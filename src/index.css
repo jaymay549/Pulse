@@ -1,0 +1,187 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
+
+    --primary: 214 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 48 100% 50%;
+    --secondary-foreground: 0 0% 8%;
+
+    --muted: 214 20% 96%;
+    --muted-foreground: 214 10% 40%;
+
+    --accent: 214 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 30% 90%;
+    --input: 214 30% 90%;
+    --ring: 214 100% 50%;
+
+    --radius: 0.5rem;
+
+    /* Vendor Intel color palette */
+    --vendor-warning: 0 84% 60%;           /* Red for warnings */
+    --vendor-warning-foreground: 0 0% 100%;
+    --vendor-success: 142 76% 36%;         /* Green for recommendations */
+    --vendor-success-foreground: 0 0% 100%;
+    --vendor-pro: 45 93% 47%;              /* Gold for Pro tier */
+    --vendor-pro-foreground: 0 0% 8%;
+    --vendor-bg: 0 0% 98%;                 /* Warm off-white */
+    --vendor-card: 0 0% 100%;              /* Pure white cards */
+    --vendor-border: 0 0% 90%;             /* Light dividers */
+
+    /* Custom design tokens for CDG Circles - Professional Trust Theme */
+    --gradient-hero: linear-gradient(135deg, hsl(214, 100%, 50%) 0%, hsl(220, 90%, 48%) 100%);
+    --gradient-accent: linear-gradient(90deg, hsl(214, 100%, 50%) 0%, hsl(220, 90%, 55%) 100%);
+    --gradient-trust: linear-gradient(135deg, hsl(210, 100%, 56%) 0%, hsl(220, 90%, 48%) 100%);
+    
+    --shadow-bold: 0 4px 20px hsl(214 100% 50% / 0.3);
+    --shadow-card: 0 2px 8px hsl(214 10% 20% / 0.08);
+    
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 214 20% 98%;
+    --sidebar-foreground: 0 0% 8%;
+    --sidebar-primary: 214 100% 50%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 48 100% 50%;
+    --sidebar-accent-foreground: 0 0% 8%;
+    --sidebar-border: 214 30% 90%;
+    --sidebar-ring: 214 100% 50%;
+  }
+
+  .dark {
+    --background: 0 0% 8%;
+    --foreground: 0 0% 98%;
+
+    /* Vendor Intel dark mode */
+    --vendor-warning: 0 72% 51%;
+    --vendor-warning-foreground: 0 0% 100%;
+    --vendor-success: 142 71% 45%;
+    --vendor-success-foreground: 0 0% 100%;
+    --vendor-pro: 45 93% 47%;
+    --vendor-pro-foreground: 0 0% 8%;
+    --vendor-bg: 0 0% 10%;
+    --vendor-card: 0 0% 12%;
+    --vendor-border: 0 0% 20%;
+
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 214 100% 50%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 48 100% 50%;
+    --secondary-foreground: 0 0% 8%;
+
+    --muted: 214 10% 20%;
+    --muted-foreground: 214 10% 60%;
+
+    --accent: 214 100% 50%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 214 20% 25%;
+    --input: 214 20% 25%;
+    --ring: 214 100% 50%;
+    
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 214 100% 50%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 214 20% 15%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 214 20% 20%;
+    --sidebar-ring: 214 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html, body {
+    @apply overflow-x-hidden;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-black tracking-tight;
+  }
+}
+
+@layer utilities {
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes marquee-reverse {
+    0% {
+      transform: translateX(-50%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+  
+  .animate-marquee {
+    animation: marquee var(--marquee-duration, 80s) linear infinite;
+  }
+
+  .animate-marquee-reverse {
+    animation: marquee-reverse var(--marquee-duration, 80s) linear infinite;
+  }
+  
+  .hover\:pause-animation:hover {
+    animation-play-state: paused;
+  }
+  
+  .line-clamp-4 {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
