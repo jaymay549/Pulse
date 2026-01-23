@@ -13,7 +13,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import cdgCirclesLogo from "@/assets/cdg-circles-logo-black.png";
+import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
 
 // Components
 import {
@@ -366,7 +366,7 @@ const VendorsV2 = () => {
                 </Sheet>
 
                 <Link to="/" className="flex items-center">
-                  <img src={cdgCirclesLogo} alt="CDG Circles" className="h-7" />
+                  <img src={cdgPulseLogo} alt="CDG Pulse" className="h-7" />
                 </Link>
               </div>
 
@@ -723,11 +723,11 @@ const VendorsV2 = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-center gap-6">
               <Link to="/">
-                <img src={cdgCirclesLogo} alt="CDG Circles" className="h-6 opacity-70" />
+                <img src={cdgPulseLogo} alt="CDG Pulse" className="h-6 opacity-70" />
               </Link>
 
               <p className="max-w-2xl text-center text-xs text-muted-foreground/70">
-                <span className="font-medium">Disclaimer:</span> CDG Circles does not endorse or recommend any vendor.
+                <span className="font-medium">Disclaimer:</span> CDG Pulse does not endorse or recommend any vendor.
                 All reviews are community-generated and reflect individual experiences.
               </p>
 
