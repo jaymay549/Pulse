@@ -11,7 +11,7 @@ interface AIInsightBannerProps {
   searchQuery?: string;
   selectedVendor?: string | null;
   isProUser?: boolean;
-  pulseSessionId?: string | null;
+  getToken?: () => Promise<string | null>;
   className?: string;
   onUpgradeClick?: () => void;
 }
@@ -36,7 +36,7 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
   searchQuery,
   selectedVendor,
   isProUser,
-  pulseSessionId,
+  getToken,
   className,
   onUpgradeClick,
 }) => {
@@ -48,7 +48,7 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
     // Only fetch when we have a vendor name (either selected or typed)
     const hasVendorQuery = selectedVendor || (searchQuery && searchQuery.trim().length > 0);
     const hasCategoryFilter = selectedCategory && selectedCategory !== "all";
-    
+
     // Skip if no meaningful filter is applied
     if (!hasVendorQuery && !hasCategoryFilter) {
       setInsight(null);
@@ -65,7 +65,7 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
         const params = new URLSearchParams();
         // Prioritize selectedVendor over searchQuery for vendor scoping
         const vendorName = selectedVendor || (searchQuery && searchQuery.trim().length > 0 ? searchQuery : null);
-        
+
         // When a vendor is selected, scope to vendor only (not category)
         // Vendor is more specific than category, so we ignore category when vendor is selected
         if (vendorName) {
@@ -76,8 +76,11 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
         }
 
         const headers: HeadersInit = {};
-        if (pulseSessionId) {
-          headers["x-pulse-session"] = pulseSessionId;
+        if (getToken) {
+          const token = await getToken();
+          if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+          }
         }
 
         const response = await fetch(`${WAM_URL}/api/public/vendor-pulse/insights?${params.toString()}`, {
@@ -105,7 +108,7 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
     };
 
     fetchInsight();
-  }, [selectedCategory, searchQuery, selectedVendor, pulseSessionId]);
+  }, [selectedCategory, searchQuery, selectedVendor, getToken]);
 
   // Hide AI Intelligence banner when search query is present (but show if vendor is selected)
   if (searchQuery && searchQuery.trim().length > 0 && !selectedVendor) {

@@ -4,19 +4,19 @@ import { cn } from "@/lib/utils";
 
 interface UpgradeTeaserProps {
   remainingCount: number;
-  isPulseAuthenticated: boolean;
+  isAuthenticated: boolean;
   onUpgradeClick: () => void;
   className?: string;
 }
 
 export const UpgradeTeaser: React.FC<UpgradeTeaserProps> = ({
   remainingCount,
-  isPulseAuthenticated,
+  isAuthenticated,
   onUpgradeClick,
   className,
 }) => {
   const handleClick = () => {
-    if (isPulseAuthenticated) {
+    if (isAuthenticated) {
       onUpgradeClick();
     } else {
       const tiersSection = document.getElementById('tiers-section');
@@ -64,7 +64,7 @@ export const UpgradeTeaser: React.FC<UpgradeTeaserProps> = ({
         )}
       >
         <Crown className="h-4 w-4" />
-        <span>{isPulseAuthenticated ? 'Upgrade to Unlock' : 'Join as a Viewer'}</span>
+        <span>{isAuthenticated ? 'Upgrade to Unlock' : 'Join as a Viewer'}</span>
         <ArrowRight className="h-4 w-4" />
       </button>
 
@@ -81,7 +81,7 @@ interface SearchLockedPaywallProps {
   resultCount: number;
   positiveCount: number;
   warningCount: number;
-  isPulseAuthenticated: boolean;
+  isAuthenticated: boolean;
   onUpgradeClick: () => void;
 }
 
@@ -90,11 +90,11 @@ export const SearchLockedPaywall: React.FC<SearchLockedPaywallProps> = ({
   resultCount,
   positiveCount,
   warningCount,
-  isPulseAuthenticated,
+  isAuthenticated,
   onUpgradeClick,
 }) => {
   const handleClick = () => {
-    if (isPulseAuthenticated) {
+    if (isAuthenticated) {
       onUpgradeClick();
     } else {
       const tiersSection = document.getElementById('tiers-section');
@@ -137,7 +137,7 @@ export const SearchLockedPaywall: React.FC<SearchLockedPaywallProps> = ({
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-yellow-500 hover:bg-yellow-400 text-yellow-950 font-bold text-base shadow-lg hover:shadow-xl transition-all"
           >
             <Crown className="h-5 w-5" />
-            <span>{isPulseAuthenticated ? 'Upgrade to Unlock' : 'Join as a Viewer'}</span>
+            <span>{isAuthenticated ? 'Upgrade to Unlock' : 'Join as a Viewer'}</span>
           </button>
         </div>
       </div>

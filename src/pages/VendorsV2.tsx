@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import {
-  Search, X, Crown, User, LogOut, Share2, Menu, ChevronDown
+  Search, X, Crown, Share2, Menu
 } from "lucide-react";
+import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,6 +14,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
 import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
 
 // Components
@@ -27,15 +32,13 @@ import {
   TrendingVendorChips,
 } from "@/components/vendors";
 import UpgradeModal from "@/components/UpgradeModal";
-import WamAuthModal from "@/components/WamAuthModal";
 import QuoteCardModal from "@/components/wins/QuoteCardModal";
 import VendorPricingTiers from "@/components/vendors/VendorPricingTiers";
-import AuthPickerModal from "@/components/vendors/AuthPickerModal";
 import ReviewMarquee from "@/components/vendors/ReviewMarquee";
 
 // Hooks
 import { useVendorFilters, categories } from "@/hooks/useVendorFilters";
-import { useWamAuth } from "@/hooks/useWamAuth";
+import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { useVendorReviews, VendorEntry } from "@/hooks/useVendorReviews";
 import { useVendorWebsites } from "@/hooks/useVendorWebsites";
 import { useVerifiedVendor } from "@/hooks/useVerifiedVendor";
@@ -82,24 +85,23 @@ function getAccessLevel(userTier: UserTier): {
 const VendorsV2 = () => {
   // UI State
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [showPulseModal, setShowPulseModal] = useState(false);
-  const [showAuthPicker, setShowAuthPicker] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
   const [selectedCard, setSelectedCard] = useState<VendorEntry | null>(null);
   const [selectedCardForShare, setSelectedCardForShare] = useState<VendorEntry | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
 
-  // WAM Pulse Auth
+  // Clerk Auth
   const {
-    isAuthenticated: isPulseAuthenticated,
-    role: pulseRole,
-    sessionId: pulseSessionId,
-    isLoading: pulseAuthLoading,
-    requestCode: requestPulseCode,
-    verifyCode: verifyPulseCode,
-    logout: logoutPulse
-  } = useWamAuth();
+    isAuthenticated,
+    role,
+    tier,
+    isLoading: isAuthLoading,
+    fetchWithAuth,
+    getToken,
+  } = useClerkAuth();
+  const { signOut } = useClerk();
 
   // Vendor data from WAM
   const [wamMentions, setWamMentions] = useState<VendorEntry[]>([]);
@@ -124,46 +126,33 @@ const VendorsV2 = () => {
 
   // Fetch Vendor Pulse mentions from WAM
   useEffect(() => {
-    const fetchWamMentions = async () => {
+    const fetchMentions = async () => {
       setIsWamLoading(true);
       try {
-        const headers: HeadersInit = {};
-        if (pulseSessionId) {
-          headers["x-pulse-session"] = pulseSessionId;
-        }
-
-        const response = await fetch(`${WAM_URL}/api/public/vendor-pulse/mentions`, {
-          headers
-        });
+        const response = await fetchWithAuth(`${WAM_URL}/api/public/vendor-pulse/mentions`);
         if (response.ok) {
           const data = await response.json();
           setWamMentions(data.mentions || []);
         }
       } catch (err) {
-        console.error("Failed to fetch WAM mentions:", err);
+        console.error("Failed to fetch mentions:", err);
       } finally {
         setIsWamLoading(false);
       }
     };
 
-    fetchWamMentions();
-  }, [isPulseAuthenticated, pulseSessionId]);
+    fetchMentions();
+  }, [isAuthenticated, fetchWithAuth]);
 
-  // Map WAM Pulse role to tier format
+  // Map Clerk tier to local format
   const effectiveTier = useMemo(() => {
-    if (isPulseAuthenticated && pulseRole) {
-      switch (pulseRole) {
-        case "Pro":
-          return "pro";
-        case "Community":
-          return "community";
-        case "Guest":
-        default:
-          return "anonymous";
-      }
+    if (isAuthenticated) {
+      if (tier === "pro" || tier === "executive") return "pro";
+      if (tier === "community") return "community";
+      return "free";
     }
     return "anonymous";
-  }, [isPulseAuthenticated, pulseRole]);
+  }, [isAuthenticated, tier]);
 
   // Access level
   const accessLevel = getAccessLevel(effectiveTier);
@@ -204,14 +193,14 @@ const VendorsV2 = () => {
   const sortedCategories = useMemo(() => {
     const allCategory = categories.find(cat => cat.id === "all");
     const otherCategories = categories.filter(cat => cat.id !== "all");
-    
+
     // Sort by mention count (descending)
     const sorted = otherCategories.sort((a, b) => {
       const countA = categoryCounts[a.id] || 0;
       const countB = categoryCounts[b.id] || 0;
       return countB - countA;
     });
-    
+
     // Put "All" first, then sorted categories
     return allCategory ? [allCategory, ...sorted] : sorted;
   }, [categoryCounts]);
@@ -233,22 +222,22 @@ const VendorsV2 = () => {
     // When searching: show 1 unlocked positive (teaser), then warning as 2nd card, then remaining mix
     const positives = [...filteredData.filter(e => e.type === "positive")];
     const warnings = [...filteredData.filter(e => e.type === "warning")];
-    
+
     const result: (VendorEntry & { isUnlockedTeaser?: boolean })[] = [];
-    
+
     // First: add a positive as the UNLOCKED teaser (shows value without giving away warnings)
     if (positives.length > 0) {
       const randomIdx = Math.floor(Math.random() * positives.length);
       const teaserPositive = positives.splice(randomIdx, 1)[0];
       result.push({ ...teaserPositive, isUnlockedTeaser: true });
     }
-    
+
     // Second: ALWAYS add a warning if one exists (compels dealers to subscribe)
     if (warnings.length > 0) {
       const randomWarnIdx = Math.floor(Math.random() * warnings.length);
       result.push(warnings.splice(randomWarnIdx, 1)[0]);
     }
-    
+
     // Fill remaining slots (up to 5 total) with alternating pattern
     let usePositive = true;
     while (result.length < 5) {
@@ -265,7 +254,7 @@ const VendorsV2 = () => {
       }
       usePositive = !usePositive;
     }
-    
+
     return result;
   }, [filteredData, accessLevel.unlimitedAccess, searchQuery, selectedVendor]);
 
@@ -380,14 +369,13 @@ const VendorsV2 = () => {
                   Share
                 </Button>
 
-                {!isPulseAuthenticated && !pulseAuthLoading && (
-                  <Button variant="outline" size="sm" onClick={() => setShowAuthPicker(true)}>
-                    <User className="h-4 w-4 mr-2" />
+                {!isAuthenticated && !isAuthLoading && (
+                  <Button variant="outline" size="sm" onClick={() => setShowSignIn(true)}>
                     Sign In
                   </Button>
                 )}
 
-                {isPulseAuthenticated && !isProUser && (
+                {isAuthenticated && !isProUser && (
                   <Button
                     variant="yellow"
                     size="sm"
@@ -399,16 +387,15 @@ const VendorsV2 = () => {
                   </Button>
                 )}
 
-                {isPulseAuthenticated && (
-                  <>
-                    <div className="hidden lg:flex items-center gap-1 px-2 py-1 rounded-full bg-muted text-xs font-medium text-muted-foreground">
-                      <User className="h-3 w-3" />
-                      <span className="capitalize">{effectiveTier}</span>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => logoutPulse()}>
-                      <LogOut className="h-4 w-4" />
-                    </Button>
-                  </>
+                {isAuthenticated && (
+                  <UserButton
+                    appearance={{
+                      elements: {
+                        avatarBox: "h-8 w-8",
+                      },
+                    }}
+                    afterSignOutUrl="/vendors"
+                  />
                 )}
               </div>
             </div>
@@ -471,48 +458,48 @@ const VendorsV2 = () => {
                 )}
 
                 {/* Main Hero - Only on default "all" view with no search */}
-                {selectedCategory === "all" && 
-                 searchQuery.trim().length === 0 && 
-                 selectedVendor === null && (
-                  <div className="py-4 sm:py-6">
-                    {/* Content */}
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/20 border border-secondary/30 text-xs font-semibold text-yellow-800 mb-4">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-500 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
-                      </span>
-                      Updated Daily
-                    </div>
-                    
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground mb-4 leading-[1.1] tracking-tight">
-                      Unfiltered Vendor Intel{" "}
-                      <span className="text-yellow-600">From Real Dealers</span>
-                    </h1>
-                    
-                    <p className="text-lg sm:text-xl text-muted-foreground mb-6 max-w-xl leading-relaxed">
-                      Real feedback from verified dealers. No paid placements, just honest experiences.
-                    </p>
+                {selectedCategory === "all" &&
+                  searchQuery.trim().length === 0 &&
+                  selectedVendor === null && (
+                    <div className="py-4 sm:py-6">
+                      {/* Content */}
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/20 border border-secondary/30 text-xs font-semibold text-yellow-800 mb-4">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-500 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+                        </span>
+                        Updated Daily
+                      </div>
 
-                    {/* Value Props */}
-                    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-2 sm:gap-y-2 text-sm sm:text-base text-foreground/80">
-                      <div className="flex items-center gap-2">
-                        <span className="text-green-500 font-bold">✓</span>
-                        <span><strong className="text-foreground">{mentions.length}+</strong> verified reviews</span>
+                      <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground mb-4 leading-[1.1] tracking-tight">
+                        Unfiltered Vendor Intel{" "}
+                        <span className="text-yellow-600">From Real Dealers</span>
+                      </h1>
+
+                      <p className="text-lg sm:text-xl text-muted-foreground mb-6 max-w-xl leading-relaxed">
+                        Real feedback from verified dealers. No paid placements, just honest experiences.
+                      </p>
+
+                      {/* Value Props */}
+                      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-2 sm:gap-y-2 text-sm sm:text-base text-foreground/80">
+                        <div className="flex items-center gap-2">
+                          <span className="text-green-500 font-bold">✓</span>
+                          <span><strong className="text-foreground">{mentions.length}+</strong> verified reviews</span>
+                        </div>
+                        <span className="text-border hidden sm:inline">•</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-red-500 font-bold">⚠️</span>
+                          <span><strong className="text-foreground">{totalWarningCount}+</strong> warnings to avoid</span>
+                        </div>
+                        <span className="text-border hidden sm:inline">•</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-yellow-500 font-bold">💰</span>
+                          <span>Save <strong className="text-foreground">thousands</strong> in bad contracts</span>
+                        </div>
                       </div>
-                      <span className="text-border hidden sm:inline">•</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-red-500 font-bold">⚠️</span>
-                        <span><strong className="text-foreground">{totalWarningCount}+</strong> warnings to avoid</span>
-                      </div>
-                      <span className="text-border hidden sm:inline">•</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-yellow-500 font-bold">💰</span>
-                        <span>Save <strong className="text-foreground">thousands</strong> in bad contracts</span>
-                      </div>
+
                     </div>
-                    
-                  </div>
-                )}
+                  )}
 
                 {/* Search Bar - Below hero */}
                 <div className="pt-2 pb-4">
@@ -579,7 +566,7 @@ const VendorsV2 = () => {
                   searchQuery={searchQuery}
                   selectedVendor={selectedVendor}
                   isProUser={isProUser}
-                  pulseSessionId={pulseSessionId}
+                  getToken={getToken}
                   onUpgradeClick={() => setShowUpgradeModal(true)}
                   className="mb-6"
                 />
@@ -616,19 +603,19 @@ const VendorsV2 = () => {
                   {visibleEntries.map((entry) => {
                     // Check if this is the unlocked teaser card
                     const isUnlockedTeaser = (entry as VendorEntry & { isUnlockedTeaser?: boolean }).isUnlockedTeaser === true;
-                    
+
                     // Use the isLocked flag from API, or fall back to checking if content is locked
                     // Unlocked teasers override the lock status
-                    const isLocked = isUnlockedTeaser 
-                      ? false 
-                      : (entry.isLocked !== undefined 
-                          ? entry.isLocked 
-                          : (entry.quote === "[Content locked - Join Pro to view]" || 
-                             entry.quote === "[Content locked - Upgrade to Pro to view]"));
-                    
+                    const isLocked = isUnlockedTeaser
+                      ? false
+                      : (entry.isLocked !== undefined
+                        ? entry.isLocked
+                        : (entry.quote === "[Content locked - Join Pro to view]" ||
+                          entry.quote === "[Content locked - Upgrade to Pro to view]"));
+
                     // Show vendor names if: vendorName exists AND (user has access OR unlocked teaser OR not locked)
                     // Backend doesn't serve vendorName when it should be hidden
-                    const showVendorNames = entry.vendorName && 
+                    const showVendorNames = entry.vendorName &&
                       (accessLevel.unlimitedAccess || isUnlockedTeaser || (!isLocked && accessLevel.showVendorNames));
 
                     // Get website and logo for this vendor (if verified vendor has set them)
@@ -643,7 +630,7 @@ const VendorsV2 = () => {
                         isLocked={isLocked}
                         showVendorNames={showVendorNames}
                         isFullAccess={accessLevel.unlimitedAccess}
-                        isPulseAuthenticated={isPulseAuthenticated}
+                        isAuthenticated={isAuthenticated}
                         vendorResponse={vendorResponse}
                         vendorWebsite={vendorWebsiteUrl}
                         vendorLogo={vendorLogoUrl}
@@ -658,7 +645,7 @@ const VendorsV2 = () => {
                   {showTeaserCard && (
                     <UpgradeTeaser
                       remainingCount={remainingCount}
-                      isPulseAuthenticated={isPulseAuthenticated}
+                      isAuthenticated={isAuthenticated}
                       onUpgradeClick={() => setShowUpgradeModal(true)}
                     />
                   )}
@@ -684,16 +671,16 @@ const VendorsV2 = () => {
               )}
 
               {/* Upgrade Section for Non-Pro Users */}
-              {!accessLevel.unlimitedAccess && !isPulseAuthenticated && (
-                <VendorPricingTiers 
+              {!accessLevel.unlimitedAccess && !isAuthenticated && (
+                <VendorPricingTiers
                   totalReviews={wamMentions.length}
                   totalWarnings={totalWarningCount}
-                  onSignInClick={() => setShowAuthPicker(true)}
+                  onSignInClick={() => setShowSignIn(true)}
                 />
               )}
 
               {/* Authenticated Non-Pro Upgrade Banner */}
-              {!accessLevel.unlimitedAccess && isPulseAuthenticated && (
+              {!accessLevel.unlimitedAccess && isAuthenticated && (
                 <div className="mt-8">
                   <div className="p-6 rounded-xl bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 border-2 border-yellow-400/30 flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
@@ -776,18 +763,21 @@ const VendorsV2 = () => {
         targetTier="pro"
       />
 
-      <WamAuthModal
-        isOpen={showPulseModal}
-        onClose={() => setShowPulseModal(false)}
-        onRequestCode={requestPulseCode}
-        onVerifyCode={verifyPulseCode}
-      />
-
-      <AuthPickerModal
-        isOpen={showAuthPicker}
-        onClose={() => setShowAuthPicker(false)}
-        onSelectPhone={() => setShowPulseModal(true)}
-      />
+      {/* Clerk Sign In Modal */}
+      <Dialog open={showSignIn} onOpenChange={setShowSignIn}>
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+          <SignIn
+            appearance={{
+              elements: {
+                rootBox: "w-full",
+                card: "shadow-none w-full",
+              },
+            }}
+            afterSignInUrl="/vendors"
+            signUpUrl="/vendors"
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

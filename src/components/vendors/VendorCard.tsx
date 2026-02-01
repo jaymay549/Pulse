@@ -91,7 +91,7 @@ const isWordBoundary = (char: string | undefined): boolean => {
 };
 
 const blurVendorNames = (text: string): React.ReactNode => {
-  let result: React.ReactNode[] = [];
+  const result: React.ReactNode[] = [];
   let remainingText = text;
   let keyIndex = 0;
 
@@ -153,19 +153,19 @@ const extractTextFromNode = (node: React.ReactNode): string => {
   if (typeof node === 'string') {
     return node;
   }
-  
+
   if (typeof node === 'number' || typeof node === 'boolean') {
     return String(node);
   }
-  
+
   if (node === null || node === undefined) {
     return '';
   }
-  
+
   if (Array.isArray(node)) {
     return node.map(extractTextFromNode).join('');
   }
-  
+
   if (React.isValidElement(node)) {
     const children = node.props.children;
     if (children === undefined || children === null) {
@@ -173,7 +173,7 @@ const extractTextFromNode = (node: React.ReactNode): string => {
     }
     return extractTextFromNode(children);
   }
-  
+
   return '';
 };
 
@@ -184,28 +184,28 @@ const blurVendorNamesInNodes = (node: React.ReactNode, keyIndex: { current: numb
   if (typeof node === 'string') {
     return blurVendorNames(node);
   }
-  
+
   if (typeof node === 'number' || typeof node === 'boolean' || node === null || node === undefined) {
     return node;
   }
-  
+
   if (Array.isArray(node)) {
     return node.map((child) => blurVendorNamesInNodes(child, keyIndex));
   }
-  
+
   if (React.isValidElement(node)) {
     // Extract text content to check if it contains vendor names
     const textContent = extractTextFromNode(node.props.children);
-    
+
     // If the text content contains vendor names, we need to blur them
     // For now, we'll recursively process children
     const children = React.Children.map(node.props.children, (child) => {
       return blurVendorNamesInNodes(child, keyIndex);
     });
-    
+
     return React.cloneElement(node, { ...node.props, key: `blur-${keyIndex.current++}` }, children);
   }
-  
+
   return node;
 };
 
@@ -215,11 +215,11 @@ const blurVendorNamesInNodes = (node: React.ReactNode, keyIndex: { current: numb
 const parseMarkdownWithBlur = (text: string, showVendorNames: boolean): React.ReactNode => {
   // Always parse markdown first to get React elements
   const parsed = parseMarkdown(text);
-  
+
   if (showVendorNames) {
     return parsed;
   }
-  
+
   // Blur vendor names in the parsed markdown
   const keyIndex = { current: 0 };
   return blurVendorNamesInNodes(parsed, keyIndex);
@@ -246,7 +246,7 @@ interface VendorCardProps {
   isLocked: boolean;
   showVendorNames: boolean;
   isFullAccess: boolean;
-  isPulseAuthenticated: boolean;
+  isAuthenticated: boolean;
   vendorResponse?: VendorResponse | null;
   vendorWebsite?: string | null;
   vendorLogo?: string | null;
@@ -260,7 +260,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
   isLocked,
   showVendorNames,
   isFullAccess,
-  isPulseAuthenticated,
+  isAuthenticated,
   vendorResponse,
   vendorWebsite,
   vendorLogo,
@@ -341,7 +341,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (isPulseAuthenticated && onUpgradeClick) {
+                if (isAuthenticated && onUpgradeClick) {
                   onUpgradeClick();
                 } else {
                   const tiersSection = document.getElementById('tiers-section');
@@ -355,7 +355,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
               className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-yellow-500 hover:bg-yellow-400 text-yellow-950 font-semibold text-sm shadow-lg hover:shadow-xl transition-all"
             >
               <Crown className="h-4 w-4" />
-              <span>{isPulseAuthenticated ? 'Unlock' : 'Join to Unlock'}</span>
+              <span>{isAuthenticated ? 'Unlock' : 'Join to Unlock'}</span>
             </button>
           </div>
         </div>
@@ -364,10 +364,10 @@ export const VendorCard: React.FC<VendorCardProps> = ({
   }
 
   // Check if quote contains locked placeholder text from API
-  const hasLockedPlaceholder = entry.quote.includes("[Content locked") || 
-                                entry.quote.includes("[content locked") ||
-                                entry.quote.includes("Join Pro to view") ||
-                                entry.quote.includes("Upgrade to Pro");
+  const hasLockedPlaceholder = entry.quote.includes("[Content locked") ||
+    entry.quote.includes("[content locked") ||
+    entry.quote.includes("Join Pro to view") ||
+    entry.quote.includes("Upgrade to Pro");
 
   // Unlocked card layout
   return (
