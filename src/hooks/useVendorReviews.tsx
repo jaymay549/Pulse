@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 
 // Transform to match existing VendorEntry interface for backward compatibility
 export interface VendorEntry {
@@ -25,45 +24,22 @@ interface UseVendorReviewsResult {
 }
 
 /**
- * Hook for vendor reviews - fetches from Airtable via edge function
- * since database tables were removed.
+ * Hook for vendor reviews - currently returns empty array.
+ * Reviews functionality is disabled until a data source is configured.
  */
 export function useVendorReviews(): UseVendorReviewsResult {
-  const [reviews, setReviews] = useState<VendorEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [reviews] = useState<VendorEntry[]>([]);
+  const [isLoading] = useState(false);
+  const [error] = useState<string | null>(null);
 
-  const fetchReviews = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Fetch from Airtable via edge function
-      const { data, error: fnError } = await supabase.functions.invoke("fetch-airtable-reviews");
-
-      if (fnError) {
-        throw fnError;
-      }
-
-      if (data?.reviews) {
-        setReviews(data.reviews);
-      }
-    } catch (err) {
-      console.error("Error fetching vendor reviews:", err);
-      setError(err instanceof Error ? err.message : "Failed to fetch reviews");
-    } finally {
-      setIsLoading(false);
-    }
+  const refetch = async () => {
+    // No-op - no data source configured
   };
-
-  useEffect(() => {
-    fetchReviews();
-  }, []);
 
   return {
     reviews,
     isLoading,
     error,
-    refetch: fetchReviews,
+    refetch,
   };
 }
