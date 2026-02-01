@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Loader2, X } from "lucide-react";
@@ -12,6 +11,10 @@ interface VendorLogoUploadProps {
   onLogoUpdated: (url: string | null) => void;
 }
 
+/**
+ * Vendor logo upload component - currently disabled since database tables were removed.
+ * Shows the current logo but upload functionality is disabled.
+ */
 export function VendorLogoUpload({
   profileId,
   vendorName,
@@ -20,8 +23,8 @@ export function VendorLogoUpload({
 }: VendorLogoUploadProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isRemoving, setIsRemoving] = useState(false);
+  const [isUploading] = useState(false);
+  const [isRemoving] = useState(false);
 
   const getInitials = (name: string) => {
     return name
@@ -33,115 +36,19 @@ export function VendorLogoUpload({
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      toast({
-        title: "Invalid file type",
-        description: "Please upload an image file (JPG, PNG, etc.)",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please upload an image smaller than 2MB",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      // Generate unique filename
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${profileId}/logo.${fileExt}`;
-
-      // Delete existing logo if present
-      if (currentLogoUrl) {
-        const oldPath = currentLogoUrl.split("/vendor-logos/")[1];
-        if (oldPath) {
-          await supabase.storage.from("vendor-logos").remove([oldPath]);
-        }
-      }
-
-      // Upload new logo
-      const { error: uploadError } = await supabase.storage
-        .from("vendor-logos")
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("vendor-logos")
-        .getPublicUrl(fileName);
-
-      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
-
-      // Update profile with new logo URL
-      const { error: updateError } = await supabase
-        .from("vendor_profiles")
-        .update({ company_logo_url: publicUrl })
-        .eq("id", profileId);
-
-      if (updateError) throw updateError;
-
-      onLogoUpdated(publicUrl);
-      toast({ title: "Logo updated successfully!" });
-    } catch (err) {
-      console.error("Failed to upload logo:", err);
-      toast({
-        title: "Upload failed",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
+    toast({
+      title: "Feature disabled",
+      description: "Logo upload is temporarily unavailable.",
+      variant: "destructive",
+    });
   };
 
   const handleRemoveLogo = async () => {
-    if (!currentLogoUrl) return;
-
-    setIsRemoving(true);
-
-    try {
-      // Extract path from URL
-      const path = currentLogoUrl.split("/vendor-logos/")[1]?.split("?")[0];
-      if (path) {
-        await supabase.storage.from("vendor-logos").remove([path]);
-      }
-
-      // Update profile to remove logo URL
-      const { error: updateError } = await supabase
-        .from("vendor_profiles")
-        .update({ company_logo_url: null })
-        .eq("id", profileId);
-
-      if (updateError) throw updateError;
-
-      onLogoUpdated(null);
-      toast({ title: "Logo removed" });
-    } catch (err) {
-      console.error("Failed to remove logo:", err);
-      toast({
-        title: "Failed to remove logo",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRemoving(false);
-    }
+    toast({
+      title: "Feature disabled",
+      description: "Logo removal is temporarily unavailable.",
+      variant: "destructive",
+    });
   };
 
   return (

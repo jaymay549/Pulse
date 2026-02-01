@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { Crown, Star, Users, Check, ArrowRight, X, MessageCircle, Search, Zap, Calendar } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { Crown, Star, Users, Check, ArrowRight, MessageCircle, Search, Zap, Calendar } from "lucide-react";
+import { useClerkAuth } from "@/hooks/useClerkAuth";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -18,6 +17,13 @@ interface UpgradeModalProps {
 
 const tierConfig = {
   free: {
+    name: 'Community',
+    icon: Users,
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted',
+    borderColor: 'border-muted',
+  },
+  community: {
     name: 'Community',
     icon: Users,
     color: 'text-muted-foreground',
@@ -67,30 +73,10 @@ const upgradeFeatures = {
 };
 
 const UpgradeModal = ({ isOpen, onClose, targetTier }: UpgradeModalProps) => {
-  const [userTier, setUserTier] = useState<'free' | 'pro' | 'executive'>('free');
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchUserTier = async () => {
-      setIsLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('tier')
-          .eq('id', user.id)
-          .single();
-        if (profile?.tier) {
-          setUserTier(profile.tier as 'free' | 'pro' | 'executive');
-        }
-      }
-      setIsLoading(false);
-    };
-
-    if (isOpen) {
-      fetchUserTier();
-    }
-  }, [isOpen]);
+  const { tier, isLoading } = useClerkAuth();
+  
+  // Map Clerk tier to local tier format
+  const userTier = tier === 'community' ? 'free' : tier;
 
   // Determine target tier based on current tier if not specified
   const effectiveTargetTier = targetTier || (userTier === 'free' ? 'pro' : 'executive');
@@ -103,9 +89,8 @@ const UpgradeModal = ({ isOpen, onClose, targetTier }: UpgradeModalProps) => {
   };
 
   const features = upgradeFeatures[getFeatureKey()];
-  const currentTierConfig = tierConfig[userTier];
+  const currentTierConfig = tierConfig[userTier] || tierConfig.free;
   const targetTierConfig = tierConfig[effectiveTargetTier];
-  const CurrentIcon = currentTierConfig.icon;
   const TargetIcon = targetTierConfig.icon;
 
   // If user is already at the target tier or higher, don't show upgrade

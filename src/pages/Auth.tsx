@@ -14,22 +14,6 @@ const emailSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }),
 });
 
-// Helper to get onboarding page based on tier
-const getOnboardingRedirect = (tier: string): string => {
-  switch (tier) {
-    case 'executive':
-      return '/executive-onboarding';
-    case 'pro':
-      return '/pro-onboarding';
-    case 'viewer':
-      return '/viewer-onboarding';
-    case 'verified_vendor':
-      return '/verified-vendor-onboarding';
-    default:
-      return '/vendors';
-  }
-};
-
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,41 +24,23 @@ const Auth = () => {
 
   // Get redirect URL from query params
   const redirectParam = searchParams.get("redirect");
-  // If redirect param is set to "onboarding", we'll determine based on tier
-  const shouldRedirectToOnboarding = redirectParam === "onboarding";
 
   useEffect(() => {
-    const handleRedirect = async (userId: string) => {
-      if (shouldRedirectToOnboarding) {
-        // Fetch user's tier from profiles table
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('tier')
-          .eq('id', userId)
-          .single();
-        
-        const tier = profile?.tier || 'free';
-        navigate(getOnboardingRedirect(tier));
-      } else {
-        navigate(redirectParam || '/vendors');
-      }
-    };
-
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        handleRedirect(session.user.id);
+        navigate(redirectParam || '/vendors');
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        handleRedirect(session.user.id);
+        navigate(redirectParam || '/vendors');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, redirectParam, shouldRedirectToOnboarding]);
+  }, [navigate, redirectParam]);
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,10 +49,7 @@ const Auth = () => {
     try {
       emailSchema.parse({ email });
 
-      // For onboarding redirects, we need to go through auth first to get tier
-      const redirectUrl = shouldRedirectToOnboarding 
-        ? `${window.location.origin}/auth?redirect=onboarding`
-        : `${window.location.origin}${redirectParam || '/vendors'}`;
+      const redirectUrl = `${window.location.origin}${redirectParam || '/vendors'}`;
       
       const { error } = await supabase.auth.signInWithOtp({
         email,

@@ -1,6 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-
+import { useState, useMemo, useCallback } from "react";
 
 interface ViewStats {
   [entryId: number]: {
@@ -18,45 +16,16 @@ interface EntryInput {
 }
 
 const TRENDING_COUNT = 5;
-const DEBOUNCE_MS = 1000; // Debounce view tracking to prevent spam
 
 // Track which entries have been viewed in this session to prevent duplicate increments
 const viewedThisSession = new Set<number>();
 
+// In-memory stats storage (no database)
+const inMemoryStats: ViewStats = {};
+
 export const useTrendingEntries = (allEntries: EntryInput[]) => {
-  const [viewStats, setViewStats] = useState<ViewStats>({});
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch stats from database
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('vendor_entry_stats')
-          .select('entry_id, views, shares');
-        
-        if (error) {
-          console.error('Error fetching vendor stats:', error);
-          return;
-        }
-
-        const stats: ViewStats = {};
-        data?.forEach(row => {
-          stats[row.entry_id] = {
-            views: row.views,
-            shares: row.shares,
-          };
-        });
-        setViewStats(stats);
-      } catch (err) {
-        console.error('Error fetching stats:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
+  const [viewStats, setViewStats] = useState<ViewStats>(inMemoryStats);
+  const [isLoading] = useState(false);
 
   // Helper to convert id to number
   const toNumericId = (entryId: number | string): number | null => {
@@ -64,8 +33,8 @@ export const useTrendingEntries = (allEntries: EntryInput[]) => {
     return isNaN(numericId) ? null : numericId;
   };
 
-  // Track a view - increments in database
-  const trackView = useCallback(async (entryId: number | string) => {
+  // Track a view - in-memory only
+  const trackView = useCallback((entryId: number | string) => {
     const numericId = toNumericId(entryId);
     if (numericId === null) return;
     
@@ -75,77 +44,37 @@ export const useTrendingEntries = (allEntries: EntryInput[]) => {
     }
     viewedThisSession.add(numericId);
 
-    // Optimistic update
-    setViewStats(prev => ({
-      ...prev,
-      [numericId]: {
-        views: (prev[numericId]?.views || 0) + 1,
-        shares: prev[numericId]?.shares || 0,
-      },
-    }));
-
-    try {
-      // Check if entry exists
-      const { data: existing } = await supabase
-        .from('vendor_entry_stats')
-        .select('id, views')
-        .eq('entry_id', numericId)
-        .maybeSingle();
-
-      if (existing) {
-        // Update existing
-        await supabase
-          .from('vendor_entry_stats')
-          .update({ views: existing.views + 1 })
-          .eq('entry_id', numericId);
-      } else {
-        // Insert new
-        await supabase
-          .from('vendor_entry_stats')
-          .insert({ entry_id: numericId, views: 1, shares: 0 });
-      }
-    } catch (err) {
-      console.error('Error tracking view:', err);
-    }
+    setViewStats(prev => {
+      const updated = {
+        ...prev,
+        [numericId]: {
+          views: (prev[numericId]?.views || 0) + 1,
+          shares: prev[numericId]?.shares || 0,
+        },
+      };
+      // Update in-memory storage
+      Object.assign(inMemoryStats, updated);
+      return updated;
+    });
   }, []);
 
-  // Track a share - increments in database
-  const trackShare = useCallback(async (entryId: number | string) => {
+  // Track a share - in-memory only
+  const trackShare = useCallback((entryId: number | string) => {
     const numericId = toNumericId(entryId);
     if (numericId === null) return;
 
-    // Optimistic update
-    setViewStats(prev => ({
-      ...prev,
-      [numericId]: {
-        views: prev[numericId]?.views || 0,
-        shares: (prev[numericId]?.shares || 0) + 1,
-      },
-    }));
-
-    try {
-      // Check if entry exists
-      const { data: existing } = await supabase
-        .from('vendor_entry_stats')
-        .select('id, shares')
-        .eq('entry_id', numericId)
-        .maybeSingle();
-
-      if (existing) {
-        // Update existing
-        await supabase
-          .from('vendor_entry_stats')
-          .update({ shares: existing.shares + 1 })
-          .eq('entry_id', numericId);
-      } else {
-        // Insert new
-        await supabase
-          .from('vendor_entry_stats')
-          .insert({ entry_id: numericId, views: 0, shares: 1 });
-      }
-    } catch (err) {
-      console.error('Error tracking share:', err);
-    }
+    setViewStats(prev => {
+      const updated = {
+        ...prev,
+        [numericId]: {
+          views: prev[numericId]?.views || 0,
+          shares: (prev[numericId]?.shares || 0) + 1,
+        },
+      };
+      // Update in-memory storage
+      Object.assign(inMemoryStats, updated);
+      return updated;
+    });
   }, []);
 
   // Calculate trending entries (weighted: shares count 3x more than views)

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useClerkAuth } from '@/hooks/useClerkAuth';
 
 export type WinType = 'positive' | 'warning';
 
@@ -30,33 +31,17 @@ export function useAirtableReviews(): UseAirtableReviewsResult {
   const [reviews, setReviews] = useState<VendorEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userTier, setUserTier] = useState<UserTier>('anonymous');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  const { isAuthenticated, tier, isLoading: authLoading } = useClerkAuth();
 
-  const fetchAuthAndTier = async (opts?: { silent?: boolean }) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (user) {
-        setIsAuthenticated(true);
-
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('tier')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        setUserTier((profile?.tier as UserTier) || 'free');
-      } else {
-        setIsAuthenticated(false);
-        setUserTier('anonymous');
-      }
-    } catch (err) {
-      // Tier lookup should never hard-break the page
-      console.error('Error fetching auth/tier:', err);
-      if (!opts?.silent) setError('Failed to load membership');
-    }
-  };
+  // Map Clerk tier to UserTier
+  const userTier: UserTier = !isAuthenticated 
+    ? 'anonymous' 
+    : tier === 'executive' 
+      ? 'executive' 
+      : tier === 'pro' 
+        ? 'pro' 
+        : 'free';
 
   const fetchReviewsData = async () => {
     // Fetch reviews from Airtable via backend function
@@ -79,7 +64,6 @@ export function useAirtableReviews(): UseAirtableReviewsResult {
     setError(null);
 
     try {
-      await fetchAuthAndTier();
       await fetchReviewsData();
     } catch (err) {
       console.error('Error in useAirtableReviews:', err);
@@ -90,37 +74,14 @@ export function useAirtableReviews(): UseAirtableReviewsResult {
   };
 
   useEffect(() => {
-    fetchAll();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+    if (!authLoading) {
       fetchAll();
-    });
-
-    // Refresh tier when the tab becomes active again (covers tier changes made while logged in)
-    const handleFocus = () => {
-      fetchAuthAndTier({ silent: true });
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleFocus);
-
-    // Lightweight periodic refresh for long-lived sessions
-    const intervalId = window.setInterval(() => {
-      fetchAuthAndTier({ silent: true });
-    }, 30_000);
-
-    return () => {
-      subscription.unsubscribe();
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleFocus);
-      window.clearInterval(intervalId);
-    };
-  }, []);
+    }
+  }, [authLoading, isAuthenticated]);
 
   return {
     reviews,
-    isLoading,
+    isLoading: isLoading || authLoading,
     error,
     userTier,
     isAuthenticated,
