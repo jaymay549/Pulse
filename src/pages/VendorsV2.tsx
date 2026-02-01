@@ -765,17 +765,26 @@ const VendorsV2 = () => {
 
       {/* Clerk Sign In Modal */}
       <Dialog open={showSignIn} onOpenChange={setShowSignIn}>
-        <DialogContent className="sm:max-w-md p-0 overflow-hidden">
-          <SignIn
-            appearance={{
-              elements: {
-                rootBox: "w-full",
-                card: "shadow-none w-full",
-              },
-            }}
-            afterSignInUrl="/vendors"
-            signUpUrl="/vendors"
-          />
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden [&>button]:hidden">
+          <div className="relative">
+            <button
+              onClick={() => setShowSignIn(false)}
+              className="absolute right-3 top-3 z-10 rounded-full p-1.5 bg-background/80 backdrop-blur-sm border border-border hover:bg-muted transition-colors"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+            <SignIn
+              appearance={{
+                elements: {
+                  rootBox: "w-full",
+                  card: "shadow-none w-full pt-2",
+                },
+              }}
+              afterSignInUrl="/vendors"
+              signUpUrl="/vendors"
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </>
