@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 
 interface VendorWebsite {
   vendor_name: string;
@@ -15,50 +14,19 @@ interface UseVendorWebsitesResult {
 }
 
 /**
- * Hook to fetch approved vendor profile websites for linking on vendor cards
+ * Hook to fetch approved vendor profile websites for linking on vendor cards.
+ * Currently a stub since database tables were removed.
  */
 export function useVendorWebsites(): UseVendorWebsitesResult {
-  const [websites, setWebsites] = useState<Record<string, VendorWebsite>>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const [websites] = useState<Record<string, VendorWebsite>>({});
+  const [isLoading] = useState(false);
 
-  useEffect(() => {
-    fetchVendorWebsites();
-  }, []);
-
-  const fetchVendorWebsites = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("vendor_profiles")
-        .select("vendor_name, company_website, company_logo_url")
-        .eq("is_approved", true);
-
-      if (error) throw error;
-
-      const websiteMap: Record<string, VendorWebsite> = {};
-      (data || []).forEach((profile) => {
-        websiteMap[profile.vendor_name.toLowerCase()] = {
-          vendor_name: profile.vendor_name,
-          company_website: profile.company_website,
-          company_logo_url: profile.company_logo_url,
-        };
-      });
-
-      setWebsites(websiteMap);
-    } catch (err) {
-      console.error("Failed to fetch vendor websites:", err);
-    } finally {
-      setIsLoading(false);
-    }
+  const getWebsiteForVendor = (_vendorName: string): string | null => {
+    return null;
   };
 
-  const getWebsiteForVendor = (vendorName: string): string | null => {
-    const key = vendorName.toLowerCase();
-    return websites[key]?.company_website || null;
-  };
-
-  const getLogoForVendor = (vendorName: string): string | null => {
-    const key = vendorName.toLowerCase();
-    return websites[key]?.company_logo_url || null;
+  const getLogoForVendor = (_vendorName: string): string | null => {
+    return null;
   };
 
   return {

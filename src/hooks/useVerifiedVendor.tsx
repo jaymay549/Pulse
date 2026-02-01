@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 
 export interface VerifiedVendorProfile {
   id: string;
@@ -18,62 +17,27 @@ interface UseVerifiedVendorResult {
   refetch: () => Promise<void>;
 }
 
+/**
+ * Hook for verified vendor profiles - currently a stub since database tables were removed.
+ * Vendor verification is disabled until tables are recreated.
+ */
 export function useVerifiedVendor(): UseVerifiedVendorResult {
-  const [profile, setProfile] = useState<VerifiedVendorProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [profile] = useState<VerifiedVendorProfile | null>(null);
+  const [isLoading] = useState(false);
 
-  const fetchProfile = async () => {
-    setIsLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setProfile(null);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("vendor_profiles")
-        .select("id, vendor_name, is_approved, company_logo_url, company_website, contact_email")
-        .eq("user_id", user.id)
-        .single();
-
-      if (error) {
-        if (error.code !== "PGRST116") {
-          console.error("Failed to fetch vendor profile:", error);
-        }
-        setProfile(null);
-        return;
-      }
-
-      setProfile(data);
-    } catch (err) {
-      console.error("Failed to fetch vendor profile:", err);
-      setProfile(null);
-    } finally {
-      setIsLoading(false);
-    }
+  const canRespondTo = (_vendorName: string): boolean => {
+    return false;
   };
 
-  useEffect(() => {
-    fetchProfile();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      fetchProfile();
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const canRespondTo = (vendorName: string): boolean => {
-    if (!profile || !profile.is_approved) return false;
-    return profile.vendor_name.toLowerCase() === vendorName.toLowerCase();
+  const refetch = async () => {
+    // No-op - tables not configured
   };
 
   return {
     profile,
     isLoading,
-    isVerified: profile?.is_approved ?? false,
+    isVerified: false,
     canRespondTo,
-    refetch: fetchProfile,
+    refetch,
   };
 }
