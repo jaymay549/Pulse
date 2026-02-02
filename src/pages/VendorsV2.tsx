@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import {
-  Search, X, Crown, Share2, Menu, CreditCard
-} from "lucide-react";
+import { Search, X, Crown, Share2, Menu, CreditCard } from "lucide-react";
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import { Button } from "@/components/ui/button";
@@ -15,10 +13,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
 
 // Components
@@ -49,7 +44,14 @@ import { useVendorResponses } from "@/hooks/useVendorResponses";
 import { WAM_URL } from "@/config/wam";
 
 // Helper to determine access level based on tier
-type UserTier = 'anonymous' | 'free' | 'community' | 'pro' | 'executive' | 'viewer' | 'verified_vendor';
+type UserTier =
+  | "anonymous"
+  | "free"
+  | "community"
+  | "pro"
+  | "executive"
+  | "viewer"
+  | "verified_vendor";
 
 function getAccessLevel(userTier: UserTier): {
   freeReviewCount: number;
@@ -57,23 +59,23 @@ function getAccessLevel(userTier: UserTier): {
   unlimitedAccess: boolean;
 } {
   switch (userTier) {
-    case 'pro':
-    case 'executive':
-    case 'viewer':
-    case 'verified_vendor':
+    case "pro":
+    case "executive":
+    case "viewer":
+    case "verified_vendor":
       return {
         freeReviewCount: Infinity,
         showVendorNames: true,
         unlimitedAccess: true,
       };
-    case 'free':
-    case 'community':
+    case "free":
+    case "community":
       return {
         freeReviewCount: 3,
         showVendorNames: true,
         unlimitedAccess: false,
       };
-    case 'anonymous':
+    case "anonymous":
     default:
       return {
         freeReviewCount: 3,
@@ -88,7 +90,8 @@ const VendorsV2 = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [selectedCard, setSelectedCard] = useState<VendorEntry | null>(null);
-  const [selectedCardForShare, setSelectedCardForShare] = useState<VendorEntry | null>(null);
+  const [selectedCardForShare, setSelectedCardForShare] =
+    useState<VendorEntry | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
@@ -113,7 +116,11 @@ const VendorsV2 = () => {
   const { reviews: dbReviews, isLoading: isDbLoading } = useVendorReviews();
 
   // Verified vendor hooks
-  const { profile: vendorProfile, isVerified, canRespondTo } = useVerifiedVendor();
+  const {
+    profile: vendorProfile,
+    isVerified,
+    canRespondTo,
+  } = useVerifiedVendor();
   const { getWebsiteForVendor, getLogoForVendor } = useVendorWebsites();
 
   const mentions = useMemo(() => {
@@ -121,17 +128,24 @@ const VendorsV2 = () => {
   }, [wamMentions, dbReviews]);
 
   // Get review IDs for fetching responses
-  const reviewIds = useMemo(() => mentions.map((m) => Number(m.id)), [mentions]);
-  const { responses, addResponse, updateResponse, deleteResponse } = useVendorResponses(reviewIds);
+  const reviewIds = useMemo(
+    () => mentions.map((m) => Number(m.id)),
+    [mentions],
+  );
+  const { responses, addResponse, updateResponse, deleteResponse } =
+    useVendorResponses(reviewIds);
 
-  const isDataLoading = isWamLoading || (wamMentions.length === 0 && isDbLoading);
+  const isDataLoading =
+    isWamLoading || (wamMentions.length === 0 && isDbLoading);
 
   // Fetch Vendor Pulse mentions from WAM
   useEffect(() => {
     const fetchMentions = async () => {
       setIsWamLoading(true);
       try {
-        const response = await fetchWithAuth(`${WAM_URL}/api/public/vendor-pulse/mentions`);
+        const response = await fetchWithAuth(
+          `${WAM_URL}/api/public/vendor-pulse/mentions`,
+        );
         if (response.ok) {
           const data = await response.json();
           setWamMentions(data.mentions || []);
@@ -184,7 +198,10 @@ const VendorsV2 = () => {
   useEffect(() => {
     if (!searchQuery || searchQuery.trim().length === 0) {
       setSelectedVendor(null);
-    } else if (selectedVendor && searchQuery.trim().toLowerCase() !== selectedVendor.trim().toLowerCase()) {
+    } else if (
+      selectedVendor &&
+      searchQuery.trim().toLowerCase() !== selectedVendor.trim().toLowerCase()
+    ) {
       // If searchQuery changed to something different from selectedVendor, clear it
       // This handles the case where user types in search box after selecting a vendor
       setSelectedVendor(null);
@@ -193,8 +210,8 @@ const VendorsV2 = () => {
 
   // Sort categories by mention count (descending), keeping "All" at the top
   const sortedCategories = useMemo(() => {
-    const allCategory = categories.find(cat => cat.id === "all");
-    const otherCategories = categories.filter(cat => cat.id !== "all");
+    const allCategory = categories.find((cat) => cat.id === "all");
+    const otherCategories = categories.filter((cat) => cat.id !== "all");
 
     // Sort by mention count (descending)
     const sorted = otherCategories.sort((a, b) => {
@@ -210,7 +227,8 @@ const VendorsV2 = () => {
   // Calculate visible entries based on access level
   // For anonymous users searching: show 1 fully unlocked positive (teaser) + 4 locked cards (2:1 ratio positive:warning)
   const visibleEntries = useMemo(() => {
-    const isSearchActive = searchQuery.trim().length > 0 || selectedVendor !== null;
+    const isSearchActive =
+      searchQuery.trim().length > 0 || selectedVendor !== null;
 
     if (accessLevel.unlimitedAccess) {
       return filteredData;
@@ -222,8 +240,8 @@ const VendorsV2 = () => {
     }
 
     // When searching: show 1 unlocked positive (teaser), then warning as 2nd card, then remaining mix
-    const positives = [...filteredData.filter(e => e.type === "positive")];
-    const warnings = [...filteredData.filter(e => e.type === "warning")];
+    const positives = [...filteredData.filter((e) => e.type === "positive")];
+    const warnings = [...filteredData.filter((e) => e.type === "warning")];
 
     const result: (VendorEntry & { isUnlockedTeaser?: boolean })[] = [];
 
@@ -260,17 +278,20 @@ const VendorsV2 = () => {
     return result;
   }, [filteredData, accessLevel.unlimitedAccess, searchQuery, selectedVendor]);
 
-  const remainingCount = Math.max(0, filteredData.length - visibleEntries.length);
+  const remainingCount = Math.max(
+    0,
+    filteredData.length - visibleEntries.length,
+  );
   const showTeaserCard = !accessLevel.unlimitedAccess && remainingCount > 0;
 
   // Total warning count for CTAs
-  const totalWarningCount = mentions.filter(e => e.type === "warning").length;
+  const totalWarningCount = mentions.filter((e) => e.type === "warning").length;
 
   // Handle share
   const handleShare = async () => {
     const shareData = {
-      title: 'Vendor Reviews from CDG Circles',
-      text: 'Real vendor reviews from verified auto dealers.',
+      title: "Vendor Reviews from CDG Circles",
+      text: "Real vendor reviews from verified auto dealers.",
       url: window.location.href,
     };
 
@@ -304,11 +325,12 @@ const VendorsV2 = () => {
   const handleTypeFilterChange = (filter: "all" | "positive" | "warning") => {
     if (filter === "warning" && !accessLevel.unlimitedAccess) {
       // Scroll to tiers section instead of showing modal
-      const tiersSection = document.getElementById('tiers-section');
+      const tiersSection = document.getElementById("tiers-section");
       if (tiersSection) {
         const offset = 100;
-        const elementPosition = tiersSection.getBoundingClientRect().top + window.pageYOffset;
-        window.scrollTo({ top: elementPosition - offset, behavior: 'smooth' });
+        const elementPosition =
+          tiersSection.getBoundingClientRect().top + window.pageYOffset;
+        window.scrollTo({ top: elementPosition - offset, behavior: "smooth" });
       }
       return;
     }
@@ -319,7 +341,10 @@ const VendorsV2 = () => {
     <>
       <Helmet>
         <title>Vendor Pulse | CDG Circles - Real Dealer Insights</title>
-        <meta name="description" content="Monitor what dealers are saying about your company. Real-time vendor intelligence from verified automotive dealers." />
+        <meta
+          name="description"
+          content="Monitor what dealers are saying about your company. Real-time vendor intelligence from verified automotive dealers."
+        />
       </Helmet>
 
       <div className="min-h-screen bg-[hsl(var(--vendor-bg))] overflow-x-hidden">
@@ -347,7 +372,9 @@ const VendorsV2 = () => {
                         categoryCounts={categoryCounts}
                         vendorsInCategory={vendorsInCategory}
                         showMoreCategories={showMoreCategories}
-                        onToggleMoreCategories={() => setShowMoreCategories(!showMoreCategories)}
+                        onToggleMoreCategories={() =>
+                          setShowMoreCategories(!showMoreCategories)
+                        }
                         onVendorSelect={handleVendorSelect}
                         selectedVendor={selectedVendor || undefined}
                         className="w-full"
@@ -366,13 +393,22 @@ const VendorsV2 = () => {
 
               {/* Right: Actions */}
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={handleShare} className="hidden lg:flex">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleShare}
+                  className="hidden lg:flex"
+                >
                   <Share2 className="h-4 w-4 mr-2" />
                   Share
                 </Button>
 
                 {!isAuthenticated && !isAuthLoading && (
-                  <Button variant="outline" size="sm" onClick={() => setShowSignIn(true)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSignIn(true)}
+                  >
                     Sign In
                   </Button>
                 )}
@@ -384,9 +420,11 @@ const VendorsV2 = () => {
                     onClick={() => {
                       const email = user?.email;
                       const portalUrl = email
-                        ? `${import.meta.env.VITE_STRIPE_PORTAL_URL}?prefilled_email=${encodeURIComponent(email)}`
+                        ? `${
+                            import.meta.env.VITE_STRIPE_PORTAL_URL
+                          }?prefilled_email=${encodeURIComponent(email)}`
                         : import.meta.env.VITE_STRIPE_PORTAL_URL;
-                      window.open(portalUrl, '_blank');
+                      window.open(portalUrl, "_blank");
                     }}
                     className="hidden lg:flex font-bold"
                   >
@@ -405,9 +443,17 @@ const VendorsV2 = () => {
                     afterSignOutUrl="/vendors"
                   >
                     <UserButton.MenuItems>
-                      <UserButton.Action label="Subscription" labelIcon={<CreditCard className="h-4 w-4" />} open="subscription" />
+                      <UserButton.Action
+                        label="Subscription"
+                        labelIcon={<CreditCard className="h-4 w-4" />}
+                        open="subscription"
+                      />
                     </UserButton.MenuItems>
-                    <UserButton.UserProfilePage label="Subscription" labelIcon={<CreditCard className="h-4 w-4" />} url="subscription">
+                    <UserButton.UserProfilePage
+                      label="Subscription"
+                      labelIcon={<CreditCard className="h-4 w-4" />}
+                      url="subscription"
+                    >
                       <SubscriptionManagement />
                     </UserButton.UserProfilePage>
                   </UserButton>
@@ -416,7 +462,6 @@ const VendorsV2 = () => {
             </div>
           </div>
         </header>
-
 
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
@@ -428,7 +473,9 @@ const VendorsV2 = () => {
               categoryCounts={categoryCounts}
               vendorsInCategory={vendorsInCategory}
               showMoreCategories={showMoreCategories}
-              onToggleMoreCategories={() => setShowMoreCategories(!showMoreCategories)}
+              onToggleMoreCategories={() =>
+                setShowMoreCategories(!showMoreCategories)
+              }
               onVendorSelect={handleVendorSelect}
               selectedVendor={selectedVendor || undefined}
               className="hidden lg:block"
@@ -441,7 +488,9 @@ const VendorsV2 = () => {
                 {/* Show category context when filtering */}
                 {selectedCategory !== "all" && selectedCategoryData && (
                   <div className="flex items-center gap-2 mb-4">
-                    <span className="text-3xl">{selectedCategoryData.icon}</span>
+                    <span className="text-3xl">
+                      {selectedCategoryData.icon}
+                    </span>
                     <span className="text-lg font-bold text-foreground">
                       {selectedCategoryData.label}
                     </span>
@@ -459,15 +508,21 @@ const VendorsV2 = () => {
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                       </span>
-                      <span className="text-xs font-medium text-green-600">Updated Daily</span>
+                      <span className="text-xs font-medium text-green-600">
+                        Updated Daily
+                      </span>
                     </div>
                     <h2 className="text-lg font-bold text-foreground mb-1">
                       Results for "{searchQuery}"
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      {filteredData.length} review{filteredData.length !== 1 ? 's' : ''} found
+                      {filteredData.length} review
+                      {filteredData.length !== 1 ? "s" : ""} found
                       {positiveCount > 0 && ` • ${positiveCount} recommended`}
-                      {warningCount > 0 && ` • ${warningCount} warning${warningCount !== 1 ? 's' : ''}`}
+                      {warningCount > 0 &&
+                        ` • ${warningCount} warning${
+                          warningCount !== 1 ? "s" : ""
+                        }`}
                     </p>
                   </div>
                 )}
@@ -488,31 +543,49 @@ const VendorsV2 = () => {
 
                       <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground mb-4 leading-[1.1] tracking-tight">
                         Unfiltered Vendor Intel{" "}
-                        <span className="text-yellow-600">From Real Dealers</span>
+                        <span className="text-yellow-600">
+                          From Real Dealers
+                        </span>
                       </h1>
 
                       <p className="text-lg sm:text-xl text-muted-foreground mb-6 max-w-xl leading-relaxed">
-                        Real feedback from verified dealers. No paid placements, just honest experiences.
+                        Real feedback from verified dealers. No paid placements,
+                        just honest experiences.
                       </p>
 
                       {/* Value Props */}
                       <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-2 sm:gap-y-2 text-sm sm:text-base text-foreground/80">
                         <div className="flex items-center gap-2">
                           <span className="text-green-500 font-bold">✓</span>
-                          <span><strong className="text-foreground">{mentions.length}+</strong> verified reviews</span>
+                          <span>
+                            <strong className="text-foreground">
+                              {mentions.length}+
+                            </strong>{" "}
+                            verified reviews
+                          </span>
                         </div>
                         <span className="text-border hidden sm:inline">•</span>
                         <div className="flex items-center gap-2">
                           <span className="text-red-500 font-bold">⚠️</span>
-                          <span><strong className="text-foreground">{totalWarningCount}+</strong> warnings to avoid</span>
+                          <span>
+                            <strong className="text-foreground">
+                              {totalWarningCount}+
+                            </strong>{" "}
+                            warnings to avoid
+                          </span>
                         </div>
                         <span className="text-border hidden sm:inline">•</span>
                         <div className="flex items-center gap-2">
                           <span className="text-yellow-500 font-bold">💰</span>
-                          <span>Save <strong className="text-foreground">thousands</strong> in bad contracts</span>
+                          <span>
+                            Save{" "}
+                            <strong className="text-foreground">
+                              thousands
+                            </strong>{" "}
+                            in bad contracts
+                          </span>
                         </div>
                       </div>
-
                     </div>
                   )}
 
@@ -525,11 +598,18 @@ const VendorsV2 = () => {
                       value={searchQuery}
                       onChange={(e) => {
                         setSearchQuery(e.target.value);
-                        if (selectedVendor && e.target.value.trim().toLowerCase() !== selectedVendor.trim().toLowerCase()) {
+                        if (
+                          selectedVendor &&
+                          e.target.value.trim().toLowerCase() !==
+                            selectedVendor.trim().toLowerCase()
+                        ) {
                           setSelectedVendor(null);
                         }
                         // Only show suggestions when user is actually typing
-                        if (e.target.value.trim().length > 0 && !showSearchSuggestions) {
+                        if (
+                          e.target.value.trim().length > 0 &&
+                          !showSearchSuggestions
+                        ) {
                           setShowSearchSuggestions(true);
                         }
                         // Hide suggestions when input is cleared
@@ -570,11 +650,12 @@ const VendorsV2 = () => {
                     />
                   </div>
                 </div>
-
               </div>
 
               {/* AI Insight Banner - Only show when actively searching/filtering */}
-              {(searchQuery.trim().length > 0 || selectedVendor !== null || selectedCategory !== "all") && (
+              {(searchQuery.trim().length > 0 ||
+                selectedVendor !== null ||
+                selectedCategory !== "all") && (
                 <AIInsightBanner
                   data={wamMentions}
                   selectedCategory={selectedCategory}
@@ -611,31 +692,40 @@ const VendorsV2 = () => {
                 />
               )}
 
-
               {/* Results Grid */}
               {visibleEntries.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {visibleEntries.map((entry) => {
                     // Check if this is the unlocked teaser card
-                    const isUnlockedTeaser = (entry as VendorEntry & { isUnlockedTeaser?: boolean }).isUnlockedTeaser === true;
+                    const isUnlockedTeaser =
+                      (entry as VendorEntry & { isUnlockedTeaser?: boolean })
+                        .isUnlockedTeaser === true;
 
                     // Use the isLocked flag from API, or fall back to checking if content is locked
                     // Unlocked teasers override the lock status
                     const isLocked = isUnlockedTeaser
                       ? false
-                      : (entry.isLocked !== undefined
-                        ? entry.isLocked
-                        : (entry.quote === "[Content locked - Join Pro to view]" ||
-                          entry.quote === "[Content locked - Upgrade to Pro to view]"));
+                      : entry.isLocked !== undefined
+                      ? entry.isLocked
+                      : entry.quote === "[Content locked - Join Pro to view]" ||
+                        entry.quote ===
+                          "[Content locked - Upgrade to Pro to view]";
 
                     // Show vendor names if: vendorName exists AND (user has access OR unlocked teaser OR not locked)
                     // Backend doesn't serve vendorName when it should be hidden
-                    const showVendorNames = entry.vendorName &&
-                      (accessLevel.unlimitedAccess || isUnlockedTeaser || (!isLocked && accessLevel.showVendorNames));
+                    const showVendorNames =
+                      entry.vendorName &&
+                      (accessLevel.unlimitedAccess ||
+                        isUnlockedTeaser ||
+                        (!isLocked && accessLevel.showVendorNames));
 
                     // Get website and logo for this vendor (if verified vendor has set them)
-                    const vendorWebsiteUrl = entry.vendorName ? getWebsiteForVendor(entry.vendorName) : null;
-                    const vendorLogoUrl = entry.vendorName ? getLogoForVendor(entry.vendorName) : null;
+                    const vendorWebsiteUrl = entry.vendorName
+                      ? getWebsiteForVendor(entry.vendorName)
+                      : null;
+                    const vendorLogoUrl = entry.vendorName
+                      ? getLogoForVendor(entry.vendorName)
+                      : null;
                     const vendorResponse = responses[Number(entry.id)] || null;
 
                     return (
@@ -671,8 +761,12 @@ const VendorsV2 = () => {
               {filteredData.length === 0 && !isWamLoading && (
                 <div className="text-center py-16">
                   <Search className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                  <h3 className="text-lg font-bold text-foreground mb-2">No results found</h3>
-                  <p className="text-muted-foreground">Try adjusting your search or category filter</p>
+                  <h3 className="text-lg font-bold text-foreground mb-2">
+                    No results found
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Try adjusting your search or category filter
+                  </p>
                 </div>
               )}
 
@@ -680,7 +774,10 @@ const VendorsV2 = () => {
               {isWamLoading && (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="h-48 bg-muted/50 rounded-lg animate-pulse" />
+                    <div
+                      key={i}
+                      className="h-48 bg-muted/50 rounded-lg animate-pulse"
+                    />
                   ))}
                 </div>
               )}
@@ -703,13 +800,21 @@ const VendorsV2 = () => {
                         <Crown className="h-7 w-7 text-yellow-600" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-foreground">Upgrade to See All Reviews</h3>
+                        <h3 className="text-lg font-bold text-foreground">
+                          Upgrade to See All Reviews
+                        </h3>
                         <p className="text-muted-foreground text-sm">
-                          Unlock all {wamMentions.length} reviews including {totalWarningCount} warnings.
+                          Unlock all {wamMentions.length} reviews including{" "}
+                          {totalWarningCount} warnings.
                         </p>
                       </div>
                     </div>
-                    <Button variant="yellow" size="lg" className="font-bold whitespace-nowrap" onClick={() => setShowUpgradeModal(true)}>
+                    <Button
+                      variant="yellow"
+                      size="lg"
+                      className="font-bold whitespace-nowrap"
+                      onClick={() => setShowUpgradeModal(true)}
+                    >
                       <Crown className="h-4 w-4 mr-2" />
                       Upgrade to Unlock
                     </Button>
@@ -725,19 +830,34 @@ const VendorsV2 = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-center gap-6">
               <Link to="/">
-                <img src={cdgPulseLogo} alt="CDG Pulse" className="h-6 opacity-70" />
+                <img
+                  src={cdgPulseLogo}
+                  alt="CDG Pulse"
+                  className="h-6 opacity-70"
+                />
               </Link>
 
               <p className="max-w-2xl text-center text-xs text-muted-foreground/70">
-                <span className="font-medium">Disclaimer:</span> CDG Pulse does not endorse or recommend any vendor.
-                All reviews are community-generated and reflect individual experiences.
+                <span className="font-medium">Disclaimer:</span> CDG Pulse does
+                not endorse or recommend any vendor. All reviews are
+                community-generated and reflect individual experiences.
               </p>
 
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                <a href="https://cardealershipguy.com/terms" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+                <a
+                  href="https://cardealershipguy.com/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-foreground"
+                >
                   Terms
                 </a>
-                <a href="https://cardealershipguy.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+                <a
+                  href="https://cardealershipguy.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-foreground"
+                >
                   Privacy
                 </a>
                 <span>© {new Date().getFullYear()} Car Dealership Guy</span>
@@ -755,9 +875,19 @@ const VendorsV2 = () => {
         onShare={(entry) => setSelectedCardForShare(entry)}
         onVendorSelect={handleVendorSelect}
         onCategorySelect={handleCategoryChange}
-        vendorResponse={selectedCard ? responses[Number(selectedCard.id)] : null}
-        canRespondAsVendor={selectedCard?.vendorName ? canRespondTo(selectedCard.vendorName) : false}
-        onAddResponse={(text) => selectedCard ? addResponse(Number(selectedCard.id), text) : Promise.resolve(false)}
+        vendorResponse={
+          selectedCard ? responses[Number(selectedCard.id)] : null
+        }
+        canRespondAsVendor={
+          selectedCard?.vendorName
+            ? canRespondTo(selectedCard.vendorName)
+            : false
+        }
+        onAddResponse={(text) =>
+          selectedCard
+            ? addResponse(Number(selectedCard.id), text)
+            : Promise.resolve(false)
+        }
         onUpdateResponse={updateResponse}
         onDeleteResponse={deleteResponse}
       />
@@ -780,26 +910,17 @@ const VendorsV2 = () => {
 
       {/* Clerk Sign In Modal */}
       <Dialog open={showSignIn} onOpenChange={setShowSignIn}>
-        <DialogContent className="sm:max-w-md p-0 overflow-hidden [&>button]:hidden">
-          <div className="relative">
-            <button
-              onClick={() => setShowSignIn(false)}
-              className="absolute right-3 top-3 z-10 rounded-full p-1.5 bg-background/80 backdrop-blur-sm border border-border hover:bg-muted transition-colors"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4 text-muted-foreground" />
-            </button>
-            <SignIn
-              appearance={{
-                elements: {
-                  rootBox: "w-full",
-                  card: "shadow-none w-full pt-2",
-                },
-              }}
-              afterSignInUrl="/vendors"
-              signUpUrl="/vendors"
-            />
-          </div>
+        <DialogContent className="sm:max-w-md p-0 border-0 bg-transparent shadow-none [&>button]:hidden">
+          <SignIn
+            appearance={{
+              elements: {
+                rootBox: "w-full",
+                card: "w-full border-0 shadow-none",
+              },
+            }}
+            afterSignInUrl="/vendors"
+            signUpUrl="/vendors"
+          />
         </DialogContent>
       </Dialog>
     </>
