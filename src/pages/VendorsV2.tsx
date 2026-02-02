@@ -111,6 +111,13 @@ const VendorsV2 = () => {
   // Vendor data from WAM
   const [wamMentions, setWamMentions] = useState<VendorEntry[]>([]);
   const [isWamLoading, setIsWamLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [paginationInfo, setPaginationInfo] = useState<{
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    hasMore: boolean;
+  } | null>(null);
 
   // Fallback vendor data from backend table (keeps /vendors usable if WAM is flaky)
   const { reviews: dbReviews, isLoading: isDbLoading } = useVendorReviews();
@@ -149,6 +156,15 @@ const VendorsV2 = () => {
         if (response.ok) {
           const data = await response.json();
           setWamMentions(data.mentions || []);
+          // Store pagination info if provided
+          if (data.page !== undefined) {
+            setPaginationInfo({
+              page: data.page,
+              pageSize: data.pageSize,
+              totalCount: data.totalCount,
+              hasMore: data.hasMore,
+            });
+          }
         }
       } catch (err) {
         console.error("Failed to fetch mentions:", err);
@@ -159,6 +175,37 @@ const VendorsV2 = () => {
 
     fetchMentions();
   }, [isAuthenticated, fetchWithAuth]);
+
+  // Load more mentions (for pro users)
+  const loadMoreMentions = async () => {
+    if (!paginationInfo?.hasMore || isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      const nextPage = paginationInfo.page + 1;
+      const response = await fetchWithAuth(
+        `${WAM_URL}/api/public/vendor-pulse/mentions?page=${nextPage}&pageSize=${paginationInfo.pageSize}`,
+      );
+      if (response.ok) {
+        const data = await response.json();
+        // Append new mentions to existing ones
+        setWamMentions((prev) => [...prev, ...(data.mentions || [])]);
+        // Update pagination info
+        if (data.page !== undefined) {
+          setPaginationInfo({
+            page: data.page,
+            pageSize: data.pageSize,
+            totalCount: data.totalCount,
+            hasMore: data.hasMore,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load more mentions:", err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   // Map Clerk tier to local format
   const effectiveTier = useMemo(() => {
@@ -225,58 +272,16 @@ const VendorsV2 = () => {
   }, [categoryCounts]);
 
   // Calculate visible entries based on access level
-  // For anonymous users searching: show 1 fully unlocked positive (teaser) + 4 locked cards (2:1 ratio positive:warning)
+  // Non-pro users see limited results with blurred vendor names to entice upgrades
   const visibleEntries = useMemo(() => {
-    const isSearchActive =
-      searchQuery.trim().length > 0 || selectedVendor !== null;
-
     if (accessLevel.unlimitedAccess) {
       return filteredData;
     }
 
-    // Free users must search - show nothing by default
-    if (!isSearchActive) {
-      return [];
-    }
-
-    // When searching: show 1 unlocked positive (teaser), then warning as 2nd card, then remaining mix
-    const positives = [...filteredData.filter((e) => e.type === "positive")];
-    const warnings = [...filteredData.filter((e) => e.type === "warning")];
-
-    const result: (VendorEntry & { isUnlockedTeaser?: boolean })[] = [];
-
-    // First: add a positive as the UNLOCKED teaser (shows value without giving away warnings)
-    if (positives.length > 0) {
-      const randomIdx = Math.floor(Math.random() * positives.length);
-      const teaserPositive = positives.splice(randomIdx, 1)[0];
-      result.push({ ...teaserPositive, isUnlockedTeaser: true });
-    }
-
-    // Second: ALWAYS add a warning if one exists (compels dealers to subscribe)
-    if (warnings.length > 0) {
-      const randomWarnIdx = Math.floor(Math.random() * warnings.length);
-      result.push(warnings.splice(randomWarnIdx, 1)[0]);
-    }
-
-    // Fill remaining slots (up to 5 total) with alternating pattern
-    let usePositive = true;
-    while (result.length < 5) {
-      if (usePositive && positives.length > 0) {
-        result.push(positives.shift()!);
-      } else if (!usePositive && warnings.length > 0) {
-        result.push(warnings.shift()!);
-      } else if (positives.length > 0) {
-        result.push(positives.shift()!);
-      } else if (warnings.length > 0) {
-        result.push(warnings.shift()!);
-      } else {
-        break;
-      }
-      usePositive = !usePositive;
-    }
-
-    return result;
-  }, [filteredData, accessLevel.unlimitedAccess, searchQuery, selectedVendor]);
+    // For non-pro users: show all filtered data (backend already limits and blurs content)
+    // The backend returns max 20 for Guest, 30 for Community with blurred vendor names
+    return filteredData;
+  }, [filteredData, accessLevel.unlimitedAccess]);
 
   const remainingCount = Math.max(
     0,
@@ -686,7 +691,6 @@ const VendorsV2 = () => {
               {/* Trending Vendor Chips - Show when NOT searching */}
               {searchQuery.trim().length === 0 && selectedVendor === null && (
                 <TrendingVendorChips
-                  data={wamMentions}
                   onVendorSelect={handleVendorSelect}
                   className="mb-6"
                 />
@@ -754,6 +758,35 @@ const VendorsV2 = () => {
                       onUpgradeClick={() => setShowUpgradeModal(true)}
                     />
                   )}
+                </div>
+              )}
+
+              {/* Load More Button - Only for Pro users with more results */}
+              {isProUser && paginationInfo?.hasMore && visibleEntries.length > 0 && (
+                <div className="mt-8 flex justify-center">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={loadMoreMentions}
+                    disabled={isLoadingMore}
+                    className="min-w-[200px]"
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <span className="animate-spin mr-2">...</span>
+                        Loading...
+                      </>
+                    ) : (
+                      <>
+                        Load More Reviews
+                        {paginationInfo.totalCount > wamMentions.length && (
+                          <span className="ml-2 text-muted-foreground">
+                            ({wamMentions.length} of {paginationInfo.totalCount})
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </Button>
                 </div>
               )}
 
@@ -845,7 +878,7 @@ const VendorsV2 = () => {
 
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
                 <a
-                  href="https://cardealershipguy.com/terms"
+                  href="https://www.dealershipguy.com/terms-of-use/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-foreground"
@@ -853,7 +886,7 @@ const VendorsV2 = () => {
                   Terms
                 </a>
                 <a
-                  href="https://cardealershipguy.com/privacy"
+                  href="https://www.dealershipguy.com/privacy-policy/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-foreground"

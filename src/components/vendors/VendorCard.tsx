@@ -305,7 +305,13 @@ export const VendorCard: React.FC<VendorCardProps> = ({
     }
   };
 
-  // Locked card has a completely different, cleaner layout
+  // Check if we have actual blurred content from the backend (not just placeholder text)
+  const hasBlurredContent = entry.quote &&
+    !entry.quote.includes("[Content locked") &&
+    !entry.quote.includes("[content locked") &&
+    entry.quote.includes("****");
+
+  // Locked card - show blurred content preview if available, otherwise show placeholder
   if (isLocked) {
     return (
       <article
@@ -328,13 +334,35 @@ export const VendorCard: React.FC<VendorCardProps> = ({
             </div>
           </div>
 
-          {/* Blurred preview content */}
-          <div className="flex-1 space-y-2 mb-4">
-            <div className="h-5 w-3/4 bg-foreground/10 rounded blur-[3px]" />
-            <div className="h-4 w-full bg-foreground/5 rounded blur-[2px]" />
-            <div className="h-4 w-5/6 bg-foreground/5 rounded blur-[2px]" />
-            <div className="h-4 w-2/3 bg-foreground/5 rounded blur-[2px]" />
-          </div>
+          {/* Blurred content preview - show actual content with vendor names masked as "****" */}
+          {hasBlurredContent ? (
+            <div className="flex-1 mb-4">
+              {/* Title with blurred vendor names */}
+              {entry.title && (
+                <p className="text-sm font-medium text-foreground/80 mb-2 line-clamp-2">
+                  {entry.title}
+                </p>
+              )}
+              {/* Quote with blurred vendor names */}
+              <div className="relative">
+                <Quote className="absolute left-0 top-0 h-4 w-4 text-muted-foreground/30" />
+                <p className="text-sm text-foreground/70 leading-relaxed line-clamp-3 pl-6">
+                  "{entry.quote}"
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3 italic">
+                Upgrade to see which vendor this is about
+              </p>
+            </div>
+          ) : (
+            /* Fallback: placeholder blocks for cards without blurred content */
+            <div className="flex-1 space-y-2 mb-4">
+              <div className="h-5 w-3/4 bg-foreground/10 rounded blur-[3px]" />
+              <div className="h-4 w-full bg-foreground/5 rounded blur-[2px]" />
+              <div className="h-4 w-5/6 bg-foreground/5 rounded blur-[2px]" />
+              <div className="h-4 w-2/3 bg-foreground/5 rounded blur-[2px]" />
+            </div>
+          )}
 
           {/* Centered CTA */}
           <div className="flex justify-center">
@@ -355,7 +383,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
               className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-yellow-500 hover:bg-yellow-400 text-yellow-950 font-semibold text-sm shadow-lg hover:shadow-xl transition-all"
             >
               <Crown className="h-4 w-4" />
-              <span>{isAuthenticated ? 'Unlock' : 'Join to Unlock'}</span>
+              <span>{isAuthenticated ? 'Unlock Vendor' : 'Join to Unlock'}</span>
             </button>
           </div>
         </div>
