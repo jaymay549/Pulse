@@ -1,47 +1,50 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { VendorEntry } from "@/hooks/useVendorReviews";
+import { WAM_URL } from "@/config/wam";
 
 interface TrendingVendorChipsProps {
-  data: VendorEntry[];
   onVendorSelect: (vendorName: string) => void;
   className?: string;
 }
 
 export const TrendingVendorChips: React.FC<TrendingVendorChipsProps> = ({
-  data,
   onVendorSelect,
   className,
 }) => {
-  // Calculate top vendors by review count
-  const topVendors = React.useMemo(() => {
-    const vendorCounts: Record<string, number> = {};
-    
-    data.forEach((entry) => {
-      if (entry.vendorName) {
-        vendorCounts[entry.vendorName] = (vendorCounts[entry.vendorName] || 0) + 1;
+  const [trendingVendors, setTrendingVendors] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTrending = async () => {
+      try {
+        const response = await fetch(`${WAM_URL}/api/public/vendor-pulse/trending`);
+        if (response.ok) {
+          const data = await response.json();
+          setTrendingVendors(data.trending || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch trending vendors:", err);
+      } finally {
+        setIsLoading(false);
       }
-    });
+    };
 
-    return Object.entries(vendorCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
-      .map(([name]) => name);
-  }, [data]);
+    fetchTrending();
+  }, []);
 
-  if (topVendors.length === 0) return null;
+  if (isLoading || trendingVendors.length === 0) return null;
 
   return (
     <div className={cn("", className)}>
       <div className="flex items-center gap-2 mb-3">
         <TrendingUp className="h-4 w-4 text-muted-foreground" />
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Popular searches
+          Trending
         </span>
       </div>
       <div className="flex flex-wrap gap-2">
-        {topVendors.map((name) => (
+        {trendingVendors.map((name) => (
           <button
             key={name}
             onClick={() => onVendorSelect(name)}
