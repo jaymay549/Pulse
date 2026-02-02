@@ -2,9 +2,10 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import {
-  Search, X, Crown, Share2, Menu
+  Search, X, Crown, Share2, Menu, CreditCard
 } from "lucide-react";
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
+import SubscriptionManagement from "@/components/SubscriptionManagement";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -95,6 +96,7 @@ const VendorsV2 = () => {
   // Clerk Auth
   const {
     isAuthenticated,
+    user,
     role,
     tier,
     isLoading: isAuthLoading,
@@ -379,7 +381,13 @@ const VendorsV2 = () => {
                   <Button
                     variant="yellow"
                     size="sm"
-                    onClick={() => window.open('https://billing.stripe.com/p/login/cN23dQ1g35Tsd3ibII', '_blank')}
+                    onClick={() => {
+                      const email = user?.email;
+                      const portalUrl = email
+                        ? `${import.meta.env.VITE_STRIPE_PORTAL_URL}?prefilled_email=${encodeURIComponent(email)}`
+                        : import.meta.env.VITE_STRIPE_PORTAL_URL;
+                      window.open(portalUrl, '_blank');
+                    }}
                     className="hidden lg:flex font-bold"
                   >
                     <Crown className="h-4 w-4 mr-2" />
@@ -395,7 +403,14 @@ const VendorsV2 = () => {
                       },
                     }}
                     afterSignOutUrl="/vendors"
-                  />
+                  >
+                    <UserButton.MenuItems>
+                      <UserButton.Action label="Subscription" labelIcon={<CreditCard className="h-4 w-4" />} open="subscription" />
+                    </UserButton.MenuItems>
+                    <UserButton.UserProfilePage label="Subscription" labelIcon={<CreditCard className="h-4 w-4" />} url="subscription">
+                      <SubscriptionManagement />
+                    </UserButton.UserProfilePage>
+                  </UserButton>
                 )}
               </div>
             </div>
