@@ -283,7 +283,7 @@ export const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
           }}
           className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
         >
-          View all {filteredCount} reviews
+          view {filteredCount} results for "{searchQuery}"
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>

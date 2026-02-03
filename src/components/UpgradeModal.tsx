@@ -73,7 +73,7 @@ const upgradeFeatures = {
 };
 
 const UpgradeModal = ({ isOpen, onClose, targetTier }: UpgradeModalProps) => {
-  const { tier, isLoading } = useClerkAuth();
+  const { tier, isLoading, user } = useClerkAuth();
   
   // Map Clerk tier to local tier format
   const userTier = tier === 'community' ? 'free' : tier;
@@ -185,16 +185,18 @@ const UpgradeModal = ({ isOpen, onClose, targetTier }: UpgradeModalProps) => {
                 variant={effectiveTargetTier === 'executive' ? 'yellow' : 'default'}
                 size="lg"
                 className="w-full font-bold"
-                asChild
+                onClick={() => {
+                  const email = user?.email;
+                  const portalUrl = email
+                    ? `${import.meta.env.VITE_STRIPE_PORTAL_URL}?prefilled_email=${encodeURIComponent(email)}`
+                    : import.meta.env.VITE_STRIPE_PORTAL_URL;
+                  window.open(portalUrl, "_blank");
+                  onClose();
+                }}
               >
-                <a 
-                  href="/#pricing" 
-                  onClick={onClose}
-                >
-                  <TargetIcon className="h-4 w-4 mr-2" />
-                  View Plans
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </a>
+                <TargetIcon className="h-4 w-4 mr-2" />
+                View Plans
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
               <Button variant="ghost" onClick={onClose} className="text-muted-foreground text-sm">
                 Maybe later

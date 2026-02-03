@@ -43,18 +43,8 @@ import { useVendorResponses } from "@/hooks/useVendorResponses";
 // Config
 import { WAM_URL } from "@/config/wam";
 
-// Simplified 2-tier system: Pro (full access) vs Free (limited/redacted)
-type UserTier = "free" | "pro";
-
-function getAccessLevel(tier: string, isAuthenticated: boolean): {
-  unlimitedAccess: boolean;
-} {
-  // Pro tier includes: pro, executive, viewer, verified_vendor
-  const isPro = tier === "pro" || tier === "executive" || tier === "viewer" || tier === "verified_vendor";
-  return {
-    unlimitedAccess: isPro,
-  };
-}
+// Utils
+import { getAccessLevel, isProUser } from "@/utils/tierUtils";
 
 const VendorsV2 = () => {
   // UI State
@@ -106,8 +96,8 @@ const VendorsV2 = () => {
   }, [wamMentions, dbReviews]);
 
   // Access level - simplified 2-tier system
-  const accessLevel = getAccessLevel(tier || "", isAuthenticated);
-  const isProUser = accessLevel.unlimitedAccess;
+  const accessLevel = getAccessLevel(tier);
+  const isProUserValue = isProUser(tier);
 
   // Filter hook
   const {
@@ -146,6 +136,18 @@ const VendorsV2 = () => {
 
   const isDataLoading =
     isWamLoading || (wamMentions.length === 0 && isDbLoading);
+
+  // Handle search input click/focus - show upgrade modal for non-pro users
+  const handleSearchClick = (e: React.MouseEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>) => {
+    if (!isProUserValue) {
+      e.preventDefault();
+      setShowUpgradeModal(true);
+      // Blur the input to prevent typing
+      if (e.target instanceof HTMLInputElement) {
+        e.target.blur();
+      }
+    }
+  };
 
   // Fetch Vendor Pulse mentions from WAM
   useEffect(() => {
@@ -245,7 +247,7 @@ const VendorsV2 = () => {
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!isProUser || !paginationInfo?.hasMore || isLoadingMore) return;
+    if (!isProUserValue || !paginationInfo?.hasMore || isLoadingMore) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -266,7 +268,7 @@ const VendorsV2 = () => {
         observer.unobserve(sentinel);
       }
     };
-  }, [isProUser, paginationInfo?.hasMore, isLoadingMore]);
+  }, [isProUserValue, paginationInfo?.hasMore, isLoadingMore]);
 
   // Clear selectedVendor when searchQuery is cleared or changed manually (but not when it matches)
   useEffect(() => {
@@ -446,7 +448,7 @@ const VendorsV2 = () => {
                   </Button>
                 )}
 
-                {isAuthenticated && !isProUser && (
+                {isAuthenticated && !isProUserValue && (
                   <Button
                     variant="yellow"
                     size="sm"
@@ -628,7 +630,14 @@ const VendorsV2 = () => {
                     <Input
                       placeholder="Search vendors..."
                       value={searchQuery}
+                      onClick={handleSearchClick}
+                      onFocus={handleSearchClick}
                       onChange={(e) => {
+                        // Prevent typing for non-pro users
+                        if (!isProUserValue) {
+                          setShowUpgradeModal(true);
+                          return;
+                        }
                         setSearchQuery(e.target.value);
                         if (
                           selectedVendor &&
@@ -693,7 +702,7 @@ const VendorsV2 = () => {
                     selectedCategory={selectedCategory}
                     searchQuery={searchQuery}
                     selectedVendor={selectedVendor}
-                    isProUser={isProUser}
+                    isProUser={isProUserValue}
                     getToken={getToken}
                     onUpgradeClick={() => setShowUpgradeModal(true)}
                     className="mb-6"
@@ -771,7 +780,7 @@ const VendorsV2 = () => {
               )}
 
               {/* Infinite scroll sentinel - loads more when scrolled into view */}
-              {isProUser && paginationInfo?.hasMore && visibleEntries.length > 0 && (
+              {isProUserValue && paginationInfo?.hasMore && visibleEntries.length > 0 && (
                 <div ref={loadMoreRef} className="mt-8 flex justify-center py-4">
                   {isLoadingMore && (
                     <div className="flex items-center gap-2 text-muted-foreground">

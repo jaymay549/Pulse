@@ -10,6 +10,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { isPaidTier } from "@/utils/tierUtils";
 
 type SubscriptionStatus =
   | "active"
@@ -136,7 +137,7 @@ const SubscriptionManagement = () => {
   const statusInfo = statusConfig[status];
   const TierIcon = config.icon;
 
-  const isPaidTier = tier === "pro" || tier === "executive";
+  const isPaidTierValue = isPaidTier(tier);
   const email = user.primaryEmailAddress?.emailAddress;
 
   const handleManageSubscription = () => {
@@ -222,7 +223,7 @@ const SubscriptionManagement = () => {
 
       {/* Actions */}
       <div className="space-y-3">
-        {isPaidTier ? (
+        {isPaidTierValue ? (
           <Button
             onClick={handleManageSubscription}
             className="w-full"
