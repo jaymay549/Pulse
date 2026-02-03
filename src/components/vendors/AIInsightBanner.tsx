@@ -272,6 +272,11 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
           className="absolute inset-0 pointer-events-none bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"
         />
       )}
+
+      {/* AI Disclaimer */}
+      <p className="absolute bottom-2 right-3 text-[9px] text-muted-foreground/60 font-normal pointer-events-none">
+        AI can make mistakes
+      </p>
     </motion.div>
   );
 };
