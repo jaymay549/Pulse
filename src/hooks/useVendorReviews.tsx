@@ -10,7 +10,7 @@ export interface VendorEntry {
   member?: string;
   type: "positive" | "warning";
   category: string;
-  createdAt?: string;
+  conversationTime?: string;
   isLocked?: boolean;
   views?: number;
   shares?: number;

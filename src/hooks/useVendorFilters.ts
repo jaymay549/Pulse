@@ -39,6 +39,10 @@ export const secondaryCategories = categories.slice(7);
 interface UseVendorFiltersOptions {
   data: VendorEntry[];
   selectedVendor?: string | null;
+  externalCategoryCounts?: Record<string, number>;
+  externalPositiveCount?: number;
+  externalWarningCount?: number;
+  externalTotalCount?: number;
 }
 
 interface UseVendorFiltersReturn {
@@ -67,7 +71,14 @@ interface UseVendorFiltersReturn {
   hasActiveFilters: boolean;
 }
 
-export function useVendorFilters({ data, selectedVendor }: UseVendorFiltersOptions): UseVendorFiltersReturn {
+export function useVendorFilters({
+  data,
+  selectedVendor,
+  externalCategoryCounts,
+  externalPositiveCount,
+  externalWarningCount,
+  externalTotalCount
+}: UseVendorFiltersOptions): UseVendorFiltersReturn {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
@@ -85,6 +96,8 @@ export function useVendorFilters({ data, selectedVendor }: UseVendorFiltersOptio
 
   // Calculate counts per category
   const categoryCounts = useMemo(() => {
+    if (externalCategoryCounts) return externalCategoryCounts;
+
     const counts: Record<string, number> = {};
     counts["all"] = data.length;
     categories.forEach(cat => {
@@ -93,7 +106,7 @@ export function useVendorFilters({ data, selectedVendor }: UseVendorFiltersOptio
       }
     });
     return counts;
-  }, [data]);
+  }, [data, externalCategoryCounts]);
 
   // Filter and sort data based on all filters
   const filteredData = useMemo(() => {
@@ -104,14 +117,14 @@ export function useVendorFilters({ data, selectedVendor }: UseVendorFiltersOptio
       if (searchQuery === "") return matchesCategory && matchesType;
 
       const query = searchQuery.toLowerCase();
-      
+
       // When a vendor is selected (from sidebar/suggestions), only match on vendorName exactly
       // This prevents showing entries for other vendors that just mention the selected vendor
       if (selectedVendor && selectedVendor.trim().toLowerCase() === query) {
         const matchesVendorName = entry.vendorName?.toLowerCase() === query;
         return matchesCategory && matchesType && matchesVendorName;
       }
-      
+
       // Freeform search: allow matching in all fields
       const matchesVendorName = entry.vendorName?.toLowerCase().includes(query);
       const matchesTitle = entry.title?.toLowerCase().includes(query);
@@ -121,8 +134,8 @@ export function useVendorFilters({ data, selectedVendor }: UseVendorFiltersOptio
       return matchesCategory && matchesType && (matchesVendorName || matchesTitle || matchesQuote || matchesExplanation);
     });
 
-    // Shuffle results randomly for variety on each load
-    return [...filtered].sort(() => Math.random() - 0.5);
+    // Return filtered data in the order received from the server (sorted by date)
+    return filtered;
   }, [data, selectedCategory, typeFilter, searchQuery, selectedVendor]);
 
   // Get unique vendors within selected category
@@ -133,7 +146,7 @@ export function useVendorFilters({ data, selectedVendor }: UseVendorFiltersOptio
 
     const vendorCounts: Record<string, number> = {};
     const categoryData = data.filter(entry => entry.category === selectedCategory);
-    
+
     categoryData.forEach(entry => {
       if (entry.vendorName) {
         vendorCounts[entry.vendorName] = (vendorCounts[entry.vendorName] || 0) + 1;
@@ -154,13 +167,13 @@ export function useVendorFilters({ data, selectedVendor }: UseVendorFiltersOptio
       if (searchQuery === "") return matchesCategory;
 
       const query = searchQuery.toLowerCase();
-      
+
       // When a vendor is selected (from sidebar/suggestions), only match on vendorName exactly
       if (selectedVendor && selectedVendor.trim().toLowerCase() === query) {
         const matchesVendorName = entry.vendorName?.toLowerCase() === query;
         return matchesCategory && matchesVendorName;
       }
-      
+
       // Freeform search: allow matching in all fields
       const matchesVendorName = entry.vendorName?.toLowerCase().includes(query);
       const matchesTitle = entry.title?.toLowerCase().includes(query);
@@ -171,9 +184,9 @@ export function useVendorFilters({ data, selectedVendor }: UseVendorFiltersOptio
     });
   }, [data, selectedCategory, searchQuery, selectedVendor]);
 
-  const positiveCount = dataBeforeTypeFilter.filter(e => e.type === "positive").length;
-  const warningCount = dataBeforeTypeFilter.filter(e => e.type === "warning").length;
-  const totalCount = dataBeforeTypeFilter.length;
+  const positiveCount = externalPositiveCount ?? dataBeforeTypeFilter.filter(e => e.type === "positive").length;
+  const warningCount = externalWarningCount ?? dataBeforeTypeFilter.filter(e => e.type === "warning").length;
+  const totalCount = externalTotalCount ?? dataBeforeTypeFilter.length;
 
   const hasActiveFilters = selectedCategory !== "all" || searchQuery !== "" || typeFilter !== "all";
 

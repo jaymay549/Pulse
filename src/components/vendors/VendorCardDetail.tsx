@@ -291,7 +291,7 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
         {/* Attribution */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Circles Member{formatMemberDate(entry.createdAt) ? ` · ${formatMemberDate(entry.createdAt)}` : ''}
+            Circles Member{formatMemberDate(entry.conversationTime) ? ` · ${formatMemberDate(entry.conversationTime)}` : ''}
           </p>
         </div>
 

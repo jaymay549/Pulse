@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { Search, X, Crown, Share2, Menu, CreditCard } from "lucide-react";
@@ -43,46 +43,17 @@ import { useVendorResponses } from "@/hooks/useVendorResponses";
 // Config
 import { WAM_URL } from "@/config/wam";
 
-// Helper to determine access level based on tier
-type UserTier =
-  | "anonymous"
-  | "free"
-  | "community"
-  | "pro"
-  | "executive"
-  | "viewer"
-  | "verified_vendor";
+// Simplified 2-tier system: Pro (full access) vs Free (limited/redacted)
+type UserTier = "free" | "pro";
 
-function getAccessLevel(userTier: UserTier): {
-  freeReviewCount: number;
-  showVendorNames: boolean;
+function getAccessLevel(tier: string, isAuthenticated: boolean): {
   unlimitedAccess: boolean;
 } {
-  switch (userTier) {
-    case "pro":
-    case "executive":
-    case "viewer":
-    case "verified_vendor":
-      return {
-        freeReviewCount: Infinity,
-        showVendorNames: true,
-        unlimitedAccess: true,
-      };
-    case "free":
-    case "community":
-      return {
-        freeReviewCount: 3,
-        showVendorNames: true,
-        unlimitedAccess: false,
-      };
-    case "anonymous":
-    default:
-      return {
-        freeReviewCount: 3,
-        showVendorNames: false,
-        unlimitedAccess: false,
-      };
-  }
+  // Pro tier includes: pro, executive, viewer, verified_vendor
+  const isPro = tier === "pro" || tier === "executive" || tier === "viewer" || tier === "verified_vendor";
+  return {
+    unlimitedAccess: isPro,
+  };
 }
 
 const VendorsV2 = () => {
@@ -116,6 +87,10 @@ const VendorsV2 = () => {
     page: number;
     pageSize: number;
     totalCount: number;
+    totalPositiveCount?: number;
+    totalWarningCount?: number;
+    totalSystemCount?: number;
+    categoryCounts?: Record<string, number>;
     hasMore: boolean;
   } | null>(null);
 
@@ -123,102 +98,15 @@ const VendorsV2 = () => {
   const { reviews: dbReviews, isLoading: isDbLoading } = useVendorReviews();
 
   // Verified vendor hooks
-  const {
-    profile: vendorProfile,
-    isVerified,
-    canRespondTo,
-  } = useVerifiedVendor();
+  const { profile: vendorProfile, isVerified, canRespondTo } = useVerifiedVendor();
   const { getWebsiteForVendor, getLogoForVendor } = useVendorWebsites();
 
   const mentions = useMemo(() => {
     return wamMentions.length > 0 ? wamMentions : dbReviews;
   }, [wamMentions, dbReviews]);
 
-  // Get review IDs for fetching responses
-  const reviewIds = useMemo(
-    () => mentions.map((m) => Number(m.id)),
-    [mentions],
-  );
-  const { responses, addResponse, updateResponse, deleteResponse } =
-    useVendorResponses(reviewIds);
-
-  const isDataLoading =
-    isWamLoading || (wamMentions.length === 0 && isDbLoading);
-
-  // Fetch Vendor Pulse mentions from WAM
-  useEffect(() => {
-    const fetchMentions = async () => {
-      setIsWamLoading(true);
-      try {
-        const response = await fetchWithAuth(
-          `${WAM_URL}/api/public/vendor-pulse/mentions`,
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setWamMentions(data.mentions || []);
-          // Store pagination info if provided
-          if (data.page !== undefined) {
-            setPaginationInfo({
-              page: data.page,
-              pageSize: data.pageSize,
-              totalCount: data.totalCount,
-              hasMore: data.hasMore,
-            });
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch mentions:", err);
-      } finally {
-        setIsWamLoading(false);
-      }
-    };
-
-    fetchMentions();
-  }, [isAuthenticated, fetchWithAuth]);
-
-  // Load more mentions (for pro users)
-  const loadMoreMentions = async () => {
-    if (!paginationInfo?.hasMore || isLoadingMore) return;
-
-    setIsLoadingMore(true);
-    try {
-      const nextPage = paginationInfo.page + 1;
-      const response = await fetchWithAuth(
-        `${WAM_URL}/api/public/vendor-pulse/mentions?page=${nextPage}&pageSize=${paginationInfo.pageSize}`,
-      );
-      if (response.ok) {
-        const data = await response.json();
-        // Append new mentions to existing ones
-        setWamMentions((prev) => [...prev, ...(data.mentions || [])]);
-        // Update pagination info
-        if (data.page !== undefined) {
-          setPaginationInfo({
-            page: data.page,
-            pageSize: data.pageSize,
-            totalCount: data.totalCount,
-            hasMore: data.hasMore,
-          });
-        }
-      }
-    } catch (err) {
-      console.error("Failed to load more mentions:", err);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
-
-  // Map Clerk tier to local format
-  const effectiveTier = useMemo(() => {
-    if (isAuthenticated) {
-      if (tier === "pro" || tier === "executive") return "pro";
-      if (tier === "community") return "community";
-      return "free";
-    }
-    return "anonymous";
-  }, [isAuthenticated, tier]);
-
-  // Access level
-  const accessLevel = getAccessLevel(effectiveTier);
+  // Access level - simplified 2-tier system
+  const accessLevel = getAccessLevel(tier || "", isAuthenticated);
   const isProUser = accessLevel.unlimitedAccess;
 
   // Filter hook
@@ -239,7 +127,146 @@ const VendorsV2 = () => {
     positiveCount,
     warningCount,
     totalCount,
-  } = useVendorFilters({ data: mentions, selectedVendor });
+  } = useVendorFilters({
+    data: mentions,
+    selectedVendor,
+    externalCategoryCounts: paginationInfo?.categoryCounts,
+    externalPositiveCount: paginationInfo?.totalPositiveCount,
+    externalWarningCount: paginationInfo?.totalWarningCount,
+    externalTotalCount: paginationInfo?.totalSystemCount,
+  });
+
+  // Get review IDs for fetching responses
+  const reviewIds = useMemo(
+    () => mentions.map((m) => Number(m.id)),
+    [mentions],
+  );
+  const { responses, addResponse, updateResponse, deleteResponse } =
+    useVendorResponses(reviewIds);
+
+  const isDataLoading =
+    isWamLoading || (wamMentions.length === 0 && isDbLoading);
+
+  // Fetch Vendor Pulse mentions from WAM
+  useEffect(() => {
+    const fetchMentions = async () => {
+      setIsWamLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (selectedCategory !== "all") params.append("category", selectedCategory);
+        if (selectedVendor) params.append("vendorName", selectedVendor);
+        if (searchQuery) params.append("search", searchQuery);
+        if (typeFilter !== "all" && typeFilter !== undefined) params.append("type", typeFilter);
+
+        const response = await fetchWithAuth(
+          `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
+        );
+        if (response.ok) {
+          const data = await response.json();
+          // Transform snake_case conversation_time to camelCase conversationTime
+          const transformedMentions = (data.mentions || []).map((mention: any) => ({
+            ...mention,
+            conversationTime: mention.conversation_time || mention.conversationTime,
+          }));
+          setWamMentions(transformedMentions);
+          // Store pagination info if provided
+          if (data.page !== undefined) {
+            setPaginationInfo({
+              page: data.page,
+              pageSize: data.pageSize,
+              totalCount: data.totalCount,
+              totalPositiveCount: data.totalPositiveCount,
+              totalWarningCount: data.totalWarningCount,
+              totalSystemCount: data.totalSystemCount,
+              categoryCounts: data.categoryCounts,
+              hasMore: data.hasMore,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch mentions:", err);
+      } finally {
+        setIsWamLoading(false);
+      }
+    };
+
+    fetchMentions();
+  }, [isAuthenticated, fetchWithAuth, selectedCategory, selectedVendor, searchQuery, typeFilter]);
+
+  // Load more mentions (for pro users)
+  const loadMoreMentions = async () => {
+    if (!paginationInfo?.hasMore || isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      const nextPage = paginationInfo.page + 1;
+      const params = new URLSearchParams();
+      if (selectedCategory !== "all") params.append("category", selectedCategory);
+      if (selectedVendor) params.append("vendorName", selectedVendor);
+      if (searchQuery) params.append("search", searchQuery);
+      if (typeFilter !== "all" && typeFilter !== undefined) params.append("type", typeFilter);
+      params.append("page", nextPage.toString());
+      params.append("pageSize", (paginationInfo.pageSize || 20).toString());
+
+      const response = await fetchWithAuth(
+        `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
+      );
+      if (response.ok) {
+        const data = await response.json();
+        // Transform snake_case conversation_time to camelCase conversationTime
+        const transformedMentions = (data.mentions || []).map((mention: any) => ({
+          ...mention,
+          conversationTime: mention.conversation_time || mention.conversationTime,
+        }));
+        // Append new mentions to existing ones
+        setWamMentions((prev) => [...prev, ...transformedMentions]);
+        // Update pagination info
+        if (data.page !== undefined) {
+          setPaginationInfo({
+            page: data.page,
+            pageSize: data.pageSize,
+            totalCount: data.totalCount,
+            totalPositiveCount: data.totalPositiveCount,
+            totalWarningCount: data.totalWarningCount,
+            totalSystemCount: data.totalSystemCount,
+            categoryCounts: data.categoryCounts,
+            hasMore: data.hasMore,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load more mentions:", err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  // Infinite scroll: observe a sentinel element at the bottom
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isProUser || !paginationInfo?.hasMore || isLoadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMoreMentions();
+        }
+      },
+      { threshold: 0.1, rootMargin: "100px" }
+    );
+
+    const sentinel = loadMoreRef.current;
+    if (sentinel) {
+      observer.observe(sentinel);
+    }
+
+    return () => {
+      if (sentinel) {
+        observer.unobserve(sentinel);
+      }
+    };
+  }, [isProUser, paginationInfo?.hasMore, isLoadingMore]);
 
   // Clear selectedVendor when searchQuery is cleared or changed manually (but not when it matches)
   useEffect(() => {
@@ -279,7 +306,7 @@ const VendorsV2 = () => {
     }
 
     // For non-pro users: show all filtered data (backend already limits and blurs content)
-    // The backend returns max 20 for Guest, 30 for Community with blurred vendor names
+    // The backend returns max 5 results for free/community users with redacted vendor names
     return filteredData;
   }, [filteredData, accessLevel.unlimitedAccess]);
 
@@ -289,8 +316,9 @@ const VendorsV2 = () => {
   );
   const showTeaserCard = !accessLevel.unlimitedAccess && remainingCount > 0;
 
-  // Total warning count for CTAs
-  const totalWarningCount = mentions.filter((e) => e.type === "warning").length;
+  // Use total counts from paginationInfo if available, otherwise fall back to mentions length
+  const totalVerifiedCount = paginationInfo?.totalPositiveCount ?? mentions.filter(e => e.type === "positive").length;
+  const totalWarningCountValue = paginationInfo?.totalWarningCount ?? mentions.filter((e) => e.type === "warning").length;
 
   // Handle share
   const handleShare = async () => {
@@ -425,9 +453,8 @@ const VendorsV2 = () => {
                     onClick={() => {
                       const email = user?.email;
                       const portalUrl = email
-                        ? `${
-                            import.meta.env.VITE_STRIPE_PORTAL_URL
-                          }?prefilled_email=${encodeURIComponent(email)}`
+                        ? `${import.meta.env.VITE_STRIPE_PORTAL_URL
+                        }?prefilled_email=${encodeURIComponent(email)}`
                         : import.meta.env.VITE_STRIPE_PORTAL_URL;
                       window.open(portalUrl, "_blank");
                     }}
@@ -446,6 +473,7 @@ const VendorsV2 = () => {
                       },
                     }}
                     afterSignOutUrl="/vendors"
+                    signInUrl="/auth?redirect=/vendors"
                   >
                     <UserButton.MenuItems>
                       <UserButton.Action
@@ -525,8 +553,7 @@ const VendorsV2 = () => {
                       {filteredData.length !== 1 ? "s" : ""} found
                       {positiveCount > 0 && ` • ${positiveCount} recommended`}
                       {warningCount > 0 &&
-                        ` • ${warningCount} warning${
-                          warningCount !== 1 ? "s" : ""
+                        ` • ${warningCount} warning${warningCount !== 1 ? "s" : ""
                         }`}
                     </p>
                   </div>
@@ -564,9 +591,9 @@ const VendorsV2 = () => {
                           <span className="text-green-500 font-bold">✓</span>
                           <span>
                             <strong className="text-foreground">
-                              {mentions.length}+
+                              {totalVerifiedCount}+
                             </strong>{" "}
-                            verified reviews
+                            recommendations
                           </span>
                         </div>
                         <span className="text-border hidden sm:inline">•</span>
@@ -574,7 +601,7 @@ const VendorsV2 = () => {
                           <span className="text-red-500 font-bold">⚠️</span>
                           <span>
                             <strong className="text-foreground">
-                              {totalWarningCount}+
+                              {totalWarningCountValue}+
                             </strong>{" "}
                             warnings to avoid
                           </span>
@@ -606,7 +633,7 @@ const VendorsV2 = () => {
                         if (
                           selectedVendor &&
                           e.target.value.trim().toLowerCase() !==
-                            selectedVendor.trim().toLowerCase()
+                          selectedVendor.trim().toLowerCase()
                         ) {
                           setSelectedVendor(null);
                         }
@@ -661,17 +688,17 @@ const VendorsV2 = () => {
               {(searchQuery.trim().length > 0 ||
                 selectedVendor !== null ||
                 selectedCategory !== "all") && (
-                <AIInsightBanner
-                  data={wamMentions}
-                  selectedCategory={selectedCategory}
-                  searchQuery={searchQuery}
-                  selectedVendor={selectedVendor}
-                  isProUser={isProUser}
-                  getToken={getToken}
-                  onUpgradeClick={() => setShowUpgradeModal(true)}
-                  className="mb-6"
-                />
-              )}
+                  <AIInsightBanner
+                    data={wamMentions}
+                    selectedCategory={selectedCategory}
+                    searchQuery={searchQuery}
+                    selectedVendor={selectedVendor}
+                    isProUser={isProUser}
+                    getToken={getToken}
+                    onUpgradeClick={() => setShowUpgradeModal(true)}
+                    className="mb-6"
+                  />
+                )}
 
               {/* Filter Bar - Only show when searching */}
               {(searchQuery.trim().length > 0 || selectedVendor !== null) && (
@@ -700,28 +727,10 @@ const VendorsV2 = () => {
               {visibleEntries.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {visibleEntries.map((entry) => {
-                    // Check if this is the unlocked teaser card
-                    const isUnlockedTeaser =
-                      (entry as VendorEntry & { isUnlockedTeaser?: boolean })
-                        .isUnlockedTeaser === true;
-
-                    // Use the isLocked flag from API, or fall back to checking if content is locked
-                    // Unlocked teasers override the lock status
-                    const isLocked = isUnlockedTeaser
-                      ? false
-                      : entry.isLocked !== undefined
-                      ? entry.isLocked
-                      : entry.quote === "[Content locked - Join Pro to view]" ||
-                        entry.quote ===
-                          "[Content locked - Upgrade to Pro to view]";
-
-                    // Show vendor names if: vendorName exists AND (user has access OR unlocked teaser OR not locked)
-                    // Backend doesn't serve vendorName when it should be hidden
-                    const showVendorNames =
-                      entry.vendorName &&
-                      (accessLevel.unlimitedAccess ||
-                        isUnlockedTeaser ||
-                        (!isLocked && accessLevel.showVendorNames));
+                    // Backend handles all redaction - just use what's provided
+                    const isLocked = entry.isLocked === true;
+                    // Show vendor name if it exists (backend redacts when needed)
+                    const showVendorNames = !!entry.vendorName;
 
                     // Get website and logo for this vendor (if verified vendor has set them)
                     const vendorWebsiteUrl = entry.vendorName
@@ -761,32 +770,15 @@ const VendorsV2 = () => {
                 </div>
               )}
 
-              {/* Load More Button - Only for Pro users with more results */}
+              {/* Infinite scroll sentinel - loads more when scrolled into view */}
               {isProUser && paginationInfo?.hasMore && visibleEntries.length > 0 && (
-                <div className="mt-8 flex justify-center">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={loadMoreMentions}
-                    disabled={isLoadingMore}
-                    className="min-w-[200px]"
-                  >
-                    {isLoadingMore ? (
-                      <>
-                        <span className="animate-spin mr-2">...</span>
-                        Loading...
-                      </>
-                    ) : (
-                      <>
-                        Load More Reviews
-                        {paginationInfo.totalCount > wamMentions.length && (
-                          <span className="ml-2 text-muted-foreground">
-                            ({wamMentions.length} of {paginationInfo.totalCount})
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </Button>
+                <div ref={loadMoreRef} className="mt-8 flex justify-center py-4">
+                  {isLoadingMore && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      <span className="text-sm">Loading more reviews...</span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -818,8 +810,8 @@ const VendorsV2 = () => {
               {/* Upgrade Section for Non-Pro Users */}
               {!accessLevel.unlimitedAccess && !isAuthenticated && (
                 <VendorPricingTiers
-                  totalReviews={wamMentions.length}
-                  totalWarnings={totalWarningCount}
+                  totalReviews={paginationInfo?.totalSystemCount ?? wamMentions.length}
+                  totalWarnings={totalWarningCountValue}
                   onSignInClick={() => setShowSignIn(true)}
                 />
               )}
@@ -837,8 +829,8 @@ const VendorsV2 = () => {
                           Upgrade to See All Reviews
                         </h3>
                         <p className="text-muted-foreground text-sm">
-                          Unlock all {wamMentions.length} reviews including{" "}
-                          {totalWarningCount} warnings.
+                          Unlock all {paginationInfo?.totalSystemCount ?? wamMentions.length} reviews including{" "}
+                          {totalWarningCountValue} warnings.
                         </p>
                       </div>
                     </div>
@@ -951,8 +943,8 @@ const VendorsV2 = () => {
                 card: "w-full border-0 shadow-none",
               },
             }}
-            afterSignInUrl="/vendors"
-            signUpUrl="/vendors"
+            fallbackRedirectUrl="/vendors"
+            signUpFallbackRedirectUrl="/vendors"
           />
         </DialogContent>
       </Dialog>
