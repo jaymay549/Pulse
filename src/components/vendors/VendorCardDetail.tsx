@@ -10,15 +10,8 @@ import {
   Crown,
   ShieldCheck,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-} from "@/components/ui/drawer";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { VendorEntry } from "@/hooks/useVendorReviews";
 import { VendorResponse } from "@/hooks/useVendorResponses";
@@ -46,7 +39,7 @@ const formatMemberDate = (dateString?: string): string => {
   if (!dateString) return "";
   try {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   } catch {
     return "";
   }
@@ -73,7 +66,9 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
   const isMobile = useIsMobile();
   if (!entry) return null;
 
-  const hasLockedContent = isContentLocked(entry.quote) || (entry.title && isContentLocked(entry.title));
+  const hasLockedContent =
+    isContentLocked(entry.quote) ||
+    (entry.title && isContentLocked(entry.title));
 
   const getTypeConfig = () => {
     switch (entry.type) {
@@ -125,8 +120,8 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
     const subject = encodeURIComponent("Report");
     const body = encodeURIComponent(
       `Vendor: ${entry.vendorName}\n` +
-      (entry.title ? `Title: ${entry.title}\n` : '') +
-      `\nPlease provide details about your report:`
+        (entry.title ? `Title: ${entry.title}\n` : "") +
+        `\nPlease provide details about your report:`,
     );
     window.location.href = `mailto:vendor-report@cardealershipguy.org?subject=${subject}&body=${body}`;
   };
@@ -134,10 +129,11 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
   const scrollToTiers = () => {
     onClose();
     setTimeout(() => {
-      const tiersSection = document.getElementById('tiers-section');
+      const tiersSection = document.getElementById("tiers-section");
       if (tiersSection) {
-        const elementPosition = tiersSection.getBoundingClientRect().top + window.pageYOffset;
-        window.scrollTo({ top: elementPosition - 100, behavior: 'smooth' });
+        const elementPosition =
+          tiersSection.getBoundingClientRect().top + window.pageYOffset;
+        window.scrollTo({ top: elementPosition - 100, behavior: "smooth" });
       }
     }, 100);
   };
@@ -148,12 +144,14 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
       <div className="flex flex-col h-full p-6">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
-          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold border ${typeConfig.badge}`}>
+          <div
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold border ${typeConfig.badge}`}
+          >
             {typeConfig.icon}
             {typeConfig.label}
           </div>
         </div>
-        
+
         <DialogTitle className="text-2xl font-bold text-foreground mb-6">
           {entry.vendorName}
         </DialogTitle>
@@ -167,11 +165,12 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
             Full Review Locked
           </h3>
           <p className="text-muted-foreground mb-6 max-w-sm">
-            Get access to the complete review, detailed explanations, and all dealer feedback on {entry.vendorName}.
+            Get access to the complete review, detailed explanations, and all
+            dealer feedback on {entry.vendorName}.
           </p>
-          <Button 
-            variant="yellow" 
-            size="lg" 
+          <Button
+            variant="yellow"
+            size="lg"
             className="font-bold"
             onClick={scrollToTiers}
           >
@@ -215,7 +214,9 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
       {/* Header */}
       <div className="p-6 pb-0">
         <div className="flex items-start justify-between">
-          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold border ${typeConfig.badge}`}>
+          <div
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold border ${typeConfig.badge}`}
+          >
             {typeConfig.icon}
             {typeConfig.label}
           </div>
@@ -234,7 +235,9 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
       <div className="p-6 space-y-6 overflow-y-auto">
         {/* Quote Section */}
         <div className="relative bg-muted/30 rounded-xl p-6">
-          <Quote className={`absolute left-4 top-1/2 -translate-y-1/2 h-8 w-8 ${typeConfig.accentColor} opacity-20 mr-3`} />
+          <Quote
+            className={`absolute left-4 top-1/2 -translate-y-1/2 h-8 w-8 ${typeConfig.accentColor} opacity-20 mr-3`}
+          />
           <blockquote className="relative z-10 pl-16">
             <p className="text-foreground text-base leading-relaxed italic">
               "{parseMarkdown(entry.quote)}"
@@ -264,7 +267,10 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
                 Verified Vendor Response
               </div>
               <span className="text-xs text-muted-foreground">
-                {new Date(vendorResponse.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                {new Date(vendorResponse.updated_at).toLocaleDateString(
+                  "en-US",
+                  { month: "short", day: "numeric", year: "numeric" },
+                )}
               </span>
             </div>
             <p className="text-sm text-foreground leading-relaxed">
@@ -274,16 +280,20 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
         )}
 
         {/* Vendor Response Section (for adding/editing) */}
-        {canRespondAsVendor && onAddResponse && onUpdateResponse && onDeleteResponse && entry.vendorName && (
-          <VendorResponseSection
-            response={vendorResponse || null}
-            canRespond={canRespondAsVendor}
-            vendorName={entry.vendorName}
-            onAddResponse={onAddResponse}
-            onUpdateResponse={onUpdateResponse}
-            onDeleteResponse={onDeleteResponse}
-          />
-        )}
+        {canRespondAsVendor &&
+          onAddResponse &&
+          onUpdateResponse &&
+          onDeleteResponse &&
+          entry.vendorName && (
+            <VendorResponseSection
+              response={vendorResponse || null}
+              canRespond={canRespondAsVendor}
+              vendorName={entry.vendorName}
+              onAddResponse={onAddResponse}
+              onUpdateResponse={onUpdateResponse}
+              onDeleteResponse={onDeleteResponse}
+            />
+          )}
 
         {/* Divider */}
         <div className="h-px bg-border" />
@@ -291,7 +301,10 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
         {/* Attribution */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Circles Member{formatMemberDate(entry.conversationTime) ? ` · ${formatMemberDate(entry.conversationTime)}` : ''}
+            Circles Member
+            {formatMemberDate(entry.conversationTime)
+              ? ` · ${formatMemberDate(entry.conversationTime)}`
+              : ""}
           </p>
         </div>
 

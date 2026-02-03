@@ -41,7 +41,10 @@ const blurRedactedContent = (text: string): React.ReactNode => {
 /**
  * Parses markdown and applies blur to redacted content
  */
-const parseMarkdownWithBlur = (text: string, isRedacted: boolean): React.ReactNode => {
+const parseMarkdownWithBlur = (
+  text: string,
+  isRedacted: boolean,
+): React.ReactNode => {
   if (!isRedacted) {
     return parseMarkdown(text);
   }
@@ -57,7 +60,7 @@ const formatMemberDate = (dateString?: string): string => {
   if (!dateString) return "";
   try {
     const date = new Date(dateString);
-    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const month = date.toLocaleDateString("en-US", { month: "short" });
     const year = date.getFullYear();
     return `${month} ${year}`;
   } catch {
@@ -90,33 +93,36 @@ export const VendorCard: React.FC<VendorCardProps> = ({
   vendorLogo,
   onCardClick,
   onVendorClick,
-  onUpgradeClick
+  onUpgradeClick,
 }) => {
   const getTypeStyles = () => {
     switch (entry.type) {
       case "warning":
         return {
-          border: "border-l-4 border-l-red-500 border-t border-r border-b border-border/50",
+          border:
+            "border-l-4 border-l-red-500 border-t border-r border-b border-border/50",
           bg: "bg-white hover:bg-red-50/30",
           badge: "bg-red-100 text-red-700",
           icon: <AlertTriangle className="h-3.5 w-3.5" />,
-          label: "WARNING"
+          label: "WARNING",
         };
       case "positive":
         return {
-          border: "border-l-4 border-l-green-500 border-t border-r border-b border-border/50",
+          border:
+            "border-l-4 border-l-green-500 border-t border-r border-b border-border/50",
           bg: "bg-white hover:bg-green-50/30",
           badge: "bg-green-100 text-green-700",
           icon: <ThumbsUp className="h-3.5 w-3.5" />,
-          label: "RECOMMENDED"
+          label: "RECOMMENDED",
         };
       default:
         return {
-          border: "border-l-4 border-l-primary border-t border-r border-b border-border/50",
+          border:
+            "border-l-4 border-l-primary border-t border-r border-b border-border/50",
           bg: "bg-white hover:bg-primary/5",
           badge: "bg-primary/10 text-primary",
           icon: <Lightbulb className="h-3.5 w-3.5" />,
-          label: "STRATEGY"
+          label: "STRATEGY",
         };
     }
   };
@@ -130,7 +136,8 @@ export const VendorCard: React.FC<VendorCardProps> = ({
   };
 
   // Check if we have actual blurred content from the backend (not just placeholder text)
-  const hasBlurredContent = entry.quote &&
+  const hasBlurredContent =
+    entry.quote &&
     !entry.quote.includes("[Content locked") &&
     !entry.quote.includes("[content locked") &&
     entry.quote.includes("****");
@@ -148,7 +155,9 @@ export const VendorCard: React.FC<VendorCardProps> = ({
         <div className="p-5 flex flex-col h-full min-h-[200px]">
           {/* Header: Type badge + Lock indicator */}
           <div className="flex items-center justify-between mb-4">
-            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold tracking-wide ${styles.badge}`}>
+            <div
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold tracking-wide ${styles.badge}`}
+            >
               {styles.icon}
               {styles.label}
             </div>
@@ -196,18 +205,25 @@ export const VendorCard: React.FC<VendorCardProps> = ({
                 if (isAuthenticated && onUpgradeClick) {
                   onUpgradeClick();
                 } else {
-                  const tiersSection = document.getElementById('tiers-section');
+                  const tiersSection = document.getElementById("tiers-section");
                   if (tiersSection) {
                     const offset = 100;
-                    const elementPosition = tiersSection.getBoundingClientRect().top + window.pageYOffset;
-                    window.scrollTo({ top: elementPosition - offset, behavior: 'smooth' });
+                    const elementPosition =
+                      tiersSection.getBoundingClientRect().top +
+                      window.pageYOffset;
+                    window.scrollTo({
+                      top: elementPosition - offset,
+                      behavior: "smooth",
+                    });
                   }
                 }
               }}
               className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-yellow-500 hover:bg-yellow-400 text-yellow-950 font-semibold text-sm shadow-lg hover:shadow-xl transition-all"
             >
               <Crown className="h-4 w-4" />
-              <span>{isAuthenticated ? 'Unlock Vendor' : 'Join to Unlock'}</span>
+              <span>
+                {isAuthenticated ? "Unlock Vendor" : "Join to Unlock"}
+              </span>
             </button>
           </div>
         </div>
@@ -216,7 +232,8 @@ export const VendorCard: React.FC<VendorCardProps> = ({
   }
 
   // Check if quote contains locked placeholder text from API
-  const hasLockedPlaceholder = entry.quote.includes("[Content locked") ||
+  const hasLockedPlaceholder =
+    entry.quote.includes("[Content locked") ||
     entry.quote.includes("[content locked") ||
     entry.quote.includes("Join Pro to view") ||
     entry.quote.includes("Upgrade to Pro");
@@ -234,7 +251,9 @@ export const VendorCard: React.FC<VendorCardProps> = ({
       <div className="p-5">
         {/* Header: Type badge */}
         <div className="flex items-center justify-between mb-3">
-          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold tracking-wide ${styles.badge}`}>
+          <div
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold tracking-wide ${styles.badge}`}
+          >
             {styles.icon}
             {styles.label}
           </div>
@@ -256,7 +275,11 @@ export const VendorCard: React.FC<VendorCardProps> = ({
               <h3
                 className={`
                   text-lg font-bold text-foreground leading-tight inline
-                  ${onVendorClick ? "hover:text-primary transition-colors hover:underline cursor-pointer" : ""}
+                  ${
+                    onVendorClick
+                      ? "hover:text-primary transition-colors hover:underline cursor-pointer"
+                      : ""
+                  }
                 `}
                 onClick={(e) => {
                   if (onVendorClick && entry.vendorName) {
@@ -329,7 +352,10 @@ export const VendorCard: React.FC<VendorCardProps> = ({
         {/* Footer: Member attribution */}
         <div className="mt-4 pt-3 border-t border-border/50">
           <p className="text-xs text-muted-foreground">
-            Circles Member{formatMemberDate(entry.conversationTime) ? ` · ${formatMemberDate(entry.conversationTime)}` : ''}
+            Circles Member
+            {formatMemberDate(entry.conversationTime)
+              ? ` · ${formatMemberDate(entry.conversationTime)}`
+              : ""}
           </p>
         </div>
       </div>
