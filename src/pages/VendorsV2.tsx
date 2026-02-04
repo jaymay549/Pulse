@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, Menu } from "lucide-react";
 import { Search, X, Crown, Share2, CreditCard, ArrowRight, Building2 } from "lucide-react";
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
@@ -671,8 +671,17 @@ const VendorsV2 = () => {
         <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              {/* Left: Logo */}
-              <div className="flex items-center gap-3">
+              {/* Left: Menu + Logo */}
+              <div className="flex items-center gap-2">
+                {/* Mobile menu hamburger */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSidebarOpen(true)}
+                  className="lg:hidden h-9 w-9"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
                 <Link to="/" className="flex items-center">
                   <img src={cdgPulseLogo} alt="CDG Pulse" className="h-7" />
                 </Link>
