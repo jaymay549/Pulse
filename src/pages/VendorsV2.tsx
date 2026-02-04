@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import { Search, X, Crown, Share2, Menu, CreditCard, ArrowRight, Building2 } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
+import { Search, X, Crown, Share2, CreditCard, ArrowRight, Building2 } from "lucide-react";
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import { Button } from "@/components/ui/button";
@@ -670,37 +671,8 @@ const VendorsV2 = () => {
         <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              {/* Left: Logo + Mobile Menu */}
+              {/* Left: Logo */}
               <div className="flex items-center gap-3">
-                {/* Mobile Menu Trigger */}
-                <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-                  <SheetTrigger asChild>
-                    <Button variant="ghost" size="sm" className="lg:hidden">
-                      <Menu className="h-5 w-5" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="w-72 p-0">
-                    <SheetHeader className="p-4 border-b">
-                      <SheetTitle>Categories</SheetTitle>
-                    </SheetHeader>
-                    <div className="p-4">
-                      <VendorSidebar
-                        selectedCategory={selectedCategory}
-                        onCategorySelect={handleCategoryChange}
-                        categoryCounts={categoryCounts}
-                        vendorsInCategory={vendorsInCategory}
-                        showMoreCategories={showMoreCategories}
-                        onToggleMoreCategories={() =>
-                          setShowMoreCategories(!showMoreCategories)
-                        }
-                        onVendorSelect={handleVendorSelect}
-                        selectedVendor={selectedVendor || undefined}
-                        className="w-full"
-                      />
-                    </div>
-                  </SheetContent>
-                </Sheet>
-
                 <Link to="/" className="flex items-center">
                   <img src={cdgPulseLogo} alt="CDG Pulse" className="h-7" />
                 </Link>
@@ -882,84 +854,120 @@ const VendorsV2 = () => {
 
                 {/* Search Bar - Below hero */}
                 <div className="pt-1 pb-0 sm:pb-0">
-                  <div className="relative">
-                    <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-                    <Input
-                      ref={searchInputRef}
-                      placeholder="Search vendors..."
-                      value={searchQuery}
-                      onClick={handleSearchClick}
-                      onFocus={(e) => {
-                        handleSearchClick(e);
-                        if (isProUserValue && searchQuery.trim().length >= 2) {
-                          setShowAutocomplete(true);
-                        }
-                      }}
-                      onBlur={() => {
-                        // Delay hiding autocomplete to allow clicks
-                        setTimeout(() => setShowAutocomplete(false), 200);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && autocompleteSuggestions.length > 0 && searchQuery.trim().length >= 2) {
-                          // Navigate to first suggestion on Enter
-                          e.preventDefault();
-                          handleVendorSelect(autocompleteSuggestions[0]);
-                        } else if (e.key === "Escape") {
-                          setShowAutocomplete(false);
-                          searchInputRef.current?.blur();
-                        }
-                      }}
-                      onChange={(e) => {
-                        // Prevent typing for non-pro users
-                        if (!isProUserValue) {
-                          setShowUpgradeModal(true);
-                          return;
-                        }
-                        setSearchQuery(e.target.value);
-                        setShowAutocomplete(e.target.value.trim().length >= 2);
-                        if (
-                          selectedVendor &&
-                          e.target.value.trim().toLowerCase() !==
-                          selectedVendor.trim().toLowerCase()
-                        ) {
-                          setSelectedVendor(null);
-                        }
-                      }}
-                      className="pl-10 sm:pl-12 pr-10 sm:pr-12 h-12 sm:h-14 bg-white border-2 border-border/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary text-sm sm:text-base rounded-lg sm:rounded-xl shadow-sm"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => {
-                          clearSearch();
-                          setSelectedVendor(null);
-                          setShowAutocomplete(false);
+                  <div className="flex items-center gap-2">
+                    {/* Categories button - opens sidebar on mobile, visible always on mobile */}
+                    <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                      <SheetTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="lg:hidden h-12 w-12 shrink-0 border-2 border-border/60 bg-white shadow-sm"
+                        >
+                          <LayoutGrid className="h-5 w-5 text-muted-foreground" />
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent side="left" className="w-72 p-0 bg-white z-[60]">
+                        <SheetHeader className="p-4 border-b bg-white">
+                          <SheetTitle>Categories</SheetTitle>
+                        </SheetHeader>
+                        <div className="p-4 bg-white overflow-y-auto max-h-[calc(100vh-80px)]">
+                          <VendorSidebar
+                            selectedCategory={selectedCategory}
+                            onCategorySelect={handleCategoryChange}
+                            categoryCounts={categoryCounts}
+                            vendorsInCategory={vendorsInCategory}
+                            showMoreCategories={showMoreCategories}
+                            onToggleMoreCategories={() =>
+                              setShowMoreCategories(!showMoreCategories)
+                            }
+                            onVendorSelect={handleVendorSelect}
+                            selectedVendor={selectedVendor || undefined}
+                            className="w-full"
+                          />
+                        </div>
+                      </SheetContent>
+                    </Sheet>
+
+                    {/* Search Input */}
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+                      <Input
+                        ref={searchInputRef}
+                        placeholder="Search vendors..."
+                        value={searchQuery}
+                        onClick={handleSearchClick}
+                        onFocus={(e) => {
+                          handleSearchClick(e);
+                          if (isProUserValue && searchQuery.trim().length >= 2) {
+                            setShowAutocomplete(true);
+                          }
                         }}
-                        className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
-                      >
-                        <X className="h-4 w-4 sm:h-5 sm:w-5" />
-                      </button>
-                    )}
-                    
-                    {/* Autocomplete Dropdown */}
-                    {isProUserValue && showAutocomplete && autocompleteSuggestions.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
-                        {autocompleteSuggestions.map((vendorName) => (
-                          <button
-                            key={vendorName}
-                            onClick={() => {
-                              handleVendorSelect(vendorName);
-                              setShowAutocomplete(false);
-                            }}
-                            className="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-muted/50 transition-colors border-b border-border/50 last:border-b-0 text-sm sm:text-base"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-                              <span className="font-medium truncate">{vendorName}</span>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                        onBlur={() => {
+                          // Delay hiding autocomplete to allow clicks
+                          setTimeout(() => setShowAutocomplete(false), 200);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && autocompleteSuggestions.length > 0 && searchQuery.trim().length >= 2) {
+                            // Navigate to first suggestion on Enter
+                            e.preventDefault();
+                            handleVendorSelect(autocompleteSuggestions[0]);
+                          } else if (e.key === "Escape") {
+                            setShowAutocomplete(false);
+                            searchInputRef.current?.blur();
+                          }
+                        }}
+                        onChange={(e) => {
+                          // Prevent typing for non-pro users
+                          if (!isProUserValue) {
+                            setShowUpgradeModal(true);
+                            return;
+                          }
+                          setSearchQuery(e.target.value);
+                          setShowAutocomplete(e.target.value.trim().length >= 2);
+                          if (
+                            selectedVendor &&
+                            e.target.value.trim().toLowerCase() !==
+                            selectedVendor.trim().toLowerCase()
+                          ) {
+                            setSelectedVendor(null);
+                          }
+                        }}
+                        className="pl-10 sm:pl-12 pr-10 sm:pr-12 h-12 sm:h-14 bg-white border-2 border-border/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary text-sm sm:text-base rounded-lg sm:rounded-xl shadow-sm"
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => {
+                            clearSearch();
+                            setSelectedVendor(null);
+                            setShowAutocomplete(false);
+                          }}
+                          className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                        >
+                          <X className="h-4 w-4 sm:h-5 sm:w-5" />
+                        </button>
+                      )}
+                      
+                      {/* Autocomplete Dropdown */}
+                      {isProUserValue && showAutocomplete && autocompleteSuggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                          {autocompleteSuggestions.map((vendorName) => (
+                            <button
+                              key={vendorName}
+                              onClick={() => {
+                                handleVendorSelect(vendorName);
+                                setShowAutocomplete(false);
+                              }}
+                              className="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-muted/50 transition-colors border-b border-border/50 last:border-b-0 text-sm sm:text-base"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
+                                <span className="font-medium truncate">{vendorName}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
