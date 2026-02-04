@@ -949,17 +949,22 @@ const VendorsV2 = () => {
 
       {/* Clerk Sign In Modal */}
       <Dialog open={showSignIn} onOpenChange={setShowSignIn}>
-        <DialogContent className="p-0 border-0 bg-transparent shadow-none [&>button]:hidden !inset-0 !left-0 !top-0 !translate-x-0 !translate-y-0 !max-w-none !w-full !h-full flex items-center justify-center">
-          <SignIn
-            appearance={{
-              elements: {
-                rootBox: "w-full flex justify-center",
-                card: "w-full max-w-md border-0 shadow-none",
-              },
-            }}
-            fallbackRedirectUrl="/vendors"
-            signUpFallbackRedirectUrl="/vendors"
-          />
+        <DialogContent
+          className="p-0 border-0 bg-transparent shadow-none sm:max-w-md [&>button]:hidden"
+          onPointerDownOutside={() => setShowSignIn(false)}
+        >
+          <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <SignIn
+              appearance={{
+                elements: {
+                  rootBox: "w-full flex justify-center",
+                  card: "w-full max-w-md border-0 shadow-none",
+                },
+              }}
+              fallbackRedirectUrl="/vendors"
+              signUpFallbackRedirectUrl="/vendors"
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </>
