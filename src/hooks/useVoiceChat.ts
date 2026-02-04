@@ -26,12 +26,39 @@ export function useVoiceChat({ onTranscriptComplete, enabled }: UseVoiceChatOpti
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
   const isProcessingRef = useRef(false);
+  const sessionStartRef = useRef<{
+    resolve: () => void;
+    reject: (e: Error) => void;
+  } | null>(null);
+
+  const waitForSessionStart = useCallback((timeoutMs: number) => {
+    return new Promise<void>((resolve, reject) => {
+      const timeoutId = window.setTimeout(() => {
+        if (sessionStartRef.current) sessionStartRef.current = null;
+        reject(new Error("Timed out waiting for voice session to start"));
+      }, timeoutMs);
+
+      sessionStartRef.current = {
+        resolve: () => {
+          window.clearTimeout(timeoutId);
+          sessionStartRef.current = null;
+          resolve();
+        },
+        reject: (e: Error) => {
+          window.clearTimeout(timeoutId);
+          sessionStartRef.current = null;
+          reject(e);
+        },
+      };
+    });
+  }, []);
 
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
     commitStrategy: CommitStrategy.VAD,
     onSessionStarted: () => {
       console.log("[VoiceChat] Scribe session started");
+      sessionStartRef.current?.resolve();
       setVoiceState("listening");
       toast.success("Voice chat started - speak now!");
     },
@@ -81,6 +108,14 @@ export function useVoiceChat({ onTranscriptComplete, enabled }: UseVoiceChatOpti
     },
     onError: (err) => {
       console.error("[VoiceChat] Scribe error:", err);
+      // Some errors come through as Event (e.g. WebSocket error) without details.
+      sessionStartRef.current?.reject(
+        new Error(
+          err instanceof Error
+            ? err.message
+            : "Voice connection failed (WebSocket error)"
+        )
+      );
       setError(err instanceof Error ? err.message : "Transcription error");
       setVoiceState("error");
       toast.error("Voice transcription error");
@@ -90,18 +125,26 @@ export function useVoiceChat({ onTranscriptComplete, enabled }: UseVoiceChatOpti
     },
     onDisconnect: () => {
       console.log("[VoiceChat] Scribe disconnected");
+      // If we disconnect while still connecting, reject the pending start.
+      if (sessionStartRef.current) {
+        sessionStartRef.current.reject(
+          new Error("Voice connection closed before session started")
+        );
+      }
       if (voiceState === "listening") {
         setVoiceState("idle");
       }
     },
     onAuthError: (data) => {
       console.error("[VoiceChat] Auth error:", data.error);
+      sessionStartRef.current?.reject(new Error(data.error || "Auth error"));
       setError("Voice authentication failed");
       setVoiceState("error");
       toast.error("Voice authentication failed");
     },
     onQuotaExceededError: (data) => {
       console.error("[VoiceChat] Quota exceeded:", data.error);
+      sessionStartRef.current?.reject(new Error(data.error || "Quota exceeded"));
       setError("Voice quota exceeded");
       setVoiceState("error");
       toast.error("Voice quota exceeded");
@@ -201,20 +244,54 @@ export function useVoiceChat({ onTranscriptComplete, enabled }: UseVoiceChatOpti
       if (!data.token) {
         throw new Error("No token received");
       }
-      
-      // Connect to ElevenLabs Scribe
-      console.log("[VoiceChat] Connecting to Scribe...");
-      await scribe.connect({
-        token: data.token,
-        microphone: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-      
-      console.log("[VoiceChat] Scribe connect() completed");
-      // Note: voiceState will be set to "listening" in onSessionStarted callback
+
+      const microphone = {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      };
+
+      // Some environments require a residency-specific base URI.
+      // We'll try default first, then EU/IN residency endpoints.
+      const baseUris: Array<string | undefined> = [
+        undefined,
+        "wss://api.eu.residency.elevenlabs.io",
+        "wss://api.in.residency.elevenlabs.io",
+      ];
+
+      let lastErr: unknown = null;
+
+      for (let i = 0; i < baseUris.length; i++) {
+        const baseUri = baseUris[i];
+        try {
+          console.log(
+            `[VoiceChat] Connecting to Scribe...${baseUri ? ` baseUri=${baseUri}` : ""}`
+          );
+
+          // Ensure we're not reusing an old connection
+          scribe.disconnect();
+
+          await scribe.connect({
+            token: data.token,
+            microphone,
+            ...(baseUri ? { baseUri } : {}),
+          });
+
+          console.log("[VoiceChat] Scribe connect() completed; waiting for session_start...");
+          await waitForSessionStart(5000);
+          console.log("[VoiceChat] Voice session confirmed");
+          return;
+        } catch (e) {
+          lastErr = e;
+          console.warn("[VoiceChat] Scribe connection attempt failed:", e);
+          // Brief delay before retry
+          await new Promise((r) => setTimeout(r, 200));
+        }
+      }
+
+      throw lastErr instanceof Error
+        ? lastErr
+        : new Error("Voice connection failed");
       
     } catch (err) {
       console.error("[VoiceChat] Failed to start voice:", err);
@@ -224,14 +301,15 @@ export function useVoiceChat({ onTranscriptComplete, enabled }: UseVoiceChatOpti
           setError("Microphone access denied");
           toast.error("Please enable microphone access to use voice chat");
         } else {
-          setError(err.message);
-          toast.error(err.message);
+          const msg = err.message || "Voice chat failed to connect";
+          setError(msg);
+          toast.error(msg);
         }
       }
       
       setVoiceState("error");
     }
-  }, [enabled, scribe]);
+  }, [enabled, scribe, waitForSessionStart]);
 
   const stopVoice = useCallback(() => {
     console.log("[VoiceChat] Stopping voice chat...");
