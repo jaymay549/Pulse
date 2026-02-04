@@ -1,11 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { MessageCircle, X, Send, Loader2, Sparkles, AlertCircle, Mic, MicOff, Volume2 } from "lucide-react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { X, Send, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { WAM_URL } from "@/config/wam";
 import { ChatMarkdown } from "./ChatMarkdown";
-import { useVoiceChat, VoiceState } from "@/hooks/useVoiceChat";
 
 interface Message {
   role: "user" | "assistant";
@@ -58,99 +57,6 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Voice chat handler - returns AI response for TTS
-  const handleVoiceTranscript = useCallback(async (text: string): Promise<string | undefined> => {
-    if (!text.trim() || !dataLoaded) return undefined;
-
-    const userMessage: Message = { role: "user", content: text.trim() };
-    setMessages(prev => [...prev, userMessage]);
-    setIsLoading(true);
-    setError(null);
-
-    let fullResponse = "";
-
-    const updateAssistant = (chunk: string) => {
-      fullResponse += chunk;
-      setMessages(prev => {
-        const last = prev[prev.length - 1];
-        if (last?.role === "assistant") {
-          return prev.map((m, i) => 
-            i === prev.length - 1 ? { ...m, content: fullResponse } : m
-          );
-        }
-        return [...prev, { role: "assistant", content: fullResponse }];
-      });
-    };
-
-    try {
-      const response = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
-          messages: [...messages, userMessage],
-          vendorData,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Request failed: ${response.status}`);
-      }
-
-      if (!response.body) throw new Error("No response body");
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        textBuffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
-
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) updateAssistant(content);
-          } catch {
-            textBuffer = line + "\n" + textBuffer;
-            break;
-          }
-        }
-      }
-
-      return fullResponse;
-    } catch (err) {
-      console.error("Chat error:", err);
-      setError(err instanceof Error ? err.message : "Failed to send message");
-      setMessages(prev => prev.slice(0, -1));
-      return undefined;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [messages, vendorData, dataLoaded]);
-
-  // Voice chat hook
-  const { voiceState, partialTranscript, startVoice, stopVoice } = useVoiceChat({
-    onTranscriptComplete: handleVoiceTranscript,
-    enabled: dataLoaded,
-  });
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -607,47 +513,6 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
         </div>
       )}
 
-      {/* Partial Transcript (when listening) */}
-      {voiceState === "listening" && partialTranscript && (
-        <div className="px-4 py-2 bg-primary/5 border-t">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Mic className="h-3 w-3 text-primary animate-pulse" />
-            <span className="italic">{partialTranscript}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Voice State Indicator */}
-      {voiceState !== "idle" && voiceState !== "error" && (
-        <div className="px-4 py-2 bg-primary/10 border-t">
-          <div className="flex items-center gap-2 text-sm">
-            {voiceState === "connecting" && (
-              <>
-                <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                <span>Connecting...</span>
-              </>
-            )}
-            {voiceState === "listening" && (
-              <>
-                <Mic className="h-3 w-3 text-primary animate-pulse" />
-                <span>Listening... speak now</span>
-              </>
-            )}
-            {voiceState === "processing" && (
-              <>
-                <Loader2 className="h-3 w-3 animate-spin text-primary" />
-                <span>Processing...</span>
-              </>
-            )}
-            {voiceState === "speaking" && (
-              <>
-                <Volume2 className="h-3 w-3 text-primary animate-pulse" />
-                <span>Speaking...</span>
-              </>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Input */}
       <form onSubmit={handleSubmit} className="p-3 border-t bg-background">
@@ -658,42 +523,16 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={dataLoaded ? "Ask about vendors..." : "Loading vendor data..."}
-            disabled={isLoading || !dataLoaded || voiceState !== "idle"}
+            disabled={isLoading || !dataLoaded}
             className="min-h-[44px] max-h-32 resize-none text-sm"
             rows={1}
           />
           
-          {/* Voice Button */}
-          <Button
-            type="button"
-            variant={voiceState === "idle" ? "outline" : "default"}
-            size="sm"
-            onClick={voiceState === "idle" ? startVoice : stopVoice}
-            disabled={!dataLoaded || isLoading}
-            className={cn(
-              "h-11 w-11 p-0 shrink-0 transition-all",
-              voiceState === "listening" && "bg-red-500 hover:bg-red-600 border-red-500",
-              voiceState === "speaking" && "bg-primary animate-pulse"
-            )}
-          >
-            {voiceState === "idle" ? (
-              <Mic className="h-4 w-4" />
-            ) : voiceState === "connecting" ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : voiceState === "listening" ? (
-              <MicOff className="h-4 w-4" />
-            ) : voiceState === "speaking" ? (
-              <Volume2 className="h-4 w-4" />
-            ) : (
-              <Mic className="h-4 w-4" />
-            )}
-          </Button>
-
           {/* Send Button */}
           <Button
             type="submit"
             size="sm"
-            disabled={!input.trim() || isLoading || !dataLoaded || voiceState !== "idle"}
+            disabled={!input.trim() || isLoading || !dataLoaded}
             className="h-11 w-11 p-0 shrink-0"
           >
             <Send className="h-4 w-4" />
