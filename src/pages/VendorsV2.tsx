@@ -280,7 +280,7 @@ const VendorsV2 = () => {
   }, [isAuthenticated, fetchWithAuth, selectedCategory, selectedVendor, searchQuery, typeFilter]);
 
   // Load more mentions (for pro users)
-  const loadMoreMentions = async () => {
+  const loadMoreMentions = useCallback(async () => {
     if (!paginationInfo?.hasMore || isLoadingMore) return;
 
     setIsLoadingMore(true);
@@ -325,7 +325,15 @@ const VendorsV2 = () => {
     } finally {
       setIsLoadingMore(false);
     }
-  };
+  }, [
+    fetchWithAuth,
+    isLoadingMore,
+    paginationInfo,
+    searchQuery,
+    selectedCategory,
+    selectedVendor,
+    typeFilter,
+  ]);
 
   // Infinite scroll: observe a sentinel element at the bottom
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -352,7 +360,7 @@ const VendorsV2 = () => {
         observer.unobserve(sentinel);
       }
     };
-  }, [isProUserValue, paginationInfo?.hasMore, isLoadingMore]);
+  }, [isProUserValue, paginationInfo?.hasMore, isLoadingMore, loadMoreMentions]);
 
   // Clear selectedVendor when searchQuery is cleared or changed manually (but not when it matches)
   useEffect(() => {
@@ -640,8 +648,8 @@ const VendorsV2 = () => {
                       Results for "{searchQuery}"
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      {filteredData.length} review
-                      {filteredData.length !== 1 ? "s" : ""} found
+                      {totalCount} review
+                      {totalCount !== 1 ? "s" : ""} found
                       {positiveCount > 0 && ` • ${positiveCount} recommended`}
                       {warningCount > 0 &&
                         ` • ${warningCount} warning${warningCount !== 1 ? "s" : ""
