@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Sparkles, TrendingUp, TrendingDown, ArrowRight, Lock, Loader2 } from "lucide-react";
+import {
+  Sparkles,
+  TrendingUp,
+  TrendingDown,
+  ArrowRight,
+  Lock,
+  Loader2,
+} from "lucide-react";
 import { VendorEntry } from "@/hooks/useVendorReviews";
 import { cn } from "@/lib/utils";
 import { WAM_URL } from "@/config/wam";
@@ -46,7 +53,8 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
 
   useEffect(() => {
     // Only fetch when we have a vendor name (either selected or typed)
-    const hasVendorQuery = selectedVendor || (searchQuery && searchQuery.trim().length > 0);
+    const hasVendorQuery =
+      selectedVendor || (searchQuery && searchQuery.trim().length > 0);
     const hasCategoryFilter = selectedCategory && selectedCategory !== "all";
 
     // Skip if no meaningful filter is applied
@@ -64,7 +72,9 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
       try {
         const params = new URLSearchParams();
         // Prioritize selectedVendor over searchQuery for vendor scoping
-        const vendorName = selectedVendor || (searchQuery && searchQuery.trim().length > 0 ? searchQuery : null);
+        const vendorName =
+          selectedVendor ||
+          (searchQuery && searchQuery.trim().length > 0 ? searchQuery : null);
 
         // When a vendor is selected, scope to vendor only (not category)
         // Vendor is more specific than category, so we ignore category when vendor is selected
@@ -83,9 +93,12 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
           }
         }
 
-        const response = await fetch(`${WAM_URL}/api/public/vendor-pulse/insights?${params.toString()}`, {
-          headers
-        });
+        const response = await fetch(
+          `${WAM_URL}/api/public/vendor-pulse/insights?${params.toString()}`,
+          {
+            headers,
+          }
+        );
 
         if (response.status === 403) {
           setIsLocked(true);
@@ -194,7 +207,13 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
                   >
                     <p className="text-sm text-foreground/80 font-medium flex items-center gap-2">
                       <Lock className="h-3.5 w-3.5 text-yellow-600" />
-                      <span>See what dealers really think about <strong>{selectedVendor || searchQuery || "this category"}</strong> — unlock with Pro.</span>
+                      <span>
+                        See what dealers really think about{" "}
+                        <strong>
+                          {selectedVendor || searchQuery || "this category"}
+                        </strong>{" "}
+                        — unlock with Pro.
+                      </span>
                     </p>
                     <button
                       onClick={onUpgradeClick}
@@ -229,7 +248,10 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
                       className="flex items-center gap-4 mt-3.5 text-[11px] font-semibold tracking-wide"
                     >
                       <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <span className="text-foreground">{insight.stats.total}</span> Total Reviews
+                        <span className="text-foreground">
+                          {insight.stats.total}
+                        </span>{" "}
+                        Total Reviews
                       </span>
                       <div className="flex items-center gap-3">
                         <span className="text-green-600/90 flex items-center gap-1">
@@ -257,9 +279,11 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
           animate={{ opacity: 1 }}
           className={cn(
             "absolute top-0 right-0 w-32 h-full pointer-events-none",
-            insight.sentiment === "positive" ? "bg-gradient-to-l from-green-500/5 to-transparent" :
-              insight.sentiment === "negative" ? "bg-gradient-to-l from-red-500/5 to-transparent" :
-                "bg-gradient-to-l from-yellow-500/5 to-transparent"
+            insight.sentiment === "positive"
+              ? "bg-gradient-to-l from-green-500/5 to-transparent"
+              : insight.sentiment === "negative"
+              ? "bg-gradient-to-l from-red-500/5 to-transparent"
+              : "bg-gradient-to-l from-yellow-500/5 to-transparent"
           )}
         />
       )}
@@ -274,7 +298,7 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
       )}
 
       {/* AI Disclaimer */}
-      <p className="absolute bottom-2 right-3 text-[9px] text-muted-foreground/60 font-normal pointer-events-none">
+      <p className="absolute bottom-1 right-3 text-[9px] text-muted-foreground/60 font-normal pointer-events-none">
         AI can make mistakes
       </p>
     </motion.div>

@@ -335,14 +335,14 @@ export const VendorCard: React.FC<VendorCardProps> = ({
 
         {/* Footer: Type badge + Member attribution */}
         <div className="mt-4 pt-3 border-t border-border/50">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug">
+          <div className="flex flex-row flex-wrap items-center justify-between gap-2">
+            <p className="text-[11px] text-muted-foreground leading-snug">
               Circles Member
               {formatMemberDate(entry.conversationTime)
                 ? ` · ${formatMemberDate(entry.conversationTime)}`
                 : ""}
             </p>
-            <div className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-semibold tracking-[0.08em] uppercase">
+            <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.08em] uppercase">
               {styles.icon}
               <span className={styles.badge}>{styles.label}</span>
             </div>
