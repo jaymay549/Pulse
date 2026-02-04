@@ -778,7 +778,7 @@ const VendorsV2 = () => {
         </header>
 
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
           <div className="flex gap-8">
             {/* Desktop Sidebar */}
             <VendorSidebar
@@ -798,7 +798,7 @@ const VendorsV2 = () => {
             {/* Main Content Area */}
             <main className="flex-1 min-w-0">
               {/* Hero Banner - Clean, prominent heading */}
-              <div className="mb-8">
+              <div className="mb-4">
                 {/* Show category context when filtering */}
                 {selectedCategory !== "all" && selectedCategoryData && (
                   <div className="flex items-center gap-2 mb-4">
@@ -877,7 +877,7 @@ const VendorsV2 = () => {
                   )}
 
                 {/* Search Bar - Below hero */}
-                <div className="pt-1 pb-1 sm:pb-2">
+                <div className="pt-1 pb-0 sm:pb-0">
                   <div className="relative">
                     <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                     <Input
@@ -1023,7 +1023,7 @@ const VendorsV2 = () => {
                   getLogoUrl={(vendorName) => getVendorLogoUrl(vendorName)}
                   canAccess={isProUserValue}
                   onUpgradeClick={() => setShowUpgradeModal(true)}
-                  className="mt-1 mb-4"
+                  className="mt-0 mb-3"
                 />
               )}
 

@@ -25,7 +25,9 @@ export const TrendingVendorChips: React.FC<TrendingVendorChipsProps> = ({
   useEffect(() => {
     const fetchTrending = async () => {
       try {
-        const response = await fetch(`${WAM_URL}/api/public/vendor-pulse/trending`);
+        const response = await fetch(
+          `${WAM_URL}/api/public/vendor-pulse/trending`
+        );
         if (response.ok) {
           const data = await response.json();
           setTrendingVendors(data.trending || []);
@@ -69,7 +71,10 @@ export const TrendingVendorChips: React.FC<TrendingVendorChipsProps> = ({
             )}
           >
             <Avatar className="h-6 w-6 border border-border/60 shrink-0">
-              <AvatarImage src={getLogoUrl ? getLogoUrl(name) || undefined : undefined} alt={name} />
+              <AvatarImage
+                src={getLogoUrl ? getLogoUrl(name) || undefined : undefined}
+                alt={name}
+              />
               <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
                 {name.slice(0, 2).toUpperCase()}
               </AvatarFallback>
