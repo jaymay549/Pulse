@@ -352,6 +352,11 @@ const VendorsV2 = () => {
 
   // Handle vendor chip click
   const handleVendorSelect = (vendorName: string) => {
+    // For non-pro users, show upgrade modal (same as search field click)
+    if (!isProUserValue) {
+      setShowUpgradeModal(true);
+      return;
+    }
     setSelectedVendor(vendorName);
     setSearchQuery(vendorName);
   };
