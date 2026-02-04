@@ -24,7 +24,6 @@ import {
   AIInsightBanner,
   FilterBar,
   UpgradeTeaser,
-  SearchSuggestions,
   TrendingVendorChips,
 } from "@/components/vendors";
 import UpgradeModal from "@/components/UpgradeModal";
@@ -59,7 +58,6 @@ const VendorsV2 = () => {
     useState<VendorEntry | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
-  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
 
   // Clerk Auth
   const {
@@ -632,32 +630,6 @@ const VendorsV2 = () => {
                   </div>
                 )}
 
-                {/* Search Results Summary - only when actively searching */}
-                {searchQuery.trim().length > 0 && (
-                  <div className="mb-4 p-4 rounded-xl bg-muted/50 border border-border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                      </span>
-                      <span className="text-xs font-medium text-green-600">
-                        Updated Daily
-                      </span>
-                    </div>
-                    <h2 className="text-lg font-bold text-foreground mb-1">
-                      Results for "{searchQuery}"
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                      {totalCount} review
-                      {totalCount !== 1 ? "s" : ""} found
-                      {positiveCount > 0 && ` • ${positiveCount} recommended`}
-                      {warningCount > 0 &&
-                        ` • ${warningCount} warning${warningCount !== 1 ? "s" : ""
-                        }`}
-                    </p>
-                  </div>
-                )}
-
                 {/* Main Hero - Only on default "all" view with no search */}
                 {selectedCategory === "all" &&
                   searchQuery.trim().length === 0 &&
@@ -743,17 +715,6 @@ const VendorsV2 = () => {
                         ) {
                           setSelectedVendor(null);
                         }
-                        // Only show suggestions when user is actually typing
-                        if (
-                          e.target.value.trim().length > 0 &&
-                          !showSearchSuggestions
-                        ) {
-                          setShowSearchSuggestions(true);
-                        }
-                        // Hide suggestions when input is cleared
-                        if (e.target.value.trim().length === 0) {
-                          setShowSearchSuggestions(false);
-                        }
                       }}
                       className="pl-12 pr-12 h-14 bg-white border-2 border-border/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary text-base rounded-xl shadow-sm"
                     />
@@ -762,33 +723,40 @@ const VendorsV2 = () => {
                         onClick={() => {
                           clearSearch();
                           setSelectedVendor(null);
-                          setShowSearchSuggestions(false);
                         }}
                         className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       >
                         <X className="h-5 w-5" />
                       </button>
                     )}
-                    <SearchSuggestions
-                      isOpen={showSearchSuggestions}
-                      onClose={() => setShowSearchSuggestions(false)}
-                      searchQuery={searchQuery}
-                      data={wamMentions}
-                      categoryCounts={categoryCounts}
-                      selectedCategory={selectedCategory}
-                      onVendorSelect={(vendorName) => {
-                        handleVendorSelect(vendorName);
-                        setShowSearchSuggestions(false);
-                      }}
-                      onCategorySelect={(categoryId) => {
-                        handleCategoryChange(categoryId);
-                        if (categoryId !== "all") {
-                          setShowSearchSuggestions(false);
-                        }
-                      }}
-                    />
                   </div>
                 </div>
+
+                {/* Search Results Summary - only when actively searching */}
+                {searchQuery.trim().length > 0 && (
+                  <div className="mt-3 mb-4 p-4 rounded-xl bg-muted/50 border border-border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                      </span>
+                      <span className="text-xs font-medium text-green-600">
+                        Updated Daily
+                      </span>
+                    </div>
+                    <h2 className="text-lg font-bold text-foreground mb-1">
+                      Results for "{searchQuery}"
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {totalCount} review
+                      {totalCount !== 1 ? "s" : ""} found
+                      {positiveCount > 0 && ` • ${positiveCount} recommended`}
+                      {warningCount > 0 &&
+                        ` • ${warningCount} warning${warningCount !== 1 ? "s" : ""
+                        }`}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* AI Insight Banner - Only show when actively searching/filtering */}

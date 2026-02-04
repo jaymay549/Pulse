@@ -6,6 +6,5 @@ export { FilterBar } from './FilterBar';
 export { TrendingVendorChips } from './TrendingVendorChips';
 export { UpgradeTeaser, SearchLockedPaywall } from './UpgradeTeaser';
 export { AIInsightBanner } from './AIInsightBanner';
-export { SearchSuggestions } from './SearchSuggestions';
 export { AuthPickerModal } from './AuthPickerModal';
 export { VendorPricingTiers } from './VendorPricingTiers';
