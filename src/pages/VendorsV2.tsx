@@ -600,6 +600,41 @@ const VendorsV2 = () => {
     return matching;
   }, [searchQuery, allVendorNames, vendorCounts, mentions]);
 
+  // Category vendors - similar to matchingVendors but for category pages
+  const categoryVendors = useMemo(() => {
+    if (selectedCategory === "all" || selectedVendor !== null) return [];
+    
+    return vendorsInCategory
+      .map((vendor) => {
+        // Use vendor counts from separate fetch if available, otherwise fall back to paginated data
+        const vendorNameLower = vendor.name.toLowerCase();
+        const counts = vendorCounts[vendorNameLower];
+        
+        if (counts) {
+          return {
+            name: vendor.name,
+            reviewCount: counts.total,
+            positiveCount: counts.positive,
+            warningCount: counts.warning,
+          };
+        }
+        
+        // Fallback: count from current filtered data
+        const vendorReviews = filteredData.filter(
+          (m) => m.vendorName?.toLowerCase() === vendorNameLower
+        );
+        return {
+          name: vendor.name,
+          reviewCount: vendorReviews.length,
+          positiveCount: vendorReviews.filter((r) => r.type === "positive").length,
+          warningCount: vendorReviews.filter((r) => r.type === "warning").length,
+        };
+      })
+      .filter((v) => v.reviewCount > 0) // Only show vendors with reviews
+      .sort((a, b) => b.reviewCount - a.reviewCount) // Sort by review count
+      .slice(0, 12); // Limit to top 12 vendors
+  }, [selectedCategory, selectedVendor, vendorsInCategory, vendorCounts, filteredData]);
+
   // Handle type filter change
   const handleTypeFilterChange = (filter: "all" | "positive" | "warning") => {
     if (filter === "warning" && !accessLevel.unlimitedAccess) {
@@ -981,8 +1016,8 @@ const VendorsV2 = () => {
                 </div>
               )}
 
-              {/* Trending Vendor Chips - Show when NOT searching */}
-                {searchQuery.trim().length === 0 && selectedVendor === null && (
+              {/* Trending Vendor Chips - Show when NOT searching and NOT on category page */}
+                {searchQuery.trim().length === 0 && selectedVendor === null && selectedCategory === "all" && (
                 <TrendingVendorChips
                   onVendorSelect={handleVendorSelect}
                   getLogoUrl={(vendorName) => getVendorLogoUrl(vendorName)}
@@ -990,6 +1025,65 @@ const VendorsV2 = () => {
                   onUpgradeClick={() => setShowUpgradeModal(true)}
                   className="mt-1 mb-4"
                 />
+              )}
+
+              {/* Category Vendors Section - Show when category is selected */}
+              {selectedCategory !== "all" && searchQuery.trim().length === 0 && categoryVendors.length > 0 && (
+                <div className="mb-6 sm:mb-8">
+                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                    <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
+                    <h2 className="text-lg sm:text-xl font-bold text-foreground">
+                      Vendors ({categoryVendors.length})
+                    </h2>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                    {categoryVendors.map((vendor) => {
+                      const vendorWebsiteUrl = getWebsiteForVendor(vendor.name);
+                      const vendorLogoUrl = getVendorLogoUrl(vendor.name, vendorWebsiteUrl);
+                      
+                      return (
+                        <button
+                          key={vendor.name}
+                          onClick={() => handleVendorSelect(vendor.name)}
+                          className="text-left p-3 sm:p-4 bg-white rounded-lg border border-border/50 hover:border-primary/50 hover:shadow-md transition-all group shrink-0 w-[280px] sm:w-[300px]"
+                        >
+                          <div className="flex items-start gap-2.5 sm:gap-3">
+                            {/* Vendor Logo */}
+                            <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border border-border/50 shrink-0">
+                              <AvatarImage src={vendorLogoUrl || undefined} alt={vendor.name} />
+                              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs sm:text-sm">
+                                {vendor.name.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            
+                            {/* Vendor Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 sm:gap-2">
+                                <h3 className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                                  {vendor.name}
+                                </h3>
+                                <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 opacity-0 group-hover:opacity-100" />
+                              </div>
+                              <div className="mt-1 sm:mt-1.5 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground">
+                                <span className="font-medium">{vendor.reviewCount} review{vendor.reviewCount !== 1 ? "s" : ""}</span>
+                                {vendor.positiveCount > 0 && (
+                                  <span className="px-1.5 py-0.5 rounded bg-green-50 text-green-700 font-medium text-xs">
+                                    {vendor.positiveCount} positive
+                                  </span>
+                                )}
+                                {vendor.warningCount > 0 && (
+                                  <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-700 font-medium text-xs">
+                                    {vendor.warningCount} warning{vendor.warningCount !== 1 ? "s" : ""}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
 
               {/* Matching Vendors Section - Show when searching */}
