@@ -150,6 +150,34 @@ export const VendorCard: React.FC<VendorCardProps> = ({
         `}
       >
         <div className="px-5 py-4 flex flex-col h-full min-h-[190px]">
+          {/* Vendor Name - Always show on locked cards */}
+          {entry.vendorName && (
+            <div className="mb-3 flex items-center gap-3">
+              <Avatar className="h-10 w-10 border border-border shrink-0">
+                <AvatarImage src={vendorLogo || undefined} alt={entry.vendorName} />
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                  {entry.vendorName.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <h3
+                  className={`
+                    text-lg font-bold text-foreground leading-tight inline
+                    ${onVendorClick ? "hover:text-primary transition-colors hover:underline cursor-pointer" : ""}
+                  `}
+                  onClick={(e) => {
+                    if (onVendorClick && entry.vendorName) {
+                      e.stopPropagation();
+                      onVendorClick(entry.vendorName);
+                    }
+                  }}
+                >
+                  {entry.vendorName}
+                </h3>
+              </div>
+            </div>
+          )}
+
           {/* Header: Type badge + Lock indicator */}
           <div className="flex items-center justify-between mb-3">
             <div className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
