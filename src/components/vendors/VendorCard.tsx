@@ -99,28 +99,25 @@ export const VendorCard: React.FC<VendorCardProps> = ({
     switch (entry.type) {
       case "warning":
         return {
-          border:
-            "border-l-4 border-l-red-500 border-t border-r border-b border-border/50",
-          bg: "bg-white hover:bg-red-50/30",
-          badge: "bg-red-100 text-red-700",
+          border: "border-l-2 border-l-red-500 border-border/40",
+          bg: "bg-transparent hover:bg-red-500/5",
+          badge: "text-red-700",
           icon: <AlertTriangle className="h-3.5 w-3.5" />,
           label: "WARNING",
         };
       case "positive":
         return {
-          border:
-            "border-l-4 border-l-green-500 border-t border-r border-b border-border/50",
-          bg: "bg-white hover:bg-green-50/30",
-          badge: "bg-green-100 text-green-700",
+          border: "border-l-2 border-l-green-500 border-border/40",
+          bg: "bg-transparent hover:bg-green-500/5",
+          badge: "text-green-700",
           icon: <ThumbsUp className="h-3.5 w-3.5" />,
           label: "RECOMMENDED",
         };
       default:
         return {
-          border:
-            "border-l-4 border-l-primary border-t border-r border-b border-border/50",
-          bg: "bg-white hover:bg-primary/5",
-          badge: "bg-primary/10 text-primary",
+          border: "border-l-2 border-l-primary border-border/40",
+          bg: "bg-transparent hover:bg-primary/5",
+          badge: "text-primary",
           icon: <Lightbulb className="h-3.5 w-3.5" />,
           label: "STRATEGY",
         };
@@ -147,19 +144,18 @@ export const VendorCard: React.FC<VendorCardProps> = ({
     return (
       <article
         className={`
-          relative overflow-hidden rounded-lg shadow-sm hover:shadow-md
-          transition-all duration-200 cursor-pointer group
+          relative overflow-hidden border border-border/40
+          transition-colors duration-200 cursor-pointer group
           ${styles.border} ${styles.bg}
         `}
       >
-        <div className="p-5 flex flex-col h-full min-h-[200px]">
+        <div className="px-5 py-4 flex flex-col h-full min-h-[190px]">
           {/* Header: Type badge + Lock indicator */}
-          <div className="flex items-center justify-between mb-4">
-            <div
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold tracking-wide ${styles.badge}`}
-            >
-              {styles.icon}
-              {styles.label}
+          <div className="flex items-center justify-between mb-3">
+            <div className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
+              <span className={styles.badge}>{styles.label}</span>
+              <span className="text-muted-foreground">•</span>
+              <span className="text-muted-foreground">Member insight</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Lock className="h-3 w-3" />
@@ -169,10 +165,10 @@ export const VendorCard: React.FC<VendorCardProps> = ({
 
           {/* Blurred content preview - show actual content with vendor names blurred */}
           {hasBlurredContent ? (
-            <div className="flex-1 mb-4">
+            <div className="flex-1 mb-4 space-y-3">
               {/* Title with blurred vendor names */}
               {entry.title && (
-                <p className="text-sm font-medium text-foreground/80 mb-2 line-clamp-2">
+                <p className="text-sm font-medium text-foreground/80 line-clamp-2">
                   {blurRedactedContent(entry.title)}
                 </p>
               )}
@@ -183,7 +179,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
                   "{blurRedactedContent(entry.quote)}"
                 </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-3 italic">
+              <p className="text-xs text-muted-foreground italic">
                 Upgrade to see which vendor this is about
               </p>
             </div>
@@ -218,7 +214,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
                   }
                 }
               }}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-yellow-500 hover:bg-yellow-400 text-yellow-950 font-semibold text-sm shadow-lg hover:shadow-xl transition-all"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-yellow-500 hover:bg-yellow-400 text-yellow-950 font-semibold text-sm transition-colors"
             >
               <Crown className="h-4 w-4" />
               <span>
@@ -243,34 +239,22 @@ export const VendorCard: React.FC<VendorCardProps> = ({
     <article
       onClick={handleClick}
       className={`
-        relative overflow-hidden rounded-lg shadow-sm hover:shadow-md
-        transition-all duration-200 cursor-pointer group
+        relative overflow-hidden border border-border/40
+        transition-colors duration-200 cursor-pointer group
         ${styles.border} ${styles.bg}
       `}
     >
-      <div className="p-5">
-        {/* Header: Type badge */}
-        <div className="flex items-center justify-between mb-3">
-          <div
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-bold tracking-wide ${styles.badge}`}
-          >
-            {styles.icon}
-            {styles.label}
-          </div>
-        </div>
-
+      <div className="px-5 py-4">
         {/* Vendor Name - Editorial style with logo */}
         {entry.vendorName && showVendorNames && (
           <div className="mb-2 flex items-center gap-3">
-            {/* Vendor Logo */}
-            {vendorLogo && (
-              <Avatar className="h-10 w-10 border border-border shrink-0">
-                <AvatarImage src={vendorLogo} alt={entry.vendorName} />
-                <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                  {entry.vendorName.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            )}
+            {/* Vendor Logo - Always show Avatar with logo or initials fallback */}
+            <Avatar className="h-10 w-10 border border-border shrink-0">
+              <AvatarImage src={vendorLogo || undefined} alt={entry.vendorName} />
+              <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                {entry.vendorName.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
             <div className="flex-1 min-w-0">
               <h3
                 className={`
@@ -317,7 +301,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
         {/* Quote - Handle locked placeholder gracefully */}
         <div className="relative">
           {hasLockedPlaceholder ? (
-            <div className="py-4 px-4 rounded-lg bg-muted/50 border border-border/50 text-center">
+            <div className="py-4 px-4 rounded-lg bg-muted/40 border border-border/50 text-center">
               <Lock className="h-5 w-5 text-muted-foreground/50 mx-auto mb-2" />
               <p className="text-sm text-muted-foreground font-medium">
                 Full review available to members
@@ -328,7 +312,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
             </div>
           ) : (
             <>
-              <Quote className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30 mr-2" />
+              <Quote className="absolute left-0 top-0 h-4 w-4 text-muted-foreground/30 mr-2" />
               <p className="text-sm text-foreground/80 leading-relaxed line-clamp-4 pl-6">
                 "{renderQuote(entry.quote, !showVendorNames)}"
               </p>
@@ -349,14 +333,20 @@ export const VendorCard: React.FC<VendorCardProps> = ({
           </div>
         )}
 
-        {/* Footer: Member attribution */}
+        {/* Footer: Type badge + Member attribution */}
         <div className="mt-4 pt-3 border-t border-border/50">
-          <p className="text-xs text-muted-foreground">
-            Circles Member
-            {formatMemberDate(entry.conversationTime)
-              ? ` · ${formatMemberDate(entry.conversationTime)}`
-              : ""}
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug">
+              Circles Member
+              {formatMemberDate(entry.conversationTime)
+                ? ` · ${formatMemberDate(entry.conversationTime)}`
+                : ""}
+            </p>
+            <div className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-semibold tracking-[0.08em] uppercase">
+              {styles.icon}
+              <span className={styles.badge}>{styles.label}</span>
+            </div>
+          </div>
         </div>
       </div>
     </article>

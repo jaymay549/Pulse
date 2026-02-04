@@ -9,10 +9,12 @@ import {
   Lock,
   Crown,
   ShieldCheck,
+  Globe,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VendorEntry } from "@/hooks/useVendorReviews";
 import { VendorResponse } from "@/hooks/useVendorResponses";
 import { parseMarkdown } from "@/utils/markdown";
@@ -27,6 +29,8 @@ interface VendorCardDetailProps {
   onDownload?: (entry: VendorEntry) => void;
   onVendorSelect?: (vendorName: string) => void;
   onCategorySelect?: (categoryId: string) => void;
+  vendorLogo?: string | null;
+  vendorWebsite?: string | null;
   // Vendor response props
   vendorResponse?: VendorResponse | null;
   canRespondAsVendor?: boolean;
@@ -57,6 +61,8 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
   onShare,
   onVendorSelect,
   onCategorySelect,
+  vendorLogo,
+  vendorWebsite,
   vendorResponse,
   canRespondAsVendor,
   onAddResponse,
@@ -126,6 +132,13 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
     window.location.href = `mailto:vendor-report@cardealershipguy.org?subject=${subject}&body=${body}`;
   };
 
+  const handleVendorLink = () => {
+    if (entry.vendorName && onVendorSelect) {
+      onClose();
+      onVendorSelect(entry.vendorName);
+    }
+  };
+
   const scrollToTiers = () => {
     onClose();
     setTimeout(() => {
@@ -152,9 +165,40 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
           </div>
         </div>
 
-        <DialogTitle className="text-2xl font-bold text-foreground mb-6">
-          {entry.vendorName}
-        </DialogTitle>
+        <div className="flex items-center gap-3 mt-4 mb-6">
+          <Avatar className="h-12 w-12 border border-border">
+            <AvatarImage src={vendorLogo || undefined} alt={entry.vendorName} />
+            <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
+              {entry.vendorName?.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <DialogTitle className="text-2xl font-bold text-foreground">
+              {entry.vendorName}
+            </DialogTitle>
+            <div className="flex items-center gap-3 mt-1 text-xs">
+              {onVendorSelect && entry.vendorName && (
+                <button
+                  onClick={handleVendorLink}
+                  className="text-primary font-semibold hover:underline"
+                >
+                  View vendor
+                </button>
+              )}
+              {vendorWebsite && (
+                <a
+                  href={vendorWebsite}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                >
+                  <Globe className="h-3 w-3" />
+                  Website
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Locked State */}
         <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
@@ -221,9 +265,40 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
             {typeConfig.label}
           </div>
         </div>
-        <DialogTitle className="text-2xl font-bold text-foreground mt-4">
-          {entry.vendorName}
-        </DialogTitle>
+        <div className="flex items-center gap-3 mt-4">
+          <Avatar className="h-12 w-12 border border-border">
+            <AvatarImage src={vendorLogo || undefined} alt={entry.vendorName} />
+            <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
+              {entry.vendorName?.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <DialogTitle className="text-2xl font-bold text-foreground">
+              {entry.vendorName}
+            </DialogTitle>
+            <div className="flex items-center gap-3 mt-1 text-xs">
+              {onVendorSelect && entry.vendorName && (
+                <button
+                  onClick={handleVendorLink}
+                  className="text-primary font-semibold hover:underline"
+                >
+                  View vendor
+                </button>
+              )}
+              {vendorWebsite && (
+                <a
+                  href={vendorWebsite}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                >
+                  <Globe className="h-3 w-3" />
+                  Website
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
         {entry.title && !isContentLocked(entry.title) && (
           <p className="text-muted-foreground text-sm mt-1">
             {parseMarkdown(entry.title)}

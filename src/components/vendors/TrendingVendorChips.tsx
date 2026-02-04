@@ -2,14 +2,17 @@ import React, { useEffect, useState } from "react";
 import { TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WAM_URL } from "@/config/wam";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface TrendingVendorChipsProps {
   onVendorSelect: (vendorName: string) => void;
+  getLogoUrl?: (vendorName: string) => string | null;
   className?: string;
 }
 
 export const TrendingVendorChips: React.FC<TrendingVendorChipsProps> = ({
   onVendorSelect,
+  getLogoUrl,
   className,
 }) => {
   const [trendingVendors, setTrendingVendors] = useState<string[]>([]);
@@ -49,12 +52,18 @@ export const TrendingVendorChips: React.FC<TrendingVendorChipsProps> = ({
             key={name}
             onClick={() => onVendorSelect(name)}
             className={cn(
-              "inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium",
+              "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium",
               "bg-muted/60 text-foreground border border-border/50",
               "hover:bg-primary/10 hover:border-primary/30 hover:text-primary",
               "transition-colors duration-150"
             )}
           >
+            <Avatar className="h-6 w-6 border border-border/60 shrink-0">
+              <AvatarImage src={getLogoUrl ? getLogoUrl(name) || undefined : undefined} alt={name} />
+              <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
+                {name.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
             {name}
           </button>
         ))}

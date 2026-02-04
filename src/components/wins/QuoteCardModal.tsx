@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
 import cdgLogo from "@/assets/cdg-circles-logo-white.png";
 import { parseMarkdown } from "@/utils/markdown";
@@ -17,9 +18,11 @@ interface QuoteCardModalProps {
   quote: string;
   title: string;
   type: "positive" | "warning" | "insight";
+  vendorName?: string;
+  vendorLogo?: string | null;
 }
 
-const QuoteCardModal = ({ isOpen, onClose, quote, type }: QuoteCardModalProps) => {
+const QuoteCardModal = ({ isOpen, onClose, quote, type, vendorName, vendorLogo }: QuoteCardModalProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -139,6 +142,23 @@ const QuoteCardModal = ({ isOpen, onClose, quote, type }: QuoteCardModalProps) =
                   {config.label}
                 </span>
               </div>
+              
+              {/* Vendor Logo and Name */}
+              {vendorName && (
+                <div className="flex items-center gap-3 mt-4">
+                  <Avatar className="h-10 w-10 border-2 border-white/20 shrink-0">
+                    <AvatarImage src={vendorLogo || undefined} alt={vendorName} />
+                    <AvatarFallback className="bg-white/20 text-white text-xs font-bold">
+                      {vendorName.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white/90 text-sm font-semibold truncate">
+                      {vendorName}
+                    </p>
+                  </div>
+                </div>
+              )}
               
               {/* Quote */}
               <div className="flex-1 flex items-center py-6">
