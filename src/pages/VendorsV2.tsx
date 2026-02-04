@@ -842,7 +842,7 @@ const VendorsV2 = () => {
                   )}
 
                 {/* Search Bar - Below hero */}
-                <div className="pt-2 pb-3 sm:pb-4">
+                <div className="pt-1 pb-1 sm:pb-2">
                   <div className="relative">
                     <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                     <Input
@@ -982,11 +982,13 @@ const VendorsV2 = () => {
               )}
 
               {/* Trending Vendor Chips - Show when NOT searching */}
-              {searchQuery.trim().length === 0 && selectedVendor === null && (
+                {searchQuery.trim().length === 0 && selectedVendor === null && (
                 <TrendingVendorChips
                   onVendorSelect={handleVendorSelect}
                   getLogoUrl={(vendorName) => getVendorLogoUrl(vendorName)}
-                  className="mb-6"
+                  canAccess={isProUserValue}
+                  onUpgradeClick={() => setShowUpgradeModal(true)}
+                  className="mt-1 mb-4"
                 />
               )}
 

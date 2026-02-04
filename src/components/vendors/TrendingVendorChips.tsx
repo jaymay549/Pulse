@@ -7,12 +7,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 interface TrendingVendorChipsProps {
   onVendorSelect: (vendorName: string) => void;
   getLogoUrl?: (vendorName: string) => string | null;
+  canAccess?: boolean;
+  onUpgradeClick?: () => void;
   className?: string;
 }
 
 export const TrendingVendorChips: React.FC<TrendingVendorChipsProps> = ({
   onVendorSelect,
   getLogoUrl,
+  canAccess = true,
+  onUpgradeClick,
   className,
 }) => {
   const [trendingVendors, setTrendingVendors] = useState<string[]>([]);
@@ -40,7 +44,7 @@ export const TrendingVendorChips: React.FC<TrendingVendorChipsProps> = ({
 
   return (
     <div className={cn("", className)}>
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-2">
         <TrendingUp className="h-4 w-4 text-muted-foreground" />
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           Trending
@@ -50,7 +54,13 @@ export const TrendingVendorChips: React.FC<TrendingVendorChipsProps> = ({
         {trendingVendors.map((name) => (
           <button
             key={name}
-            onClick={() => onVendorSelect(name)}
+            onClick={() => {
+              if (!canAccess) {
+                onUpgradeClick?.();
+                return;
+              }
+              onVendorSelect(name);
+            }}
             className={cn(
               "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium",
               "bg-muted/60 text-foreground border border-border/50",
