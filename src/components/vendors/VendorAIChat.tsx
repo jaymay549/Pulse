@@ -157,6 +157,72 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Helper to fetch all pages for a category
+  const fetchAllPagesForCategory = useCallback(async (
+    category: string,
+    allVendorData: Map<string, VendorData>
+  ): Promise<number> => {
+    let page = 1;
+    let hasMore = true;
+    let totalFetched = 0;
+    const pageSize = 100;
+
+    while (hasMore) {
+      const params = new URLSearchParams();
+      if (category !== "all") params.append("category", category);
+      params.append("pageSize", pageSize.toString());
+      params.append("page", page.toString());
+      
+      const response = await fetchWithAuth(
+        `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`
+      );
+      
+      if (!response.ok) break;
+      
+      const data = await response.json();
+      const mentions = data.mentions || [];
+      totalFetched += mentions.length;
+      
+      // Group by vendor
+      mentions.forEach((mention: any) => {
+        const vendorName = mention.vendorName || "Unknown";
+        const existing = allVendorData.get(vendorName.toLowerCase());
+        
+        if (existing) {
+          if (mention.type === "positive") existing.positiveCount++;
+          else if (mention.type === "warning") existing.warningCount++;
+          existing.mentions.push({
+            title: mention.title,
+            type: mention.type,
+            quote: mention.quote || mention.explanation || "",
+          });
+        } else {
+          allVendorData.set(vendorName.toLowerCase(), {
+            name: vendorName,
+            category: mention.category || category,
+            positiveCount: mention.type === "positive" ? 1 : 0,
+            warningCount: mention.type === "warning" ? 1 : 0,
+            mentions: [{
+              title: mention.title,
+              type: mention.type,
+              quote: mention.quote || mention.explanation || "",
+            }],
+          });
+        }
+      });
+      
+      hasMore = data.hasMore === true && mentions.length > 0;
+      page++;
+      
+      // Small delay to avoid rate limiting
+      if (hasMore) {
+        await new Promise(r => setTimeout(r, 100));
+      }
+    }
+    
+    return totalFetched;
+  }, [fetchWithAuth]);
+
   // Load all vendor data when chat opens
   const loadVendorData = useCallback(async () => {
     if (dataLoaded || isLoadingData) return;
@@ -166,73 +232,133 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
     setError(null);
 
     try {
-      // Fetch all categories to get comprehensive data
-      const categories = [
-        "all", "dms", "crm", "fi", "marketing", "fixed-ops", 
-        "inventory", "digital-retail", "data", "chat", "websites", "reputation"
-      ];
-      
       const allVendorData: Map<string, VendorData> = new Map();
       
-      for (let i = 0; i < categories.length; i++) {
-        const category = categories[i];
-        setLoadingProgress(Math.round(((i + 1) / categories.length) * 100));
+      // Fetch all pages for the "all" category to get complete data
+      setLoadingProgress(10);
+      
+      let page = 1;
+      let hasMore = true;
+      let totalFetched = 0;
+      const pageSize = 100;
+      
+      // First, get total count from first request
+      const initialParams = new URLSearchParams();
+      initialParams.append("pageSize", pageSize.toString());
+      initialParams.append("page", "1");
+      
+      const initialResponse = await fetchWithAuth(
+        `${WAM_URL}/api/public/vendor-pulse/mentions?${initialParams.toString()}`
+      );
+      
+      let totalCount = 0;
+      if (initialResponse.ok) {
+        const initialData = await initialResponse.json();
+        totalCount = initialData.totalCount || initialData.totalSystemCount || 1000;
+        const mentions = initialData.mentions || [];
+        totalFetched += mentions.length;
         
-        try {
-          const params = new URLSearchParams();
-          if (category !== "all") params.append("category", category);
-          params.append("pageSize", "100");
+        // Process first page
+        mentions.forEach((mention: any) => {
+          const vendorName = mention.vendorName || "Unknown";
+          const existing = allVendorData.get(vendorName.toLowerCase());
           
-          const response = await fetchWithAuth(
-            `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`
-          );
-          
-          if (response.ok) {
-            const data = await response.json();
-            const mentions = data.mentions || [];
-            
-            // Group by vendor
-            mentions.forEach((mention: any) => {
-              const vendorName = mention.vendorName || "Unknown";
-              const existing = allVendorData.get(vendorName.toLowerCase());
-              
-              if (existing) {
-                if (mention.type === "positive") existing.positiveCount++;
-                else if (mention.type === "warning") existing.warningCount++;
-                existing.mentions.push({
-                  title: mention.title,
-                  type: mention.type,
-                  quote: mention.quote || mention.explanation || "",
-                });
-              } else {
-                allVendorData.set(vendorName.toLowerCase(), {
-                  name: vendorName,
-                  category: mention.category || category,
-                  positiveCount: mention.type === "positive" ? 1 : 0,
-                  warningCount: mention.type === "warning" ? 1 : 0,
-                  mentions: [{
-                    title: mention.title,
-                    type: mention.type,
-                    quote: mention.quote || mention.explanation || "",
-                  }],
-                });
-              }
+          if (existing) {
+            if (mention.type === "positive") existing.positiveCount++;
+            else if (mention.type === "warning") existing.warningCount++;
+            existing.mentions.push({
+              title: mention.title,
+              type: mention.type,
+              quote: mention.quote || mention.explanation || "",
+            });
+          } else {
+            allVendorData.set(vendorName.toLowerCase(), {
+              name: vendorName,
+              category: mention.category || "all",
+              positiveCount: mention.type === "positive" ? 1 : 0,
+              warningCount: mention.type === "warning" ? 1 : 0,
+              mentions: [{
+                title: mention.title,
+                type: mention.type,
+                quote: mention.quote || mention.explanation || "",
+              }],
             });
           }
-        } catch (err) {
-          console.error(`Failed to fetch ${category}:`, err);
+        });
+        
+        hasMore = initialData.hasMore === true && mentions.length > 0;
+        page = 2;
+        setLoadingProgress(Math.round((totalFetched / totalCount) * 100));
+      }
+      
+      // Fetch remaining pages
+      while (hasMore) {
+        const params = new URLSearchParams();
+        params.append("pageSize", pageSize.toString());
+        params.append("page", page.toString());
+        
+        const response = await fetchWithAuth(
+          `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`
+        );
+        
+        if (!response.ok) break;
+        
+        const data = await response.json();
+        const mentions = data.mentions || [];
+        totalFetched += mentions.length;
+        
+        // Group by vendor
+        mentions.forEach((mention: any) => {
+          const vendorName = mention.vendorName || "Unknown";
+          const existing = allVendorData.get(vendorName.toLowerCase());
+          
+          if (existing) {
+            if (mention.type === "positive") existing.positiveCount++;
+            else if (mention.type === "warning") existing.warningCount++;
+            existing.mentions.push({
+              title: mention.title,
+              type: mention.type,
+              quote: mention.quote || mention.explanation || "",
+            });
+          } else {
+            allVendorData.set(vendorName.toLowerCase(), {
+              name: vendorName,
+              category: mention.category || "all",
+              positiveCount: mention.type === "positive" ? 1 : 0,
+              warningCount: mention.type === "warning" ? 1 : 0,
+              mentions: [{
+                title: mention.title,
+                type: mention.type,
+                quote: mention.quote || mention.explanation || "",
+              }],
+            });
+          }
+        });
+        
+        hasMore = data.hasMore === true && mentions.length > 0;
+        page++;
+        
+        // Update progress based on fetched vs total
+        setLoadingProgress(Math.min(95, Math.round((totalFetched / totalCount) * 100)));
+        
+        // Small delay to avoid rate limiting
+        if (hasMore) {
+          await new Promise(r => setTimeout(r, 100));
         }
       }
       
+      setLoadingProgress(100);
       setVendorData(Array.from(allVendorData.values()));
       setDataLoaded(true);
+      
+      console.log(`[VendorAIChat] Loaded ${totalFetched} total mentions across ${allVendorData.size} vendors`);
     } catch (err) {
       console.error("Failed to load vendor data:", err);
       setError("Failed to load vendor data");
     } finally {
       setIsLoadingData(false);
     }
-  }, [dataLoaded, isLoadingData, fetchWithAuth]);
+  }, [dataLoaded, isLoadingData, fetchWithAuth, fetchAllPagesForCategory]);
 
   // Auto-load data when chat opens
   useEffect(() => {
