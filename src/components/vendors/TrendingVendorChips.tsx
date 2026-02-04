@@ -52,7 +52,7 @@ export const TrendingVendorChips: React.FC<TrendingVendorChipsProps> = ({
           Trending
         </span>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
         {trendingVendors.map((name) => (
           <button
             key={name}
@@ -67,7 +67,7 @@ export const TrendingVendorChips: React.FC<TrendingVendorChipsProps> = ({
               "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium",
               "bg-muted/60 text-foreground border border-border/50",
               "hover:bg-primary/10 hover:border-primary/30 hover:text-primary",
-              "transition-colors duration-150"
+              "transition-colors duration-150 shrink-0"
             )}
           >
             <Avatar className="h-6 w-6 border border-border/60 shrink-0">
