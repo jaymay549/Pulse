@@ -96,7 +96,79 @@ const VendorsV2 = () => {
   } | null>(null);
   
   // Vendor counts for search results (fetched separately to get accurate totals)
-  const [vendorCounts, setVendorCounts] = useState<Record<string, { total: number; positive: number; warning: number }>>({});
+  type VendorCounts = { total: number; positive: number; warning: number };
+  const [searchVendorCounts, setSearchVendorCounts] = useState<Record<string, VendorCounts>>({});
+  const [categoryVendorCounts, setCategoryVendorCounts] = useState<Record<string, VendorCounts>>({});
+  const [categoryVendorNames, setCategoryVendorNames] = useState<Record<string, string>>({});
+
+  // Cache category vendor index so switching filters doesn't re-paginate every time
+  const categoryVendorIndexCacheRef = useRef<
+    Record<string, { counts: Record<string, VendorCounts>; names: Record<string, string> }>
+  >({});
+
+  const fetchVendorCountsIndex = useCallback(
+    async (opts: { category?: string; search?: string }) => {
+      const counts: Record<string, VendorCounts> = {};
+      const names: Record<string, string> = {};
+
+      let page = 1;
+      const requestedPageSize = 500;
+      const maxPages = 500; // safety to avoid infinite loops
+
+      while (page <= maxPages) {
+        const params = new URLSearchParams();
+        if (opts.category && opts.category !== "all") params.append("category", opts.category);
+        if (opts.search) params.append("search", opts.search);
+        params.append("pageSize", requestedPageSize.toString());
+        params.append("page", page.toString());
+
+        const response = await fetchWithAuth(
+          `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
+        );
+        if (!response.ok) break;
+
+        const data = await response.json();
+        const mentionsPage: any[] = data.mentions || [];
+
+        for (const mention of mentionsPage) {
+          const vendorNameRaw: string | undefined = mention.vendorName;
+          if (!vendorNameRaw) continue;
+
+          const key = vendorNameRaw.toLowerCase();
+          if (!counts[key]) counts[key] = { total: 0, positive: 0, warning: 0 };
+          if (!names[key]) names[key] = vendorNameRaw;
+
+          counts[key].total += 1;
+          if (mention.type === "positive") counts[key].positive += 1;
+          else if (mention.type === "warning") counts[key].warning += 1;
+        }
+
+        const effectivePageSize =
+          typeof data.pageSize === "number" && data.pageSize > 0
+            ? data.pageSize
+            : requestedPageSize;
+        const effectivePage =
+          typeof data.page === "number" && data.page > 0 ? data.page : page;
+        const totalCount = typeof data.totalCount === "number" ? data.totalCount : undefined;
+        const serverHasMore = typeof data.hasMore === "boolean" ? data.hasMore : undefined;
+
+        const hasMore =
+          serverHasMore ??
+          (totalCount !== undefined
+            ? effectivePage * effectivePageSize < totalCount
+            : mentionsPage.length === effectivePageSize);
+
+        if (!hasMore || mentionsPage.length === 0) break;
+
+        page += 1;
+        // Small delay to avoid rate limiting
+        await new Promise((r) => setTimeout(r, 25));
+      }
+
+      return { counts, names };
+    },
+    [fetchWithAuth],
+  );
 
   // Fallback vendor data from backend table (keeps /vendors usable if WAM is flaky)
   const { reviews: dbReviews, isLoading: isDbLoading } = useVendorReviews();
@@ -322,70 +394,82 @@ const VendorsV2 = () => {
     fetchMentions();
   }, [isAuthenticated, fetchWithAuth, selectedCategory, selectedVendor, searchQuery, typeFilter]);
 
+  // Fetch category vendor index (all vendors + accurate counts) for sidebar + category vendor chips
+  useEffect(() => {
+    const fetchCategoryVendorIndex = async () => {
+      if (selectedCategory === "all") {
+        setCategoryVendorCounts({});
+        setCategoryVendorNames({});
+        return;
+      }
+
+      const cached = categoryVendorIndexCacheRef.current[selectedCategory];
+      if (cached) {
+        setCategoryVendorCounts(cached.counts);
+        setCategoryVendorNames(cached.names);
+        return;
+      }
+
+      const { counts, names } = await fetchVendorCountsIndex({
+        category: selectedCategory,
+      });
+
+      if (cancelled) return;
+
+      categoryVendorIndexCacheRef.current[selectedCategory] = { counts, names };
+      setCategoryVendorCounts(counts);
+      setCategoryVendorNames(names);
+    };
+
+    let cancelled = false;
+    (async () => {
+      try {
+        await fetchCategoryVendorIndex();
+      } catch (err) {
+        if (!cancelled) console.error("Failed to fetch category vendor index:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCategory, fetchVendorCountsIndex]);
+
   // Fetch vendor counts separately when searching (to get accurate totals across ALL pages)
   useEffect(() => {
     const fetchVendorCounts = async () => {
       if (!searchQuery || searchQuery.trim().length < 2) {
-        setVendorCounts({});
+        setSearchVendorCounts({});
         return;
       }
 
       try {
-        const counts: Record<string, { total: number; positive: number; warning: number }> = {};
-        let page = 1;
-        let hasMore = true;
-        const pageSize = 100;
-
-        // Paginate through ALL results to get accurate counts
-        while (hasMore) {
-          const params = new URLSearchParams();
-          if (selectedCategory !== "all") params.append("category", selectedCategory);
-          if (searchQuery) params.append("search", searchQuery);
-          params.append("pageSize", pageSize.toString());
-          params.append("page", page.toString());
-
-          const response = await fetchWithAuth(
-            `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
-          );
-          
-          if (!response.ok) break;
-          
-          const data = await response.json();
-          const mentions = data.mentions || [];
-
-          // Aggregate counts by vendor
-          mentions.forEach((mention: any) => {
-            if (mention.vendorName) {
-              const vendorName = mention.vendorName.toLowerCase();
-              if (!counts[vendorName]) {
-                counts[vendorName] = { total: 0, positive: 0, warning: 0 };
-              }
-              counts[vendorName].total++;
-              if (mention.type === "positive") {
-                counts[vendorName].positive++;
-              } else if (mention.type === "warning") {
-                counts[vendorName].warning++;
-              }
-            }
-          });
-
-          hasMore = data.hasMore === true && mentions.length > 0;
-          page++;
-          
-          // Small delay to avoid rate limiting
-          if (hasMore) {
-            await new Promise(r => setTimeout(r, 50));
-          }
-        }
-
-        setVendorCounts(counts);
+        const { counts } = await fetchVendorCountsIndex({
+          category: selectedCategory,
+          search: searchQuery.trim(),
+        });
+        setSearchVendorCounts(counts);
       } catch (err) {
         console.error("Failed to fetch vendor counts:", err);
       }
     };
 
     fetchVendorCounts();
-  }, [isAuthenticated, fetchWithAuth, searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, fetchVendorCountsIndex]);
+
+  const vendorsInCategoryAccurate = useMemo(() => {
+    if (selectedCategory === "all") return vendorsInCategory;
+
+    const fromIndex = Object.entries(categoryVendorCounts)
+      .map(([key, c]) => ({
+        name: categoryVendorNames[key] ?? key,
+        count: c.total,
+      }))
+      .filter((v) => v.count > 0)
+      .sort((a, b) => b.count - a.count);
+
+    return fromIndex.length > 0 ? fromIndex : vendorsInCategory;
+  }, [selectedCategory, vendorsInCategory, categoryVendorCounts, categoryVendorNames]);
 
   // Load more mentions (for pro users)
   const loadMoreMentions = useCallback(async () => {
@@ -560,13 +644,13 @@ const VendorsV2 = () => {
   const allVendorNames = useMemo(() => {
     const vendorSet = new Set<string>();
     // Add vendors from current category
-    vendorsInCategory.forEach((v) => vendorSet.add(v.name));
+    vendorsInCategoryAccurate.forEach((v) => vendorSet.add(v.name));
     // Add vendors from mentions
     mentions.forEach((m) => {
       if (m.vendorName) vendorSet.add(m.vendorName);
     });
     return Array.from(vendorSet).sort();
-  }, [vendorsInCategory, mentions]);
+  }, [vendorsInCategoryAccurate, mentions]);
 
   // Filter vendors for autocomplete
   const autocompleteSuggestions = useMemo(() => {
@@ -588,7 +672,7 @@ const VendorsV2 = () => {
       .map((name) => {
         // Use vendor counts from separate fetch if available, otherwise fall back to paginated data
         const vendorNameLower = name.toLowerCase();
-        const counts = vendorCounts[vendorNameLower];
+        const counts = searchVendorCounts[vendorNameLower];
         
         if (counts) {
           return {
@@ -615,17 +699,17 @@ const VendorsV2 = () => {
       .slice(0, 12); // Limit to top 12 vendors
     
     return matching;
-  }, [searchQuery, allVendorNames, vendorCounts, mentions]);
+  }, [searchQuery, allVendorNames, searchVendorCounts, mentions]);
 
   // Category vendors - similar to matchingVendors but for category pages
   const categoryVendors = useMemo(() => {
     if (selectedCategory === "all" || selectedVendor !== null) return [];
     
-    return vendorsInCategory
+    return vendorsInCategoryAccurate
       .map((vendor) => {
-        // Use vendor counts from separate fetch if available, otherwise fall back to paginated data
+        // Use category vendor index if available, otherwise fall back to paginated data
         const vendorNameLower = vendor.name.toLowerCase();
-        const counts = vendorCounts[vendorNameLower];
+        const counts = categoryVendorCounts[vendorNameLower];
         
         if (counts) {
           return {
@@ -636,7 +720,7 @@ const VendorsV2 = () => {
           };
         }
         
-        // Fallback: count from current filtered data
+        // Fallback: count from current filtered data (less accurate)
         const vendorReviews = filteredData.filter(
           (m) => m.vendorName?.toLowerCase() === vendorNameLower
         );
@@ -650,7 +734,7 @@ const VendorsV2 = () => {
       .filter((v) => v.reviewCount > 0) // Only show vendors with reviews
       .sort((a, b) => b.reviewCount - a.reviewCount) // Sort by review count
       .slice(0, 12); // Limit to top 12 vendors
-  }, [selectedCategory, selectedVendor, vendorsInCategory, vendorCounts, filteredData]);
+  }, [selectedCategory, selectedVendor, vendorsInCategoryAccurate, categoryVendorCounts, filteredData]);
 
   // Handle type filter change
   const handleTypeFilterChange = (filter: "all" | "positive" | "warning") => {
@@ -782,7 +866,7 @@ const VendorsV2 = () => {
               selectedCategory={selectedCategory}
               onCategorySelect={handleCategoryChange}
               categoryCounts={categoryCounts}
-              vendorsInCategory={vendorsInCategory}
+              vendorsInCategory={vendorsInCategoryAccurate}
               showMoreCategories={showMoreCategories}
               onToggleMoreCategories={() =>
                 setShowMoreCategories(!showMoreCategories)
@@ -896,7 +980,7 @@ const VendorsV2 = () => {
                             selectedCategory={selectedCategory}
                             onCategorySelect={handleCategoryChange}
                             categoryCounts={categoryCounts}
-                            vendorsInCategory={vendorsInCategory}
+                            vendorsInCategory={vendorsInCategoryAccurate}
                             showMoreCategories={showMoreCategories}
                             onToggleMoreCategories={() =>
                               setShowMoreCategories(!showMoreCategories)
