@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Search, X, Crown, Share2, Menu, CreditCard } from "lucide-react";
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
@@ -47,6 +47,10 @@ import { WAM_URL } from "@/config/wam";
 import { getAccessLevel, isProUser } from "@/utils/tierUtils";
 
 const VendorsV2 = () => {
+  // URL params
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isUpdatingFromUrlRef = useRef(false);
+
   // UI State
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
@@ -125,6 +129,86 @@ const VendorsV2 = () => {
     externalWarningCount: paginationInfo?.totalWarningCount,
     externalTotalCount: paginationInfo?.totalSystemCount,
   });
+
+  // Sync URL params to state (for browser back/forward and initial load)
+  useEffect(() => {
+    if (isUpdatingFromUrlRef.current) return;
+
+    const urlSearch = searchParams.get("search") || "";
+    const urlCategory = searchParams.get("category") || "all";
+    const urlVendor = searchParams.get("vendor") || null;
+    const urlType = searchParams.get("type") || "all";
+
+    // Check if any URL param differs from state
+    const needsUpdate = 
+      urlSearch !== searchQuery ||
+      urlCategory !== selectedCategory ||
+      urlVendor !== selectedVendor ||
+      (urlType !== typeFilter && (urlType === "all" || urlType === "positive" || urlType === "warning"));
+
+    if (!needsUpdate) return;
+
+    // Update state from URL params
+    isUpdatingFromUrlRef.current = true;
+    
+    if (urlSearch !== searchQuery) {
+      setSearchQuery(urlSearch);
+    }
+    if (urlCategory !== selectedCategory) {
+      setSelectedCategory(urlCategory);
+    }
+    if (urlVendor !== selectedVendor) {
+      setSelectedVendor(urlVendor);
+    }
+    if (urlType !== typeFilter && (urlType === "all" || urlType === "positive" || urlType === "warning")) {
+      setTypeFilter(urlType as "all" | "positive" | "warning");
+    }
+
+    // Reset flag after state updates are queued
+    setTimeout(() => {
+      isUpdatingFromUrlRef.current = false;
+    }, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]); // Only depend on searchParams to detect URL changes
+
+  // Sync state to URL params (when user changes filters)
+  useEffect(() => {
+    if (isUpdatingFromUrlRef.current) return;
+
+    const newParams = new URLSearchParams(searchParams);
+    
+    if (searchQuery.trim()) {
+      newParams.set("search", searchQuery.trim());
+    } else {
+      newParams.delete("search");
+    }
+
+    if (selectedCategory !== "all") {
+      newParams.set("category", selectedCategory);
+    } else {
+      newParams.delete("category");
+    }
+
+    if (selectedVendor) {
+      newParams.set("vendor", selectedVendor);
+    } else {
+      newParams.delete("vendor");
+    }
+
+    if (typeFilter !== "all") {
+      newParams.set("type", typeFilter);
+    } else {
+      newParams.delete("type");
+    }
+
+    // Only update if params actually changed
+    const currentParamsStr = searchParams.toString();
+    const newParamsStr = newParams.toString();
+    if (currentParamsStr !== newParamsStr) {
+      setSearchParams(newParams, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, selectedCategory, selectedVendor, typeFilter]); // Depend on state, not searchParams
 
   // Get review IDs for fetching responses
   const reviewIds = useMemo(
@@ -669,6 +753,7 @@ const VendorsV2 = () => {
                       <button
                         onClick={() => {
                           clearSearch();
+                          setSelectedVendor(null);
                           setShowSearchSuggestions(false);
                         }}
                         className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
