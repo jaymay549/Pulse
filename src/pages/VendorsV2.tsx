@@ -322,7 +322,7 @@ const VendorsV2 = () => {
     fetchMentions();
   }, [isAuthenticated, fetchWithAuth, selectedCategory, selectedVendor, searchQuery, typeFilter]);
 
-  // Fetch vendor counts separately when searching (to get accurate totals, not paginated)
+  // Fetch vendor counts separately when searching (to get accurate totals across ALL pages)
   useEffect(() => {
     const fetchVendorCounts = async () => {
       if (!searchQuery || searchQuery.trim().length < 2) {
@@ -331,26 +331,30 @@ const VendorsV2 = () => {
       }
 
       try {
-        const params = new URLSearchParams();
-        if (selectedCategory !== "all") params.append("category", selectedCategory);
-        if (searchQuery) params.append("search", searchQuery);
-        // Fetch a large page size to get all matching mentions for counting
-        params.append("pageSize", "1000");
-        params.append("page", "1");
+        const counts: Record<string, { total: number; positive: number; warning: number }> = {};
+        let page = 1;
+        let hasMore = true;
+        const pageSize = 100;
 
-        const response = await fetchWithAuth(
-          `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
-        );
-        if (response.ok) {
+        // Paginate through ALL results to get accurate counts
+        while (hasMore) {
+          const params = new URLSearchParams();
+          if (selectedCategory !== "all") params.append("category", selectedCategory);
+          if (searchQuery) params.append("search", searchQuery);
+          params.append("pageSize", pageSize.toString());
+          params.append("page", page.toString());
+
+          const response = await fetchWithAuth(
+            `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
+          );
+          
+          if (!response.ok) break;
+          
           const data = await response.json();
-          const allMentions = (data.mentions || []).map((mention: any) => ({
-            ...mention,
-            conversationTime: mention.conversation_time || mention.conversationTime,
-          }));
+          const mentions = data.mentions || [];
 
           // Aggregate counts by vendor
-          const counts: Record<string, { total: number; positive: number; warning: number }> = {};
-          allMentions.forEach((mention: VendorEntry) => {
+          mentions.forEach((mention: any) => {
             if (mention.vendorName) {
               const vendorName = mention.vendorName.toLowerCase();
               if (!counts[vendorName]) {
@@ -365,8 +369,16 @@ const VendorsV2 = () => {
             }
           });
 
-          setVendorCounts(counts);
+          hasMore = data.hasMore === true && mentions.length > 0;
+          page++;
+          
+          // Small delay to avoid rate limiting
+          if (hasMore) {
+            await new Promise(r => setTimeout(r, 50));
+          }
         }
+
+        setVendorCounts(counts);
       } catch (err) {
         console.error("Failed to fetch vendor counts:", err);
       }
