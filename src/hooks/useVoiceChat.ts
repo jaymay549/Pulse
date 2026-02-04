@@ -30,14 +30,28 @@ export function useVoiceChat({ onTranscriptComplete, enabled }: UseVoiceChatOpti
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
     commitStrategy: CommitStrategy.VAD,
+    onSessionStarted: () => {
+      console.log("[VoiceChat] Scribe session started");
+      setVoiceState("listening");
+      toast.success("Voice chat started - speak now!");
+    },
     onPartialTranscript: (data) => {
+      console.log("[VoiceChat] Partial transcript:", data.text);
       setPartialTranscript(data.text);
     },
     onCommittedTranscript: async (data) => {
-      if (isProcessingRef.current) return;
+      console.log("[VoiceChat] Committed transcript:", data.text);
+      
+      if (isProcessingRef.current) {
+        console.log("[VoiceChat] Already processing, ignoring");
+        return;
+      }
       
       const transcript = data.text.trim();
-      if (!transcript) return;
+      if (!transcript) {
+        console.log("[VoiceChat] Empty transcript, ignoring");
+        return;
+      }
       
       isProcessingRef.current = true;
       setPartialTranscript("");
@@ -58,12 +72,39 @@ export function useVoiceChat({ onTranscriptComplete, enabled }: UseVoiceChatOpti
         
         setVoiceState("idle");
       } catch (err) {
-        console.error("Voice processing error:", err);
+        console.error("[VoiceChat] Voice processing error:", err);
         setError("Failed to process voice");
         setVoiceState("error");
       } finally {
         isProcessingRef.current = false;
       }
+    },
+    onError: (err) => {
+      console.error("[VoiceChat] Scribe error:", err);
+      setError(err instanceof Error ? err.message : "Transcription error");
+      setVoiceState("error");
+      toast.error("Voice transcription error");
+    },
+    onConnect: () => {
+      console.log("[VoiceChat] Scribe connected");
+    },
+    onDisconnect: () => {
+      console.log("[VoiceChat] Scribe disconnected");
+      if (voiceState === "listening") {
+        setVoiceState("idle");
+      }
+    },
+    onAuthError: (data) => {
+      console.error("[VoiceChat] Auth error:", data.error);
+      setError("Voice authentication failed");
+      setVoiceState("error");
+      toast.error("Voice authentication failed");
+    },
+    onQuotaExceededError: (data) => {
+      console.error("[VoiceChat] Quota exceeded:", data.error);
+      setError("Voice quota exceeded");
+      setVoiceState("error");
+      toast.error("Voice quota exceeded");
     },
   });
 
@@ -77,6 +118,8 @@ export function useVoiceChat({ onTranscriptComplete, enabled }: UseVoiceChatOpti
     // Truncate text if too long (ElevenLabs has limits)
     const truncatedText = text.slice(0, 4000);
     
+    console.log("[VoiceChat] Playing TTS for text length:", truncatedText.length);
+    
     const response = await fetch(TTS_URL, {
       method: "POST",
       headers: {
@@ -88,10 +131,13 @@ export function useVoiceChat({ onTranscriptComplete, enabled }: UseVoiceChatOpti
     });
 
     if (!response.ok) {
+      console.error("[VoiceChat] TTS request failed:", response.status);
       throw new Error(`TTS request failed: ${response.status}`);
     }
 
     const audioBlob = await response.blob();
+    console.log("[VoiceChat] TTS audio blob size:", audioBlob.size);
+    
     const audioUrl = URL.createObjectURL(audioBlob);
     audioUrlRef.current = audioUrl;
     
@@ -100,14 +146,19 @@ export function useVoiceChat({ onTranscriptComplete, enabled }: UseVoiceChatOpti
       audioRef.current = audio;
       
       audio.onended = () => {
+        console.log("[VoiceChat] Audio playback ended");
         resolve();
       };
       
-      audio.onerror = () => {
+      audio.onerror = (e) => {
+        console.error("[VoiceChat] Audio playback error:", e);
         reject(new Error("Audio playback failed"));
       };
       
-      audio.play().catch(reject);
+      audio.play().catch((err) => {
+        console.error("[VoiceChat] Audio play() failed:", err);
+        reject(err);
+      });
     });
   };
 
@@ -117,14 +168,18 @@ export function useVoiceChat({ onTranscriptComplete, enabled }: UseVoiceChatOpti
       return;
     }
     
+    console.log("[VoiceChat] Starting voice chat...");
     setError(null);
     setVoiceState("connecting");
     
     try {
       // Request microphone permission
+      console.log("[VoiceChat] Requesting microphone permission...");
       await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log("[VoiceChat] Microphone permission granted");
       
       // Get scribe token from edge function
+      console.log("[VoiceChat] Fetching scribe token...");
       const response = await fetch(SCRIBE_TOKEN_URL, {
         method: "POST",
         headers: {
@@ -135,16 +190,20 @@ export function useVoiceChat({ onTranscriptComplete, enabled }: UseVoiceChatOpti
       });
       
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("[VoiceChat] Token fetch failed:", response.status, errorText);
         throw new Error("Failed to get voice token");
       }
       
       const data = await response.json();
+      console.log("[VoiceChat] Token received:", data.token ? "yes" : "no");
       
       if (!data.token) {
         throw new Error("No token received");
       }
       
       // Connect to ElevenLabs Scribe
+      console.log("[VoiceChat] Connecting to Scribe...");
       await scribe.connect({
         token: data.token,
         microphone: {
@@ -154,10 +213,11 @@ export function useVoiceChat({ onTranscriptComplete, enabled }: UseVoiceChatOpti
         },
       });
       
-      setVoiceState("listening");
-      toast.success("Voice chat started - speak now!");
+      console.log("[VoiceChat] Scribe connect() completed");
+      // Note: voiceState will be set to "listening" in onSessionStarted callback
+      
     } catch (err) {
-      console.error("Failed to start voice:", err);
+      console.error("[VoiceChat] Failed to start voice:", err);
       
       if (err instanceof Error) {
         if (err.name === "NotAllowedError") {
@@ -174,6 +234,8 @@ export function useVoiceChat({ onTranscriptComplete, enabled }: UseVoiceChatOpti
   }, [enabled, scribe]);
 
   const stopVoice = useCallback(() => {
+    console.log("[VoiceChat] Stopping voice chat...");
+    
     // Stop audio playback
     if (audioRef.current) {
       audioRef.current.pause();
