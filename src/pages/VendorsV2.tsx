@@ -31,6 +31,7 @@ import UpgradeModal from "@/components/UpgradeModal";
 import QuoteCardModal from "@/components/wins/QuoteCardModal";
 import VendorPricingTiers from "@/components/vendors/VendorPricingTiers";
 import ReviewMarquee from "@/components/vendors/ReviewMarquee";
+import VendorAIChat from "@/components/vendors/VendorAIChat";
 
 // Hooks
 import { useVendorFilters, categories } from "@/hooks/useVendorFilters";
@@ -62,6 +63,9 @@ const VendorsV2 = () => {
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  // AI Chat feature flag
+  const showAIChat = searchParams.get("ai_chat") === "true";
 
   // Clerk Auth
   const {
@@ -1408,6 +1412,11 @@ const VendorsV2 = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* AI Chat - only shown when ?ai_chat=true */}
+      {showAIChat && (
+        <VendorAIChat fetchWithAuth={fetchWithAuth} />
+      )}
     </>
   );
 };

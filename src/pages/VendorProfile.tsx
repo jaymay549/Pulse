@@ -58,7 +58,7 @@ const VendorProfile = () => {
 
   const vendorName = vendorSlug ? decodeURIComponent(vendorSlug) : "";
 
-  const isProUserValue = useMemo(() => isProUser(role, tier), [role, tier]);
+  const isProUserValue = useMemo(() => isProUser(tier), [tier]);
 
   // Get logo URL from logo.dev or metadata
   const getLogoUrl = useCallback((name: string, websiteUrl?: string) => {
