@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { MessageCircle, X, Send, Loader2, Sparkles, AlertCircle, Mic, MicOff, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { WAM_URL } from "@/config/wam";
-import ReactMarkdown from "react-markdown";
+import { ChatMarkdown } from "./ChatMarkdown";
 import { useVoiceChat, VoiceState } from "@/hooks/useVoiceChat";
 
 interface Message {
@@ -447,8 +447,11 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
               )}
             >
               {message.role === "assistant" ? (
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                <div className="prose prose-sm max-w-none dark:prose-invert [&_a]:no-underline">
+                  <ChatMarkdown 
+                    content={message.content} 
+                    knownVendors={vendorData.map(v => v.name)}
+                  />
                 </div>
               ) : (
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>

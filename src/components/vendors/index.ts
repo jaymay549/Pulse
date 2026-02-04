@@ -8,3 +8,5 @@ export { UpgradeTeaser, SearchLockedPaywall } from "./UpgradeTeaser";
 export { AIInsightBanner } from "./AIInsightBanner";
 export { AuthPickerModal } from "./AuthPickerModal";
 export { VendorPricingTiers } from "./VendorPricingTiers";
+export { VendorMention } from "./VendorMention";
+export { ChatMarkdown } from "./ChatMarkdown";
