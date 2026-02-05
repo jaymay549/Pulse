@@ -306,15 +306,12 @@ const VendorsV2 = () => {
   const isDataLoading =
     isWamLoading || (wamMentions.length === 0 && isDbLoading);
 
-  // Handle search input click/focus - show upgrade modal for non-pro users
-  const handleSearchClick = (e: React.MouseEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>) => {
-    if (!isProUserValue) {
-      e.preventDefault();
-      setShowUpgradeModal(true);
-      // Blur the input to prevent typing
-      if (e.target instanceof HTMLInputElement) {
-        e.target.blur();
-      }
+  // Handle search input click/focus - allow searching for all users
+  const handleSearchClick = (_e: React.MouseEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>) => {
+    // Allow all users to search - cards will be redacted for non-pro users
+    // Only show autocomplete for pro users
+    if (isProUserValue && searchQuery.trim().length >= 2) {
+      setShowAutocomplete(true);
     }
   };
 
