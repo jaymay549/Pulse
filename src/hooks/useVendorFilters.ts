@@ -109,34 +109,20 @@ export function useVendorFilters({
   }, [data, externalCategoryCounts]);
 
   // Filter and sort data based on all filters
+  // NOTE: Search filtering is handled SERVER-SIDE via API params. We don't re-filter by searchQuery here
+  // because vendor names may be redacted for non-pro users, causing client-side search to fail.
+  // Category and type filters are applied client-side for UI responsiveness.
   const filteredData = useMemo(() => {
     const filtered = data.filter(entry => {
       const matchesCategory = selectedCategory === "all" || entry.category === selectedCategory;
       const matchesType = typeFilter === "all" || entry.type === typeFilter;
 
-      if (searchQuery === "") return matchesCategory && matchesType;
-
-      const query = searchQuery.toLowerCase();
-
-      // When a vendor is selected (from sidebar/suggestions), only match on vendorName exactly
-      // This prevents showing entries for other vendors that just mention the selected vendor
-      if (selectedVendor && selectedVendor.trim().toLowerCase() === query) {
-        const matchesVendorName = entry.vendorName?.toLowerCase() === query;
-        return matchesCategory && matchesType && matchesVendorName;
-      }
-
-      // Freeform search: allow matching in all fields
-      const matchesVendorName = entry.vendorName?.toLowerCase().includes(query);
-      const matchesTitle = entry.title?.toLowerCase().includes(query);
-      const matchesQuote = entry.quote?.toLowerCase().includes(query);
-      const matchesExplanation = entry.explanation?.toLowerCase().includes(query);
-
-      return matchesCategory && matchesType && (matchesVendorName || matchesTitle || matchesQuote || matchesExplanation);
+      return matchesCategory && matchesType;
     });
 
     // Return filtered data in the order received from the server (sorted by date)
     return filtered;
-  }, [data, selectedCategory, typeFilter, searchQuery, selectedVendor]);
+  }, [data, selectedCategory, typeFilter]);
 
   // Get unique vendors within selected category
   // Note: This should always show ALL vendors in the category, regardless of search query
@@ -161,28 +147,13 @@ export function useVendorFilters({
   const selectedCategoryData = categories.find(c => c.id === selectedCategory);
 
   // Calculate type counts (before type filter is applied)
+  // NOTE: Search filtering is handled server-side, so we only filter by category here
   const dataBeforeTypeFilter = useMemo(() => {
     return data.filter(entry => {
       const matchesCategory = selectedCategory === "all" || entry.category === selectedCategory;
-      if (searchQuery === "") return matchesCategory;
-
-      const query = searchQuery.toLowerCase();
-
-      // When a vendor is selected (from sidebar/suggestions), only match on vendorName exactly
-      if (selectedVendor && selectedVendor.trim().toLowerCase() === query) {
-        const matchesVendorName = entry.vendorName?.toLowerCase() === query;
-        return matchesCategory && matchesVendorName;
-      }
-
-      // Freeform search: allow matching in all fields
-      const matchesVendorName = entry.vendorName?.toLowerCase().includes(query);
-      const matchesTitle = entry.title?.toLowerCase().includes(query);
-      const matchesQuote = entry.quote?.toLowerCase().includes(query);
-      const matchesExplanation = entry.explanation?.toLowerCase().includes(query);
-
-      return matchesCategory && (matchesVendorName || matchesTitle || matchesQuote || matchesExplanation);
+      return matchesCategory;
     });
-  }, [data, selectedCategory, searchQuery, selectedVendor]);
+  }, [data, selectedCategory]);
 
   const positiveCount = externalPositiveCount ?? dataBeforeTypeFilter.filter(e => e.type === "positive").length;
   const warningCount = externalWarningCount ?? dataBeforeTypeFilter.filter(e => e.type === "warning").length;

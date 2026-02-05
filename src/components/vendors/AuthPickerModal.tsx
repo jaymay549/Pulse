@@ -91,9 +91,9 @@ export const AuthPickerModal = ({ isOpen, onClose, onSelectPhone, onSelectViewer
         <div className="text-center pt-2 border-t">
           <p className="text-xs text-muted-foreground">
             Don't have an account?{" "}
-            <a 
-              href="https://buy.stripe.com/7sY8wPcPM4qmbOk9qM3oA0u" 
-              target="_blank" 
+            <a
+              href={import.meta.env.VITE_STRIPE_CHECKOUT_URL}
+              target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline font-medium"
             >

@@ -6,8 +6,8 @@ import { Search, X, Crown, Share2, CreditCard, ArrowRight, Building2 } from "luc
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { VendorSearchBar } from "@/components/ui/vendor-search-bar";
 import {
   Sheet,
   SheetContent,
@@ -62,9 +62,7 @@ const VendorsV2 = () => {
     useState<VendorEntry | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
-  const [showAutocomplete, setShowAutocomplete] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  
+
   // AI Chat feature flag
   const showAIChat = searchParams.get("ai_chat") === "true";
 
@@ -98,42 +96,76 @@ const VendorsV2 = () => {
   // Vendor counts for search results (fetched separately to get accurate totals)
   type VendorCounts = { total: number; positive: number; warning: number };
   const [searchVendorCounts, setSearchVendorCounts] = useState<Record<string, VendorCounts>>({});
+  const [searchVendorNames, setSearchVendorNames] = useState<Record<string, string>>({});
   const [categoryVendorCounts, setCategoryVendorCounts] = useState<Record<string, VendorCounts>>({});
   const [categoryVendorNames, setCategoryVendorNames] = useState<Record<string, string>>({});
 
-  // Cache category vendor index so switching filters doesn't re-fetch every time
+  // All vendor names for search autocomplete (fetched from vendors-list endpoint)
+  const [allVendorsList, setAllVendorsList] = useState<string[]>([]);
+
+  // Cache category vendor index so switching filters doesn't re-paginate every time
   const categoryVendorIndexCacheRef = useRef<
     Record<string, { counts: Record<string, VendorCounts>; names: Record<string, string> }>
   >({});
 
-  const fetchVendorIndex = useCallback(
+  const fetchVendorCountsIndex = useCallback(
     async (opts: { category?: string; search?: string }) => {
-      const params = new URLSearchParams();
-      if (opts.category && opts.category !== "all") params.append("category", opts.category);
-      if (opts.search) params.append("search", opts.search);
-
-      const response = await fetchWithAuth(
-        `${WAM_URL}/api/public/vendor-pulse/vendor-index?${params.toString()}`,
-      );
-      if (!response.ok) {
-        return { counts: {}, names: {} };
-      }
-
-      const data = await response.json();
-      const vendors: any[] = Array.isArray(data?.vendors) ? data.vendors : [];
-
       const counts: Record<string, VendorCounts> = {};
       const names: Record<string, string> = {};
-      vendors.forEach((vendor) => {
-        if (!vendor?.name) return;
-        const key = String(vendor.name).toLowerCase();
-        counts[key] = {
-          total: typeof vendor.total === "number" ? vendor.total : 0,
-          positive: typeof vendor.positive === "number" ? vendor.positive : 0,
-          warning: typeof vendor.warning === "number" ? vendor.warning : 0,
-        };
-        names[key] = vendor.name;
-      });
+
+      let page = 1;
+      const requestedPageSize = 500;
+      const maxPages = 500; // safety to avoid infinite loops
+
+      while (page <= maxPages) {
+        const params = new URLSearchParams();
+        if (opts.category && opts.category !== "all") params.append("category", opts.category);
+        if (opts.search) params.append("search", opts.search);
+        params.append("pageSize", requestedPageSize.toString());
+        params.append("page", page.toString());
+
+        const response = await fetchWithAuth(
+          `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
+        );
+        if (!response.ok) break;
+
+        const data = await response.json();
+        const mentionsPage: any[] = data.mentions || [];
+
+        for (const mention of mentionsPage) {
+          const vendorNameRaw: string | undefined = mention.vendor_name || mention.vendorName;
+          if (!vendorNameRaw) continue;
+
+          const key = vendorNameRaw.toLowerCase();
+          if (!counts[key]) counts[key] = { total: 0, positive: 0, warning: 0 };
+          if (!names[key]) names[key] = vendorNameRaw;
+
+          counts[key].total += 1;
+          if (mention.type === "positive") counts[key].positive += 1;
+          else if (mention.type === "warning") counts[key].warning += 1;
+        }
+
+        const effectivePageSize =
+          typeof data.pageSize === "number" && data.pageSize > 0
+            ? data.pageSize
+            : requestedPageSize;
+        const effectivePage =
+          typeof data.page === "number" && data.page > 0 ? data.page : page;
+        const totalCount = typeof data.totalCount === "number" ? data.totalCount : undefined;
+        const serverHasMore = typeof data.hasMore === "boolean" ? data.hasMore : undefined;
+
+        const hasMore =
+          serverHasMore ??
+          (totalCount !== undefined
+            ? effectivePage * effectivePageSize < totalCount
+            : mentionsPage.length === effectivePageSize);
+
+        if (!hasMore || mentionsPage.length === 0) break;
+
+        page += 1;
+        // Small delay to avoid rate limiting
+        await new Promise((r) => setTimeout(r, 25));
+      }
 
       return { counts, names };
     },
@@ -257,16 +289,11 @@ const VendorsV2 = () => {
   }, [searchParams]); // Only depend on searchParams to detect URL changes
 
   // Sync state to URL params (when user changes filters)
+  // Note: searchQuery is NOT synced to URL - it's only for autocomplete
   useEffect(() => {
     if (isUpdatingFromUrlRef.current) return;
 
     const newParams = new URLSearchParams(searchParams);
-    
-    if (searchQuery.trim()) {
-      newParams.set("search", searchQuery.trim());
-    } else {
-      newParams.delete("search");
-    }
 
     if (selectedCategory !== "all") {
       newParams.set("category", selectedCategory);
@@ -293,7 +320,7 @@ const VendorsV2 = () => {
       setSearchParams(newParams, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, selectedCategory, selectedVendor, typeFilter]); // Depend on state, not searchParams
+  }, [selectedCategory, selectedVendor, typeFilter]); // Depend on state, not searchParams
 
   // Get review IDs for fetching responses
   const reviewIds = useMemo(
@@ -306,16 +333,8 @@ const VendorsV2 = () => {
   const isDataLoading =
     isWamLoading || (wamMentions.length === 0 && isDbLoading);
 
-  // Handle search input click/focus - allow searching for all users
-  const handleSearchClick = (_e: React.MouseEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>) => {
-    // Allow all users to search - cards will be redacted for non-pro users
-    // Only show autocomplete for pro users
-    if (isProUserValue && searchQuery.trim().length >= 2) {
-      setShowAutocomplete(true);
-    }
-  };
-
   // Fetch Vendor Pulse mentions from WAM
+  // Note: searchQuery is NOT used here - it only affects autocomplete dropdown
   useEffect(() => {
     const fetchMentions = async () => {
       setIsWamLoading(true);
@@ -323,7 +342,6 @@ const VendorsV2 = () => {
         const params = new URLSearchParams();
         if (selectedCategory !== "all") params.append("category", selectedCategory);
         if (selectedVendor) params.append("vendorName", selectedVendor);
-        if (searchQuery) params.append("search", searchQuery);
         if (typeFilter !== "all" && typeFilter !== undefined) params.append("type", typeFilter);
 
         const response = await fetchWithAuth(
@@ -331,9 +349,10 @@ const VendorsV2 = () => {
         );
         if (response.ok) {
           const data = await response.json();
-          // Transform snake_case conversation_time to camelCase conversationTime
+          // Transform snake_case fields to camelCase
           const transformedMentions = (data.mentions || []).map((mention: any) => ({
             ...mention,
+            vendorName: mention.vendor_name || mention.vendorName,
             conversationTime: mention.conversation_time || mention.conversationTime,
           }));
           setWamMentions(transformedMentions);
@@ -359,7 +378,7 @@ const VendorsV2 = () => {
     };
 
     fetchMentions();
-  }, [isAuthenticated, fetchWithAuth, selectedCategory, selectedVendor, searchQuery, typeFilter]);
+  }, [isAuthenticated, fetchWithAuth, selectedCategory, selectedVendor, typeFilter]);
 
   // Fetch category vendor index (all vendors + accurate counts) for sidebar + category vendor chips
   useEffect(() => {
@@ -377,7 +396,7 @@ const VendorsV2 = () => {
         return;
       }
 
-      const { counts, names } = await fetchVendorIndex({
+      const { counts, names } = await fetchVendorCountsIndex({
         category: selectedCategory,
       });
 
@@ -400,29 +419,78 @@ const VendorsV2 = () => {
     return () => {
       cancelled = true;
     };
-  }, [selectedCategory, fetchVendorIndex]);
+  }, [selectedCategory, fetchVendorCountsIndex]);
 
-  // Fetch vendor counts separately when searching (to get accurate totals across ALL pages)
+  // Fetch all vendor names on mount for search autocomplete
   useEffect(() => {
-    const fetchVendorCounts = async () => {
+    const fetchAllVendors = async () => {
+      try {
+        const response = await fetch(`${WAM_URL}/api/public/vendor-pulse/vendors-list`);
+        if (response.ok) {
+          const data = await response.json();
+          const vendorNames = (data.vendors || []).map((v: { name: string }) => v.name);
+          setAllVendorsList(vendorNames);
+        }
+      } catch (err) {
+        console.error("Failed to fetch vendors list for search:", err);
+      }
+    };
+
+    fetchAllVendors();
+  }, []);
+
+  // Fetch vendor names for search autocomplete (quick, first page only)
+  // Uses plain fetch (no auth) to get vendor names from public endpoint for all users
+  useEffect(() => {
+    const fetchSearchVendors = async () => {
       if (!searchQuery || searchQuery.trim().length < 2) {
         setSearchVendorCounts({});
+        setSearchVendorNames({});
         return;
       }
 
       try {
-        const { counts } = await fetchVendorIndex({
-          category: selectedCategory,
-          search: searchQuery.trim(),
-        });
+        // Quick search: just get first page with search filter for autocomplete
+        // Use plain fetch for public endpoint to potentially get vendor names for all users
+        const params = new URLSearchParams();
+        params.append("search", searchQuery.trim());
+        params.append("pageSize", "100"); // Get more results for better autocomplete
+
+        const response = await fetch(
+          `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`
+        );
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const mentionsPage: any[] = data.mentions || [];
+
+        // Extract unique vendor names and counts
+        const counts: Record<string, { total: number; positive: number; warning: number }> = {};
+        const names: Record<string, string> = {};
+
+        for (const mention of mentionsPage) {
+          const vendorNameRaw: string | undefined = mention.vendor_name || mention.vendorName;
+          if (!vendorNameRaw) continue;
+
+          const key = vendorNameRaw.toLowerCase();
+          if (!counts[key]) counts[key] = { total: 0, positive: 0, warning: 0 };
+          if (!names[key]) names[key] = vendorNameRaw;
+
+          counts[key].total += 1;
+          if (mention.type === "positive") counts[key].positive += 1;
+          else if (mention.type === "warning") counts[key].warning += 1;
+        }
+
         setSearchVendorCounts(counts);
+        setSearchVendorNames(names);
       } catch (err) {
-        console.error("Failed to fetch vendor counts:", err);
+        console.error("Failed to fetch search vendors:", err);
       }
     };
 
-    fetchVendorCounts();
-  }, [searchQuery, selectedCategory, fetchVendorIndex]);
+    fetchSearchVendors();
+  }, [searchQuery]);
 
   const vendorsInCategoryAccurate = useMemo(() => {
     if (selectedCategory === "all") return vendorsInCategory;
@@ -448,7 +516,6 @@ const VendorsV2 = () => {
       const params = new URLSearchParams();
       if (selectedCategory !== "all") params.append("category", selectedCategory);
       if (selectedVendor) params.append("vendorName", selectedVendor);
-      if (searchQuery) params.append("search", searchQuery);
       if (typeFilter !== "all" && typeFilter !== undefined) params.append("type", typeFilter);
       params.append("page", nextPage.toString());
       params.append("pageSize", (paginationInfo.pageSize || 20).toString());
@@ -458,9 +525,10 @@ const VendorsV2 = () => {
       );
       if (response.ok) {
         const data = await response.json();
-        // Transform snake_case conversation_time to camelCase conversationTime
+        // Transform snake_case fields to camelCase
         const transformedMentions = (data.mentions || []).map((mention: any) => ({
           ...mention,
+          vendorName: mention.vendor_name || mention.vendorName,
           conversationTime: mention.conversation_time || mention.conversationTime,
         }));
         // Append new mentions to existing ones
@@ -488,7 +556,6 @@ const VendorsV2 = () => {
     fetchWithAuth,
     isLoadingMore,
     paginationInfo,
-    searchQuery,
     selectedCategory,
     selectedVendor,
     typeFilter,
@@ -520,20 +587,6 @@ const VendorsV2 = () => {
       }
     };
   }, [isProUserValue, paginationInfo?.hasMore, isLoadingMore, loadMoreMentions]);
-
-  // Clear selectedVendor when searchQuery is cleared or changed manually (but not when it matches)
-  useEffect(() => {
-    if (!searchQuery || searchQuery.trim().length === 0) {
-      setSelectedVendor(null);
-    } else if (
-      selectedVendor &&
-      searchQuery.trim().toLowerCase() !== selectedVendor.trim().toLowerCase()
-    ) {
-      // If searchQuery changed to something different from selectedVendor, clear it
-      // This handles the case where user types in search box after selecting a vendor
-      setSelectedVendor(null);
-    }
-  }, [searchQuery, selectedVendor]);
 
   // Sort categories by mention count (descending), keeping "All" at the top
   const sortedCategories = useMemo(() => {
@@ -609,24 +662,19 @@ const VendorsV2 = () => {
 
   // Get all unique vendor names for autocomplete
   const allVendorNames = useMemo(() => {
-    const vendorSet = new Set<string>();
-    // Add vendors from current category
-    vendorsInCategoryAccurate.forEach((v) => vendorSet.add(v.name));
-    // Add vendors from mentions
-    mentions.forEach((m) => {
-      if (m.vendorName) vendorSet.add(m.vendorName);
-    });
-    return Array.from(vendorSet).sort();
-  }, [vendorsInCategoryAccurate, mentions]);
+    // Use the complete vendors list from the API
+    // Already sorted by mention count from the backend
+    return allVendorsList;
+  }, [allVendorsList]);
 
-  // Filter vendors for autocomplete
-  const autocompleteSuggestions = useMemo(() => {
-    if (!searchQuery || searchQuery.trim().length < 2) return [];
-    const query = searchQuery.toLowerCase().trim();
-    return allVendorNames
-      .filter((name) => name.toLowerCase().includes(query))
-      .slice(0, 8); // Limit to 8 suggestions
-  }, [searchQuery, allVendorNames]);
+  // Create suggestions with logos for the search bar
+  const vendorSuggestionsWithLogos = useMemo(() => {
+    return allVendorNames.map((name) => {
+      const websiteUrl = getWebsiteForVendor(name);
+      const logoUrl = getVendorLogoUrl(name, websiteUrl);
+      return { name, logoUrl };
+    });
+  }, [allVendorNames, getWebsiteForVendor, getVendorLogoUrl]);
 
   // Get matching vendors for search results (with review counts)
   const matchingVendors = useMemo(() => {
@@ -862,9 +910,8 @@ const VendorsV2 = () => {
                   </div>
                 )}
 
-                {/* Main Hero - Only on default "all" view with no search */}
+                {/* Main Hero - Only on default "all" view */}
                 {selectedCategory === "all" &&
-                  searchQuery.trim().length === 0 &&
                   selectedVendor === null && (
                     <div className="py-4 sm:py-6">
                       {/* Content */}
@@ -960,115 +1007,22 @@ const VendorsV2 = () => {
                       </SheetContent>
                     </Sheet>
 
-                    {/* Search Input */}
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-                      <Input
-                        ref={searchInputRef}
-                        placeholder="Search vendors..."
-                        value={searchQuery}
-                        onClick={handleSearchClick}
-                        onFocus={(e) => {
-                          handleSearchClick(e);
-                          if (isProUserValue && searchQuery.trim().length >= 2) {
-                            setShowAutocomplete(true);
-                          }
-                        }}
-                        onBlur={() => {
-                          // Delay hiding autocomplete to allow clicks
-                          setTimeout(() => setShowAutocomplete(false), 200);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && autocompleteSuggestions.length > 0 && searchQuery.trim().length >= 2) {
-                            // Navigate to first suggestion on Enter
-                            e.preventDefault();
-                            handleVendorSelect(autocompleteSuggestions[0]);
-                          } else if (e.key === "Escape") {
-                            setShowAutocomplete(false);
-                            searchInputRef.current?.blur();
-                          }
-                        }}
-                        onChange={(e) => {
-                          // Allow searching for all users (cards will be redacted for non-pro)
-                          setSearchQuery(e.target.value);
-                          setShowAutocomplete(e.target.value.trim().length >= 2);
-                          if (
-                            selectedVendor &&
-                            e.target.value.trim().toLowerCase() !==
-                            selectedVendor.trim().toLowerCase()
-                          ) {
-                            setSelectedVendor(null);
-                          }
-                        }}
-                        className="pl-10 sm:pl-12 pr-10 sm:pr-12 h-12 sm:h-14 bg-white border-2 border-border/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary text-sm sm:text-base rounded-lg sm:rounded-xl shadow-sm"
-                      />
-                      {searchQuery && (
-                        <button
-                          onClick={() => {
-                            clearSearch();
-                            setSelectedVendor(null);
-                            setShowAutocomplete(false);
-                          }}
-                          className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
-                        >
-                          <X className="h-4 w-4 sm:h-5 sm:w-5" />
-                        </button>
-                      )}
-                      
-                      {/* Autocomplete Dropdown */}
-                      {isProUserValue && showAutocomplete && autocompleteSuggestions.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
-                          {autocompleteSuggestions.map((vendorName) => (
-                            <button
-                              key={vendorName}
-                              onClick={() => {
-                                handleVendorSelect(vendorName);
-                                setShowAutocomplete(false);
-                              }}
-                              className="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-muted/50 transition-colors border-b border-border/50 last:border-b-0 text-sm sm:text-base"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-                                <span className="font-medium truncate">{vendorName}</span>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    {/* Search Input with Animated Dropdown */}
+                    <VendorSearchBar
+                      placeholder="Search vendors..."
+                      suggestions={vendorSuggestionsWithLogos}
+                      onSelect={handleVendorSelect}
+                      onSearchChange={setSearchQuery}
+                      className="flex-1"
+                    />
                   </div>
                 </div>
 
-                {/* Search Results Summary - only when actively searching */}
-                {searchQuery.trim().length > 0 && (
-                  <div className="mt-2 sm:mt-3 mb-3 sm:mb-4 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-muted/50 border border-border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                      </span>
-                      <span className="text-xs font-medium text-green-600">
-                        Updated Daily
-                      </span>
-                    </div>
-                    <h2 className="text-base sm:text-lg font-bold text-foreground mb-1 break-words">
-                      Results for "{searchQuery}"
-                    </h2>
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                      {totalCount} review
-                      {totalCount !== 1 ? "s" : ""} found
-                      {positiveCount > 0 && ` • ${positiveCount} recommended`}
-                      {warningCount > 0 &&
-                        ` • ${warningCount} warning${warningCount !== 1 ? "s" : ""}`}
-                    </p>
-                  </div>
-                )}
+                {/* Search Results Summary - removed: now using Matching Vendors section instead */}
               </div>
 
-              {/* AI Insight Banner - Only show when actively searching/filtering */}
-              {(searchQuery.trim().length > 0 ||
-                selectedVendor !== null ||
-                selectedCategory !== "all") && (
+              {/* AI Insight Banner - Only show when vendor selected or category filtered */}
+              {(selectedVendor !== null || selectedCategory !== "all") && (
                   <AIInsightBanner
                     data={wamMentions}
                     selectedCategory={selectedCategory}
@@ -1081,8 +1035,8 @@ const VendorsV2 = () => {
                   />
                 )}
 
-              {/* Filter Bar - Only show when searching */}
-              {(searchQuery.trim().length > 0 || selectedVendor !== null) && (
+              {/* Filter Bar - Only show when vendor is selected */}
+              {selectedVendor !== null && (
                 <div className="mb-6">
                   <FilterBar
                     typeFilter={typeFilter}
@@ -1096,19 +1050,17 @@ const VendorsV2 = () => {
                 </div>
               )}
 
-              {/* Trending Vendor Chips - Show when NOT searching and NOT on category page */}
-                {searchQuery.trim().length === 0 && selectedVendor === null && selectedCategory === "all" && (
+              {/* Trending Vendor Chips - Show on main page (no vendor selected, no category filter) */}
+              {selectedVendor === null && selectedCategory === "all" && (
                 <TrendingVendorChips
                   onVendorSelect={handleVendorSelect}
                   getLogoUrl={(vendorName) => getVendorLogoUrl(vendorName)}
-                  canAccess={isProUserValue}
-                  onUpgradeClick={() => setShowUpgradeModal(true)}
                   className="mt-0 mb-3"
                 />
               )}
 
               {/* Category Vendors Section - Show when category is selected */}
-              {selectedCategory !== "all" && searchQuery.trim().length === 0 && categoryVendors.length > 0 && (
+              {selectedCategory !== "all" && categoryVendors.length > 0 && (
                 <div className="mb-6 sm:mb-8">
                   <div className="flex items-center gap-2 mb-3 sm:mb-4">
                     <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
@@ -1166,74 +1118,6 @@ const VendorsV2 = () => {
                 </div>
               )}
 
-              {/* Matching Vendors Section - Show when searching */}
-              {searchQuery.trim().length >= 2 && matchingVendors.length > 0 && (
-                <div className="mb-6 sm:mb-8">
-                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                    <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
-                    <h2 className="text-lg sm:text-xl font-bold text-foreground">
-                      Vendors ({matchingVendors.length})
-                    </h2>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                    {matchingVendors.map((vendor) => {
-                      const vendorWebsiteUrl = getWebsiteForVendor(vendor.name);
-                      const vendorLogoUrl = getVendorLogoUrl(vendor.name, vendorWebsiteUrl);
-                      
-                      return (
-                        <button
-                          key={vendor.name}
-                          onClick={() => handleVendorSelect(vendor.name)}
-                          className="text-left p-3 sm:p-4 bg-white rounded-lg border border-border/50 hover:border-primary/50 hover:shadow-md transition-all group"
-                        >
-                          <div className="flex items-start gap-2.5 sm:gap-3">
-                            {/* Vendor Logo */}
-                            <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border border-border/50 shrink-0">
-                              <AvatarImage src={vendorLogoUrl || undefined} alt={vendor.name} />
-                              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs sm:text-sm">
-                                {vendor.name.slice(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            
-                            {/* Vendor Info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 sm:gap-2">
-                                <h3 className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                                  {vendor.name}
-                                </h3>
-                                <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 opacity-0 group-hover:opacity-100" />
-                              </div>
-                              <div className="mt-1 sm:mt-1.5 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground">
-                                <span className="font-medium">{vendor.reviewCount} review{vendor.reviewCount !== 1 ? "s" : ""}</span>
-                                {vendor.positiveCount > 0 && (
-                                  <span className="px-1.5 py-0.5 rounded bg-green-50 text-green-700 font-medium text-xs">
-                                    {vendor.positiveCount} positive
-                                  </span>
-                                )}
-                                {vendor.warningCount > 0 && (
-                                  <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-700 font-medium text-xs">
-                                    {vendor.warningCount} warning{vendor.warningCount !== 1 ? "s" : ""}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Reviews Section Header - Show when searching */}
-              {searchQuery.trim().length >= 2 && visibleEntries.length > 0 && (
-                <div className="mb-3 sm:mb-4">
-                  <h2 className="text-lg sm:text-xl font-bold text-foreground">
-                    Reviews ({totalCount})
-                  </h2>
-                </div>
-              )}
-
               {/* Results Grid */}
               {visibleEntries.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
@@ -1266,7 +1150,13 @@ const VendorsV2 = () => {
                         vendorLogo={vendorLogoUrl}
                         onCardClick={(e) => setSelectedCard(e)}
                         onVendorClick={handleVendorSelect}
-                        onUpgradeClick={() => setShowUpgradeModal(true)}
+                        onUpgradeClick={() => {
+                          if (isAuthenticated) {
+                            setShowUpgradeModal(true);
+                          } else {
+                            window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
+                          }
+                        }}
                       />
                     );
                   })}
@@ -1276,7 +1166,13 @@ const VendorsV2 = () => {
                     <UpgradeTeaser
                       remainingCount={remainingCount}
                       isAuthenticated={isAuthenticated}
-                      onUpgradeClick={() => setShowUpgradeModal(true)}
+                      onUpgradeClick={() => {
+                        if (isAuthenticated) {
+                          setShowUpgradeModal(true);
+                        } else {
+                          window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
+                        }
+                      }}
                     />
                   )}
                 </div>
@@ -1294,15 +1190,15 @@ const VendorsV2 = () => {
                 </div>
               )}
 
-              {/* Empty State */}
-              {filteredData.length === 0 && !isWamLoading && (
+              {/* Empty State - no reviews found */}
+              {!isWamLoading && filteredData.length === 0 && (
                 <div className="text-center py-16">
                   <Search className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
                   <h3 className="text-lg font-bold text-foreground mb-2">
-                    No results found
+                    No reviews found
                   </h3>
                   <p className="text-muted-foreground">
-                    Try adjusting your search or category filter
+                    Try selecting a different category
                   </p>
                 </div>
               )}

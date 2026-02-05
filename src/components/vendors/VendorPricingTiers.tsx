@@ -29,7 +29,7 @@ export const VendorPricingTiers: React.FC<VendorPricingTiersProps> = ({
     monthly: {
       price: "$299",
       period: "/mo",
-      link: "https://buy.stripe.com/7sY8wPcPM4qmbOk9qM3oA0u",
+      link: import.meta.env.VITE_STRIPE_CHECKOUT_URL,
     },
     annual: {
       price: "$249",

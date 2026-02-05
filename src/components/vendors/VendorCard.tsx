@@ -132,24 +132,62 @@ export const VendorCard: React.FC<VendorCardProps> = ({
     }
   };
 
-  // Check if we have actual blurred content from the backend (not just placeholder text)
-  const hasBlurredContent =
-    entry.quote &&
-    !entry.quote.includes("[Content locked") &&
-    !entry.quote.includes("[content locked") &&
-    entry.quote.includes("****");
-
-  // Locked card - show blurred content preview if available, otherwise show placeholder
+  // Locked card logic:
+  // - If showVendorNames is true (vendor-specific view): full blur, no content preview
+  // - If showVendorNames is false (main page browsing): show blurred content preview (safe since vendor is hidden)
   if (isLocked) {
+    // Check if vendor name is valid (not redacted) for navigation
+    const hasValidVendorName = entry.vendorName && !entry.vendorName.includes("****");
+
+    // Determine if we should show content preview (only on main page where vendor is hidden)
+    const showContentPreview = !showVendorNames && entry.quote && !entry.quote.includes("[Content locked");
+
+    const handleLockedCardClick = () => {
+      // Navigate to vendor profile page if vendor name is valid and shown
+      if (onVendorClick && hasValidVendorName && showVendorNames) {
+        onVendorClick(entry.vendorName!);
+      }
+    };
+
     return (
       <article
+        onClick={handleLockedCardClick}
         className={`
           relative overflow-hidden border border-border/40
-          transition-colors duration-200 cursor-pointer group
+          transition-colors duration-200 group
+          ${hasValidVendorName && showVendorNames ? "cursor-pointer" : ""}
           ${styles.border} ${styles.bg}
         `}
       >
         <div className="px-5 py-4 flex flex-col h-full min-h-[190px]">
+          {/* Vendor Name - Only show in vendor-specific view with valid name */}
+          {showVendorNames && hasValidVendorName && (
+            <div className="mb-3 flex items-center gap-3">
+              <Avatar className="h-10 w-10 border border-border shrink-0">
+                <AvatarImage src={vendorLogo || undefined} alt={entry.vendorName} />
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                  {entry.vendorName!.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <h3
+                  className={`
+                    text-lg font-bold text-foreground leading-tight inline
+                    ${onVendorClick ? "hover:text-primary transition-colors hover:underline cursor-pointer" : ""}
+                  `}
+                  onClick={(e) => {
+                    if (onVendorClick && hasValidVendorName) {
+                      e.stopPropagation();
+                      onVendorClick(entry.vendorName!);
+                    }
+                  }}
+                >
+                  {entry.vendorName}
+                </h3>
+              </div>
+            </div>
+          )}
+
           {/* Header: Type badge + Lock indicator */}
           <div className="flex items-center justify-between mb-3">
             <div className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
@@ -163,16 +201,16 @@ export const VendorCard: React.FC<VendorCardProps> = ({
             </div>
           </div>
 
-          {/* Blurred content preview - show actual content with vendor names blurred */}
-          {hasBlurredContent ? (
+          {/* Content area - show preview on main page, full blur on vendor-specific view */}
+          {showContentPreview ? (
             <div className="flex-1 mb-4 space-y-3">
-              {/* Title with blurred vendor names */}
+              {/* Title preview - blur any redacted vendor names */}
               {entry.title && (
                 <p className="text-sm font-medium text-foreground/80 line-clamp-2">
                   {blurRedactedContent(entry.title)}
                 </p>
               )}
-              {/* Quote with blurred vendor names */}
+              {/* Quote preview - blur any redacted vendor names */}
               <div className="relative">
                 <Quote className="absolute left-0 top-0 h-4 w-4 text-muted-foreground/30" />
                 <p className="text-sm text-foreground/70 leading-relaxed line-clamp-3 pl-6">
@@ -184,12 +222,14 @@ export const VendorCard: React.FC<VendorCardProps> = ({
               </p>
             </div>
           ) : (
-            /* Fallback: placeholder blocks for cards without blurred content */
             <div className="flex-1 space-y-2 mb-4">
               <div className="h-5 w-3/4 bg-foreground/10 rounded blur-[3px]" />
               <div className="h-4 w-full bg-foreground/5 rounded blur-[2px]" />
               <div className="h-4 w-5/6 bg-foreground/5 rounded blur-[2px]" />
               <div className="h-4 w-2/3 bg-foreground/5 rounded blur-[2px]" />
+              <p className="text-xs text-muted-foreground italic pt-2">
+                Upgrade to read the full review
+              </p>
             </div>
           )}
 
@@ -198,9 +238,10 @@ export const VendorCard: React.FC<VendorCardProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (isAuthenticated && onUpgradeClick) {
+                if (onUpgradeClick) {
                   onUpgradeClick();
                 } else {
+                  // Fallback: scroll to tiers section if no handler provided
                   const tiersSection = document.getElementById("tiers-section");
                   if (tiersSection) {
                     const offset = 100;

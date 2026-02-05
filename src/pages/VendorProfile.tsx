@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Globe, TrendingUp, ThumbsUp, AlertTriangle, Loader2, Crown } from "lucide-react";
-import { useClerk } from "@clerk/clerk-react";
+import { ArrowLeft, Globe, TrendingUp, ThumbsUp, AlertTriangle, Loader2, Crown, Share2, CreditCard } from "lucide-react";
+import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
+import SubscriptionManagement from "@/components/SubscriptionManagement";
+import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import UpgradeModal from "@/components/UpgradeModal";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +59,8 @@ const VendorProfile = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
 
   const vendorName = vendorSlug ? decodeURIComponent(vendorSlug) : "";
 
@@ -131,9 +137,10 @@ const VendorProfile = () => {
           mentionsCount: data.mentions?.length 
         });
         
-        // Transform mentions to match VendorEntry format
+        // Transform mentions to match VendorEntry format (snake_case to camelCase)
         const transformedMentions = (data.mentions || []).map((mention: any) => ({
           ...mention,
+          vendorName: mention.vendor_name || mention.vendorName,
           conversationTime: mention.conversation_time || mention.conversationTime,
         }));
 
@@ -171,6 +178,7 @@ const VendorProfile = () => {
         const data = await response.json();
         const transformedMentions = (data.mentions || []).map((mention: any) => ({
           ...mention,
+          vendorName: mention.vendor_name || mention.vendorName,
           conversationTime: mention.conversation_time || mention.conversationTime,
         }));
 
@@ -259,19 +267,113 @@ const VendorProfile = () => {
         <meta name="description" content={`Reviews and insights about ${profileData.vendorName} from CDG Pulse`} />
       </Helmet>
 
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8 max-w-7xl">
-          {/* Back Button */}
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/vendors")}
-            className="mb-4 sm:mb-6 -ml-2 sm:ml-0"
-            size="sm"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">Back to Vendors</span>
-            <span className="sm:hidden">Back</span>
-          </Button>
+      <div className="min-h-screen bg-[hsl(var(--vendor-bg))]">
+        {/* Navigation Header */}
+        <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              {/* Left: Back + Logo */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate("/vendors")}
+                  className="h-9 w-9"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <Link to="/" className="flex items-center">
+                  <img src={cdgPulseLogo} alt="CDG Pulse" className="h-7" />
+                </Link>
+              </div>
+
+              {/* Spacer */}
+              <div className="hidden md:flex flex-1" />
+
+              {/* Right: Actions */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={async () => {
+                    const shareData = {
+                      title: `${profileData.vendorName} - CDG Pulse`,
+                      text: `Check out reviews for ${profileData.vendorName} on CDG Pulse`,
+                      url: window.location.href,
+                    };
+                    if (navigator.share) {
+                      try { await navigator.share(shareData); } catch {}
+                    } else {
+                      navigator.clipboard.writeText(window.location.href);
+                    }
+                  }}
+                  className="hidden lg:flex"
+                >
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
+
+                {!isAuthenticated && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSignIn(true)}
+                  >
+                    Sign In
+                  </Button>
+                )}
+
+                {isAuthenticated && !isProUserValue && (
+                  <Button
+                    variant="yellow"
+                    size="sm"
+                    onClick={() => {
+                      const email = user?.email;
+                      const portalUrl = email
+                        ? `${import.meta.env.VITE_STRIPE_PORTAL_URL}?prefilled_email=${encodeURIComponent(email)}`
+                        : import.meta.env.VITE_STRIPE_PORTAL_URL;
+                      window.open(portalUrl, "_blank");
+                    }}
+                    className="hidden lg:flex font-bold"
+                  >
+                    <Crown className="h-4 w-4 mr-2" />
+                    Upgrade
+                  </Button>
+                )}
+
+                {isAuthenticated && (
+                  <UserButton
+                    appearance={{
+                      elements: {
+                        avatarBox: "h-8 w-8",
+                      },
+                    }}
+                    afterSignOutUrl="/vendors"
+                    signInUrl="/auth?redirect=/vendors"
+                  >
+                    <UserButton.MenuItems>
+                      <UserButton.Action
+                        label="Subscription"
+                        labelIcon={<CreditCard className="h-4 w-4" />}
+                        open="subscription"
+                      />
+                    </UserButton.MenuItems>
+                    <UserButton.UserProfilePage
+                      label="Subscription"
+                      labelIcon={<CreditCard className="h-4 w-4" />}
+                      url="subscription"
+                    >
+                      <SubscriptionManagement />
+                    </UserButton.UserProfilePage>
+                  </UserButton>
+                )}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
 
           {/* Header Section */}
           <section className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-amber-50/50 via-white to-slate-50/60 p-4 sm:p-6 mb-4 sm:mb-6">
@@ -353,6 +455,13 @@ const VendorProfile = () => {
                 selectedVendor={vendorName}
                 isProUser={isProUserValue}
                 getToken={getToken}
+                onUpgradeClick={() => {
+                  if (isAuthenticated) {
+                    setShowUpgradeModal(true);
+                  } else {
+                    window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
+                  }
+                }}
               />
             </div>
           )}
@@ -370,7 +479,7 @@ const VendorProfile = () => {
                   <VendorCard
                     key={mention.id}
                     entry={mention}
-                    isLocked={mention.isLocked || false}
+                    isLocked={mention.isLocked || !isProUserValue}
                     showVendorNames={true}
                     isFullAccess={isProUserValue}
                     isAuthenticated={isAuthenticated}
@@ -378,6 +487,14 @@ const VendorProfile = () => {
                     vendorWebsite={profileData.metadata?.website_url || null}
                     onCardClick={setSelectedCard}
                     onVendorClick={(name) => navigate(`/vendors/${encodeURIComponent(name)}`)}
+                    onUpgradeClick={() => {
+                      if (isAuthenticated) {
+                        setShowUpgradeModal(true);
+                      } else {
+                        // Redirect to Stripe checkout for Viewer tier
+                        window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
+                      }
+                    }}
                   />
                 ))}
               </div>
@@ -393,7 +510,16 @@ const VendorProfile = () => {
             )}
 
             {!isProUserValue && allMentions.length > 0 && (
-              <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+              <button
+                onClick={() => {
+                  if (isAuthenticated) {
+                    setShowUpgradeModal(true);
+                  } else {
+                    window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
+                  }
+                }}
+                className="mt-6 w-full bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center hover:bg-yellow-100 transition-colors cursor-pointer"
+              >
                 <Crown className="h-5 w-5 text-yellow-600 mx-auto mb-2" />
                 <p className="text-sm text-yellow-800 font-medium mb-1">
                   Upgrade to Pro to see all reviews
@@ -401,7 +527,7 @@ const VendorProfile = () => {
                 <p className="text-xs text-yellow-700">
                   Pro members get unlimited access to all vendor reviews and insights
                 </p>
-              </div>
+              </button>
             )}
           </div>
         </div>
@@ -418,6 +544,34 @@ const VendorProfile = () => {
           vendorWebsite={profileData.metadata?.website_url || null}
         />
       )}
+
+      {/* Upgrade Modal for authenticated users */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        targetTier="pro"
+      />
+
+      {/* Sign In Modal for non-authenticated users */}
+      <Dialog open={showSignIn} onOpenChange={setShowSignIn}>
+        <DialogContent
+          className="p-0 border-0 bg-transparent shadow-none sm:max-w-md [&>button]:hidden"
+          onPointerDownOutside={() => setShowSignIn(false)}
+        >
+          <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <SignIn
+              appearance={{
+                elements: {
+                  rootBox: "w-full flex justify-center",
+                  card: "w-full max-w-md border-0 shadow-none",
+                },
+              }}
+              fallbackRedirectUrl={`/vendors/${encodeURIComponent(vendorName)}`}
+              signUpFallbackRedirectUrl={`/vendors/${encodeURIComponent(vendorName)}`}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
