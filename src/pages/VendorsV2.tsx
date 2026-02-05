@@ -992,11 +992,7 @@ const VendorsV2 = () => {
                           }
                         }}
                         onChange={(e) => {
-                          // Prevent typing for non-pro users
-                          if (!isProUserValue) {
-                            setShowUpgradeModal(true);
-                            return;
-                          }
+                          // Allow searching for all users (cards will be redacted for non-pro)
                           setSearchQuery(e.target.value);
                           setShowAutocomplete(e.target.value.trim().length >= 2);
                           if (
@@ -1245,10 +1241,11 @@ const VendorsV2 = () => {
               {visibleEntries.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   {visibleEntries.map((entry) => {
-                    // Backend handles all redaction - just use what's provided
-                    const isLocked = entry.isLocked === true;
-                    // Show vendor name if it exists (backend redacts when needed)
-                    const showVendorNames = !!entry.vendorName;
+                    // Backend handles all redaction - but force redaction for non-pro users when searching
+                    const isSearchingAsNonPro = !isProUserValue && searchQuery.trim().length > 0;
+                    const isLocked = entry.isLocked === true || isSearchingAsNonPro;
+                    // Hide vendor names when searching as non-pro user
+                    const showVendorNames = isSearchingAsNonPro ? false : !!entry.vendorName;
 
                     // Get website and logo for this vendor
                     const vendorWebsiteUrl = entry.vendorName
