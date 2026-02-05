@@ -101,69 +101,39 @@ const VendorsV2 = () => {
   const [categoryVendorCounts, setCategoryVendorCounts] = useState<Record<string, VendorCounts>>({});
   const [categoryVendorNames, setCategoryVendorNames] = useState<Record<string, string>>({});
 
-  // Cache category vendor index so switching filters doesn't re-paginate every time
+  // Cache category vendor index so switching filters doesn't re-fetch every time
   const categoryVendorIndexCacheRef = useRef<
     Record<string, { counts: Record<string, VendorCounts>; names: Record<string, string> }>
   >({});
 
-  const fetchVendorCountsIndex = useCallback(
+  const fetchVendorIndex = useCallback(
     async (opts: { category?: string; search?: string }) => {
+      const params = new URLSearchParams();
+      if (opts.category && opts.category !== "all") params.append("category", opts.category);
+      if (opts.search) params.append("search", opts.search);
+
+      const response = await fetchWithAuth(
+        `${WAM_URL}/api/public/vendor-pulse/vendor-index?${params.toString()}`,
+      );
+      if (!response.ok) {
+        return { counts: {}, names: {} };
+      }
+
+      const data = await response.json();
+      const vendors: any[] = Array.isArray(data?.vendors) ? data.vendors : [];
+
       const counts: Record<string, VendorCounts> = {};
       const names: Record<string, string> = {};
-
-      let page = 1;
-      const requestedPageSize = 500;
-      const maxPages = 500; // safety to avoid infinite loops
-
-      while (page <= maxPages) {
-        const params = new URLSearchParams();
-        if (opts.category && opts.category !== "all") params.append("category", opts.category);
-        if (opts.search) params.append("search", opts.search);
-        params.append("pageSize", requestedPageSize.toString());
-        params.append("page", page.toString());
-
-        const response = await fetchWithAuth(
-          `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
-        );
-        if (!response.ok) break;
-
-        const data = await response.json();
-        const mentionsPage: any[] = data.mentions || [];
-
-        for (const mention of mentionsPage) {
-          const vendorNameRaw: string | undefined = mention.vendorName;
-          if (!vendorNameRaw) continue;
-
-          const key = vendorNameRaw.toLowerCase();
-          if (!counts[key]) counts[key] = { total: 0, positive: 0, warning: 0 };
-          if (!names[key]) names[key] = vendorNameRaw;
-
-          counts[key].total += 1;
-          if (mention.type === "positive") counts[key].positive += 1;
-          else if (mention.type === "warning") counts[key].warning += 1;
-        }
-
-        const effectivePageSize =
-          typeof data.pageSize === "number" && data.pageSize > 0
-            ? data.pageSize
-            : requestedPageSize;
-        const effectivePage =
-          typeof data.page === "number" && data.page > 0 ? data.page : page;
-        const totalCount = typeof data.totalCount === "number" ? data.totalCount : undefined;
-        const serverHasMore = typeof data.hasMore === "boolean" ? data.hasMore : undefined;
-
-        const hasMore =
-          serverHasMore ??
-          (totalCount !== undefined
-            ? effectivePage * effectivePageSize < totalCount
-            : mentionsPage.length === effectivePageSize);
-
-        if (!hasMore || mentionsPage.length === 0) break;
-
-        page += 1;
-        // Small delay to avoid rate limiting
-        await new Promise((r) => setTimeout(r, 25));
-      }
+      vendors.forEach((vendor) => {
+        if (!vendor?.name) return;
+        const key = String(vendor.name).toLowerCase();
+        counts[key] = {
+          total: typeof vendor.total === "number" ? vendor.total : 0,
+          positive: typeof vendor.positive === "number" ? vendor.positive : 0,
+          warning: typeof vendor.warning === "number" ? vendor.warning : 0,
+        };
+        names[key] = vendor.name;
+      });
 
       return { counts, names };
     },
@@ -410,7 +380,7 @@ const VendorsV2 = () => {
         return;
       }
 
-      const { counts, names } = await fetchVendorCountsIndex({
+      const { counts, names } = await fetchVendorIndex({
         category: selectedCategory,
       });
 
@@ -433,7 +403,7 @@ const VendorsV2 = () => {
     return () => {
       cancelled = true;
     };
-  }, [selectedCategory, fetchVendorCountsIndex]);
+  }, [selectedCategory, fetchVendorIndex]);
 
   // Fetch vendor counts separately when searching (to get accurate totals across ALL pages)
   useEffect(() => {
@@ -444,7 +414,7 @@ const VendorsV2 = () => {
       }
 
       try {
-        const { counts } = await fetchVendorCountsIndex({
+        const { counts } = await fetchVendorIndex({
           category: selectedCategory,
           search: searchQuery.trim(),
         });
@@ -455,7 +425,7 @@ const VendorsV2 = () => {
     };
 
     fetchVendorCounts();
-  }, [searchQuery, selectedCategory, fetchVendorCountsIndex]);
+  }, [searchQuery, selectedCategory, fetchVendorIndex]);
 
   const vendorsInCategoryAccurate = useMemo(() => {
     if (selectedCategory === "all") return vendorsInCategory;
