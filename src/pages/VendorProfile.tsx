@@ -146,7 +146,7 @@ const VendorProfile = () => {
 
         setProfileData(data);
         setAllMentions(transformedMentions);
-        setHasMore(transformedMentions.length >= 20);
+        setHasMore(transformedMentions.length >= 40);
         setIsLoading(false);
       } catch (err) {
         console.error("[VendorProfile] Failed to fetch vendor profile:", err);
@@ -168,7 +168,7 @@ const VendorProfile = () => {
       const params = new URLSearchParams();
       params.append("vendorName", vendorName);
       params.append("page", nextPage.toString());
-      params.append("pageSize", "20");
+      params.append("pageSize", "40");
 
       const response = await fetchWithAuth(
         `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`

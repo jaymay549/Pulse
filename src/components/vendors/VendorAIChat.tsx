@@ -71,7 +71,7 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
     let page = 1;
     let hasMore = true;
     let totalFetched = 0;
-    const pageSize = 100;
+    const pageSize = 200;
 
     while (hasMore) {
       const params = new URLSearchParams();
@@ -146,7 +146,7 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
       let page = 1;
       let hasMore = true;
       let totalFetched = 0;
-      const pageSize = 100;
+      const pageSize = 200;
       
       // First, get total count from first request
       const initialParams = new URLSearchParams();

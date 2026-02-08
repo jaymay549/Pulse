@@ -518,7 +518,7 @@ const VendorsV2 = () => {
       if (selectedVendor) params.append("vendorName", selectedVendor);
       if (typeFilter !== "all" && typeFilter !== undefined) params.append("type", typeFilter);
       params.append("page", nextPage.toString());
-      params.append("pageSize", (paginationInfo.pageSize || 20).toString());
+      params.append("pageSize", (paginationInfo.pageSize || 40).toString());
 
       const response = await fetchWithAuth(
         `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
