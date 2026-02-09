@@ -14,6 +14,10 @@ export interface VendorEntry {
   isLocked?: boolean;
   views?: number;
   shares?: number;
+  vendorResponse?: {
+    responseText: string;
+    respondedAt: string;
+  } | null;
 }
 
 interface UseVendorReviewsResult {

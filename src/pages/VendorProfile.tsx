@@ -142,6 +142,7 @@ const VendorProfile = () => {
           ...mention,
           vendorName: mention.vendor_name || mention.vendorName,
           conversationTime: mention.conversation_time || mention.conversationTime,
+          vendorResponse: mention.vendorResponse || null,
         }));
 
         setProfileData(data);
@@ -475,28 +476,41 @@ const VendorProfile = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                {allMentions.map((mention) => (
-                  <VendorCard
-                    key={mention.id}
-                    entry={mention}
-                    isLocked={mention.isLocked || !isProUserValue}
-                    showVendorNames={true}
-                    isFullAccess={isProUserValue}
-                    isAuthenticated={isAuthenticated}
-                    vendorLogo={logoUrl}
-                    vendorWebsite={profileData.metadata?.website_url || null}
-                    onCardClick={setSelectedCard}
-                    onVendorClick={(name) => navigate(`/vendors/${encodeURIComponent(name)}`)}
-                    onUpgradeClick={() => {
-                      if (isAuthenticated) {
-                        setShowUpgradeModal(true);
-                      } else {
-                        // Redirect to Stripe checkout for Viewer tier
-                        window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
-                      }
-                    }}
-                  />
-                ))}
+                {allMentions.map((mention) => {
+                  // Map API vendorResponse (camelCase) to VendorResponse type (snake_case)
+                  const apiResponse = mention.vendorResponse;
+                  const vendorResponseProp = apiResponse ? {
+                    id: "",
+                    review_id: Number(mention.id),
+                    vendor_profile_id: "",
+                    response_text: apiResponse.responseText,
+                    created_at: apiResponse.respondedAt,
+                  } : null;
+
+                  return (
+                    <VendorCard
+                      key={mention.id}
+                      entry={mention}
+                      isLocked={mention.isLocked || !isProUserValue}
+                      showVendorNames={true}
+                      isFullAccess={isProUserValue}
+                      isAuthenticated={isAuthenticated}
+                      vendorResponse={vendorResponseProp}
+                      vendorLogo={logoUrl}
+                      vendorWebsite={profileData.metadata?.website_url || null}
+                      onCardClick={setSelectedCard}
+                      onVendorClick={(name) => navigate(`/vendors/${encodeURIComponent(name)}`)}
+                      onUpgradeClick={() => {
+                        if (isAuthenticated) {
+                          setShowUpgradeModal(true);
+                        } else {
+                          // Redirect to Stripe checkout for Viewer tier
+                          window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
+                        }
+                      }}
+                    />
+                  );
+                })}
               </div>
             )}
 
@@ -534,16 +548,28 @@ const VendorProfile = () => {
       </div>
 
       {/* Card Detail Modal */}
-      {selectedCard && (
-        <VendorCardDetail
-          entry={selectedCard}
-          isOpen={!!selectedCard}
-          onClose={() => setSelectedCard(null)}
-          onVendorSelect={(name) => navigate(`/vendors/${encodeURIComponent(name)}`)}
-          vendorLogo={logoUrl}
-          vendorWebsite={profileData.metadata?.website_url || null}
-        />
-      )}
+      {selectedCard && (() => {
+        const apiResp = selectedCard.vendorResponse;
+        const detailVendorResponse = apiResp ? {
+          id: "",
+          review_id: Number(selectedCard.id),
+          vendor_profile_id: "",
+          response_text: apiResp.responseText,
+          created_at: apiResp.respondedAt,
+          updated_at: apiResp.respondedAt,
+        } : null;
+        return (
+          <VendorCardDetail
+            entry={selectedCard}
+            isOpen={!!selectedCard}
+            onClose={() => setSelectedCard(null)}
+            onVendorSelect={(name) => navigate(`/vendors/${encodeURIComponent(name)}`)}
+            vendorLogo={logoUrl}
+            vendorWebsite={profileData.metadata?.website_url || null}
+            vendorResponse={detailVendorResponse}
+          />
+        );
+      })()}
 
       {/* Upgrade Modal for authenticated users */}
       <UpgradeModal

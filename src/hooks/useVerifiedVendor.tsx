@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useVendorAuth } from "./useVendorAuth";
 
 export interface VerifiedVendorProfile {
   id: string;
@@ -18,25 +18,38 @@ interface UseVerifiedVendorResult {
 }
 
 /**
- * Hook for verified vendor profiles - currently a stub since database tables were removed.
- * Vendor verification is disabled until tables are recreated.
+ * Hook for verified vendor profiles - delegates to useVendorAuth for org-based verification.
+ * A vendor is considered "verified" if their Clerk org has both paid=true and verified=true.
  */
 export function useVerifiedVendor(): UseVerifiedVendorResult {
-  const [profile] = useState<VerifiedVendorProfile | null>(null);
-  const [isLoading] = useState(false);
+  const { isLoaded, isActive, isPro, vendorNames, organization, user } = useVendorAuth();
 
-  const canRespondTo = (_vendorName: string): boolean => {
-    return false;
+  const profile: VerifiedVendorProfile | null = isActive && organization
+    ? {
+        id: organization.id,
+        vendor_name: vendorNames[0] || organization.name,
+        is_approved: true,
+        company_logo_url: organization.imageUrl || null,
+        company_website: null,
+        contact_email: user?.primaryEmailAddress?.emailAddress || null,
+      }
+    : null;
+
+  const canRespondTo = (vendorName: string): boolean => {
+    if (!isPro || !isActive) return false;
+    return vendorNames.some(
+      (vn) => vn.toLowerCase() === vendorName.toLowerCase()
+    );
   };
 
   const refetch = async () => {
-    // No-op - tables not configured
+    // No-op - Clerk data is reactive
   };
 
   return {
     profile,
-    isLoading,
-    isVerified: false,
+    isLoading: !isLoaded,
+    isVerified: isActive,
     canRespondTo,
     refetch,
   };

@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,8 @@ interface AuthPickerModalProps {
 }
 
 export const AuthPickerModal = ({ isOpen, onClose, onSelectPhone, onSelectViewer }: AuthPickerModalProps) => {
+  const navigate = useNavigate();
+
   const handleCirclesMember = () => {
     onClose();
     onSelectPhone();
@@ -23,11 +26,8 @@ export const AuthPickerModal = ({ isOpen, onClose, onSelectPhone, onSelectViewer
 
   const handleViewer = () => {
     onClose();
-    // If callback provided, use it (opens modal on same page)
-    // Otherwise fall back to navigation (for backwards compatibility)
-    if (onSelectViewer) {
-      onSelectViewer();
-    }
+    // Navigate to vendor portal auth
+    navigate("/vendor-portal/auth");
   };
 
   return (

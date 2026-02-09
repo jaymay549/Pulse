@@ -1135,7 +1135,17 @@ const VendorsV2 = () => {
                     const vendorLogoUrl = entry.vendorName
                       ? getVendorLogoUrl(entry.vendorName, vendorWebsiteUrl)
                       : null;
-                    const vendorResponse = responses[Number(entry.id)] || null;
+                    // Use vendor response from public API (embedded in mention) or from useVendorResponses hook
+                    const hookResponse = responses[Number(entry.id)] || null;
+                    const apiResponse = (entry as any).vendorResponse;
+                    const vendorResponse = hookResponse || (apiResponse ? {
+                      id: "",
+                      review_id: Number(entry.id),
+                      vendor_profile_id: "",
+                      response_text: apiResponse.responseText,
+                      created_at: apiResponse.respondedAt,
+                      updated_at: apiResponse.respondedAt,
+                    } : null);
 
                     return (
                       <VendorCard

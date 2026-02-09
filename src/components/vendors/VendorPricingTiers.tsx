@@ -61,25 +61,23 @@ export const VendorPricingTiers: React.FC<VendorPricingTiersProps> = ({
   return (
     <div id="tiers-section" className="mt-10">
       <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-primary/5 via-yellow-500/10 to-primary/5 border-2 border-border">
-        {/* Hidden but kept - Pricing tiers section */}
-        {false && (
-          <>
-            <div className="text-center mb-8">
-              <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
-                Choose Your Access Level
-              </h3>
-              <p className="text-muted-foreground">
-                Unlock {totalReviews}+ vendor reviews and {totalWarnings}+ warnings
-              </p>
-            </div>
+        {/* Vendor Tiers Section */}
+        <div className="text-center mb-8">
+          <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
+            Choose Your Access Level
+          </h3>
+          <p className="text-muted-foreground">
+            Unlock {totalReviews}+ vendor reviews and {totalWarnings}+ warnings
+          </p>
+        </div>
 
-            {/* Vendor Tiers - Stack on mobile, side by side on larger screens */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto mb-6">
-              {/* Viewer Tier - For Vendors */}
-              <div className="p-5 pt-8 rounded-xl bg-white border-2 border-border relative flex flex-col min-h-0">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-bold">
-                  READ ONLY
-                </div>
+        {/* Vendor Tiers - Stack on mobile, side by side on larger screens */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto mb-6">
+          {/* Viewer Tier - For Vendors */}
+          <div className="p-5 pt-8 rounded-xl bg-white border-2 border-border relative flex flex-col min-h-0">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-bold">
+              READ ONLY
+            </div>
                 <div className="flex items-center gap-2 mb-1">
                   <Eye className="h-5 w-5 text-muted-foreground" />
                   <span className="font-bold text-foreground">Viewer</span>
@@ -147,16 +145,16 @@ export const VendorPricingTiers: React.FC<VendorPricingTiersProps> = ({
                 </Button>
               </div>
 
-              {/* Verified Vendor Tier */}
-              <div className="p-5 pt-8 rounded-xl bg-white border-2 border-primary/30 relative flex flex-col">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                  MOST POPULAR
-                </div>
-                <div className="flex items-center gap-2 mb-1">
-                  <ShieldCheck className="h-5 w-5 text-primary" />
-                  <span className="font-bold text-foreground">Verified Vendor</span>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">Engage with dealer feedback</p>
+          {/* Pro Tier */}
+          <div className="p-5 pt-8 rounded-xl bg-white border-2 border-primary/30 relative flex flex-col">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+              MOST POPULAR
+            </div>
+            <div className="flex items-center gap-2 mb-1">
+              <ShieldCheck className="h-5 w-5 text-primary" />
+              <span className="font-bold text-foreground">Pro</span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">Engage with dealer feedback</p>
                 
                 {/* Price + Toggle on same line */}
                 <div className="flex items-center justify-between gap-2 mb-4">
@@ -214,17 +212,15 @@ export const VendorPricingTiers: React.FC<VendorPricingTiersProps> = ({
                     <span><strong className="text-foreground">Monthly analytics</strong></span>
                   </li>
                 </ul>
-                <Button variant="yellow" className="w-full font-bold mt-auto" asChild>
-                  <a href={currentVerifiedPricing.link} target="_blank" rel="noopener noreferrer">
-                    <ShieldCheck className="h-4 w-4 mr-2" />
-                    Get Verified
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </a>
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
+            <Button variant="yellow" className="w-full font-bold mt-auto" asChild>
+              <a href={currentVerifiedPricing.link} target="_blank" rel="noopener noreferrer">
+                <ShieldCheck className="h-4 w-4 mr-2" />
+                Get Pro Access
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </a>
+            </Button>
+          </div>
+        </div>
 
         {/* Circles Member Section - Below */}
         <div className="max-w-2xl mx-auto">
