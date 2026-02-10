@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { VendorCard, VendorCardDetail, AIInsightBanner } from "@/components/vendors";
 import { VendorEntry } from "@/hooks/useVendorReviews";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
-import { WAM_URL } from "@/config/wam";
+import { fetchVendorProfile, fetchVendorPulseFeed } from "@/hooks/useSupabaseVendorData";
 import { isProUser } from "@/utils/tierUtils";
 import { cn } from "@/lib/utils";
 
@@ -47,8 +47,6 @@ const VendorProfile = () => {
     role,
     tier,
     isLoading: isAuthLoading,
-    fetchWithAuth,
-    getToken,
   } = useClerkAuth();
 
   const [profileData, setProfileData] = useState<VendorProfileData | null>(null);
@@ -113,40 +111,16 @@ const VendorProfile = () => {
       setError(null);
 
       try {
-        const url = `${WAM_URL}/api/public/vendor-pulse/vendors/${encodeURIComponent(vendorName)}/profile`;
-        console.log(`[VendorProfile] Fetching: ${url}`);
-        
-        const response = await fetchWithAuth(url);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`[VendorProfile] Error response (${response.status}):`, errorText);
-          if (response.status === 404) {
-            setError("Vendor not found");
-          } else {
-            setError(`Failed to load vendor profile (${response.status})`);
-          }
-          setIsLoading(false);
-          return;
-        }
-
-        const data = await response.json();
-        console.log(`[VendorProfile] Received data:`, { 
-          vendorName: data.vendorName, 
+        const data = await fetchVendorProfile(vendorName);
+        console.log(`[VendorProfile] Received data:`, {
+          vendorName: data.vendorName,
           totalMentions: data.stats?.totalMentions,
-          mentionsCount: data.mentions?.length 
+          mentionsCount: data.mentions?.length
         });
-        
-        // Transform mentions to match VendorEntry format (snake_case to camelCase)
-        const transformedMentions = (data.mentions || []).map((mention: any) => ({
-          ...mention,
-          vendorName: mention.vendor_name || mention.vendorName,
-          conversationTime: mention.conversation_time || mention.conversationTime,
-        }));
 
         setProfileData(data);
-        setAllMentions(transformedMentions);
-        setHasMore(transformedMentions.length >= 40);
+        setAllMentions(data.mentions || []);
+        setHasMore((data.mentions || []).length >= 40);
         setIsLoading(false);
       } catch (err) {
         console.error("[VendorProfile] Failed to fetch vendor profile:", err);
@@ -156,7 +130,7 @@ const VendorProfile = () => {
     };
 
     fetchProfile();
-  }, [vendorName, fetchWithAuth]);
+  }, [vendorName]);
 
   // Load more mentions
   const loadMoreMentions = useCallback(async () => {
@@ -165,33 +139,21 @@ const VendorProfile = () => {
     setIsLoadingMore(true);
     try {
       const nextPage = page + 1;
-      const params = new URLSearchParams();
-      params.append("vendorName", vendorName);
-      params.append("page", nextPage.toString());
-      params.append("pageSize", "40");
+      const data = await fetchVendorPulseFeed({
+        vendorName,
+        page: nextPage,
+        pageSize: 40,
+      });
 
-      const response = await fetchWithAuth(
-        `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const transformedMentions = (data.mentions || []).map((mention: any) => ({
-          ...mention,
-          vendorName: mention.vendor_name || mention.vendorName,
-          conversationTime: mention.conversation_time || mention.conversationTime,
-        }));
-
-        setAllMentions((prev) => [...prev, ...transformedMentions]);
-        setPage(nextPage);
-        setHasMore(data.hasMore || false);
-      }
+      setAllMentions((prev) => [...prev, ...data.mentions]);
+      setPage(nextPage);
+      setHasMore(data.hasMore || false);
     } catch (err) {
       console.error("Failed to load more mentions:", err);
     } finally {
       setIsLoadingMore(false);
     }
-  }, [hasMore, isLoadingMore, vendorName, page, fetchWithAuth]);
+  }, [hasMore, isLoadingMore, vendorName, page]);
 
   // Infinite scroll observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -454,7 +416,6 @@ const VendorProfile = () => {
                 data={allMentions}
                 selectedVendor={vendorName}
                 isProUser={isProUserValue}
-                getToken={getToken}
                 onUpgradeClick={() => {
                   if (isAuthenticated) {
                     setShowUpgradeModal(true);

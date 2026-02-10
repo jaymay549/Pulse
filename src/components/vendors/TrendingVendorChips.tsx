@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { WAM_URL } from "@/config/wam";
+import { fetchTrendingVendors } from "@/hooks/useSupabaseVendorData";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface TrendingVendorChipsProps {
@@ -23,15 +23,10 @@ export const TrendingVendorChips: React.FC<TrendingVendorChipsProps> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTrending = async () => {
+    const loadTrending = async () => {
       try {
-        const response = await fetch(
-          `${WAM_URL}/api/public/vendor-pulse/trending`
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setTrendingVendors(data.trending || []);
-        }
+        const trending = await fetchTrendingVendors();
+        setTrendingVendors(trending);
       } catch (err) {
         console.error("Failed to fetch trending vendors:", err);
       } finally {
@@ -39,7 +34,7 @@ export const TrendingVendorChips: React.FC<TrendingVendorChipsProps> = ({
       }
     };
 
-    fetchTrending();
+    loadTrending();
   }, []);
 
   if (isLoading || trendingVendors.length === 0) return null;

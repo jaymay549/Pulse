@@ -3,7 +3,7 @@ import { X, Send, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { WAM_URL } from "@/config/wam";
+import { fetchVendorPulseFeed } from "@/hooks/useSupabaseVendorData";
 import { ChatMarkdown } from "./ChatMarkdown";
 
 interface Message {
@@ -24,7 +24,6 @@ interface VendorData {
 }
 
 interface VendorAIChatProps {
-  fetchWithAuth: (url: string) => Promise<Response>;
   className?: string;
 }
 
@@ -39,7 +38,6 @@ const SUGGESTED_PROMPTS = [
 ];
 
 export const VendorAIChat: React.FC<VendorAIChatProps> = ({
-  fetchWithAuth,
   className,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -74,26 +72,20 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
     const pageSize = 200;
 
     while (hasMore) {
-      const params = new URLSearchParams();
-      if (category !== "all") params.append("category", category);
-      params.append("pageSize", pageSize.toString());
-      params.append("page", page.toString());
-      
-      const response = await fetchWithAuth(
-        `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`
-      );
-      
-      if (!response.ok) break;
-      
-      const data = await response.json();
+      const data = await fetchVendorPulseFeed({
+        category: category !== "all" ? category : null,
+        pageSize,
+        page,
+      });
+
       const mentions = data.mentions || [];
       totalFetched += mentions.length;
-      
+
       // Group by vendor
-      mentions.forEach((mention: any) => {
+      mentions.forEach((mention) => {
         const vendorName = mention.vendorName || "Unknown";
         const existing = allVendorData.get(vendorName.toLowerCase());
-        
+
         if (existing) {
           if (mention.type === "positive") existing.positiveCount++;
           else if (mention.type === "warning") existing.warningCount++;
@@ -116,108 +108,83 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
           });
         }
       });
-      
+
       hasMore = data.hasMore === true && mentions.length > 0;
       page++;
-      
-      // Small delay to avoid rate limiting
-      if (hasMore) {
-        await new Promise(r => setTimeout(r, 100));
-      }
     }
-    
+
     return totalFetched;
-  }, [fetchWithAuth]);
+  }, []);
 
   // Load all vendor data when chat opens
   const loadVendorData = useCallback(async () => {
     if (dataLoaded || isLoadingData) return;
-    
+
     setIsLoadingData(true);
     setLoadingProgress(0);
     setError(null);
 
     try {
       const allVendorData: Map<string, VendorData> = new Map();
-      
-      // Fetch all pages for the "all" category to get complete data
+
       setLoadingProgress(10);
-      
+
       let page = 1;
       let hasMore = true;
       let totalFetched = 0;
       const pageSize = 200;
-      
-      // First, get total count from first request
-      const initialParams = new URLSearchParams();
-      initialParams.append("pageSize", pageSize.toString());
-      initialParams.append("page", "1");
-      
-      const initialResponse = await fetchWithAuth(
-        `${WAM_URL}/api/public/vendor-pulse/mentions?${initialParams.toString()}`
-      );
-      
-      let totalCount = 0;
-      if (initialResponse.ok) {
-        const initialData = await initialResponse.json();
-        totalCount = initialData.totalCount || initialData.totalSystemCount || 1000;
-        const mentions = initialData.mentions || [];
-        totalFetched += mentions.length;
-        
-        // Process first page
-        mentions.forEach((mention: any) => {
-          const vendorName = mention.vendorName || "Unknown";
-          const existing = allVendorData.get(vendorName.toLowerCase());
-          
-          if (existing) {
-            if (mention.type === "positive") existing.positiveCount++;
-            else if (mention.type === "warning") existing.warningCount++;
-            existing.mentions.push({
+
+      // First request to get total count
+      const initialData = await fetchVendorPulseFeed({ pageSize, page: 1 });
+
+      const totalCount = initialData.totalCount || initialData.totalSystemCount || 1000;
+      const initialMentions = initialData.mentions || [];
+      totalFetched += initialMentions.length;
+
+      // Process first page
+      initialMentions.forEach((mention) => {
+        const vendorName = mention.vendorName || "Unknown";
+        const existing = allVendorData.get(vendorName.toLowerCase());
+
+        if (existing) {
+          if (mention.type === "positive") existing.positiveCount++;
+          else if (mention.type === "warning") existing.warningCount++;
+          existing.mentions.push({
+            title: mention.title,
+            type: mention.type,
+            quote: mention.quote || mention.explanation || "",
+          });
+        } else {
+          allVendorData.set(vendorName.toLowerCase(), {
+            name: vendorName,
+            category: mention.category || "all",
+            positiveCount: mention.type === "positive" ? 1 : 0,
+            warningCount: mention.type === "warning" ? 1 : 0,
+            mentions: [{
               title: mention.title,
               type: mention.type,
               quote: mention.quote || mention.explanation || "",
-            });
-          } else {
-            allVendorData.set(vendorName.toLowerCase(), {
-              name: vendorName,
-              category: mention.category || "all",
-              positiveCount: mention.type === "positive" ? 1 : 0,
-              warningCount: mention.type === "warning" ? 1 : 0,
-              mentions: [{
-                title: mention.title,
-                type: mention.type,
-                quote: mention.quote || mention.explanation || "",
-              }],
-            });
-          }
-        });
-        
-        hasMore = initialData.hasMore === true && mentions.length > 0;
-        page = 2;
-        setLoadingProgress(Math.round((totalFetched / totalCount) * 100));
-      }
-      
+            }],
+          });
+        }
+      });
+
+      hasMore = initialData.hasMore === true && initialMentions.length > 0;
+      page = 2;
+      setLoadingProgress(Math.round((totalFetched / totalCount) * 100));
+
       // Fetch remaining pages
       while (hasMore) {
-        const params = new URLSearchParams();
-        params.append("pageSize", pageSize.toString());
-        params.append("page", page.toString());
-        
-        const response = await fetchWithAuth(
-          `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`
-        );
-        
-        if (!response.ok) break;
-        
-        const data = await response.json();
+        const data = await fetchVendorPulseFeed({ pageSize, page });
+
         const mentions = data.mentions || [];
         totalFetched += mentions.length;
-        
+
         // Group by vendor
-        mentions.forEach((mention: any) => {
+        mentions.forEach((mention) => {
           const vendorName = mention.vendorName || "Unknown";
           const existing = allVendorData.get(vendorName.toLowerCase());
-          
+
           if (existing) {
             if (mention.type === "positive") existing.positiveCount++;
             else if (mention.type === "warning") existing.warningCount++;
@@ -240,23 +207,17 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
             });
           }
         });
-        
+
         hasMore = data.hasMore === true && mentions.length > 0;
         page++;
-        
-        // Update progress based on fetched vs total
+
         setLoadingProgress(Math.min(95, Math.round((totalFetched / totalCount) * 100)));
-        
-        // Small delay to avoid rate limiting
-        if (hasMore) {
-          await new Promise(r => setTimeout(r, 100));
-        }
       }
-      
+
       setLoadingProgress(100);
       setVendorData(Array.from(allVendorData.values()));
       setDataLoaded(true);
-      
+
       console.log(`[VendorAIChat] Loaded ${totalFetched} total mentions across ${allVendorData.size} vendors`);
     } catch (err) {
       console.error("Failed to load vendor data:", err);
@@ -264,7 +225,7 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
     } finally {
       setIsLoadingData(false);
     }
-  }, [dataLoaded, isLoadingData, fetchWithAuth, fetchAllPagesForCategory]);
+  }, [dataLoaded, isLoadingData, fetchAllPagesForCategory]);
 
   // Auto-load data when chat opens
   useEffect(() => {

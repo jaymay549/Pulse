@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { VendorEntry } from "@/hooks/useVendorReviews";
 import { cn } from "@/lib/utils";
-import { WAM_URL } from "@/config/wam";
+import { fetchVendorInsight } from "@/hooks/useSupabaseVendorData";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AIInsightBannerProps {
@@ -65,50 +65,23 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
       return;
     }
 
-    const fetchInsight = async () => {
+    const loadInsight = async () => {
       setIsLocked(false);
       setIsLoading(true);
 
       try {
-        const params = new URLSearchParams();
         // Prioritize selectedVendor over searchQuery for vendor scoping
         const vendorName =
           selectedVendor ||
           (searchQuery && searchQuery.trim().length > 0 ? searchQuery : null);
 
-        // When a vendor is selected, scope to vendor only (not category)
-        // Vendor is more specific than category, so we ignore category when vendor is selected
-        if (vendorName) {
-          params.append("vendorName", vendorName);
-        } else if (selectedCategory) {
-          // Only include category if no vendor is selected
-          params.append("category", selectedCategory);
-        }
+        const insightData = await fetchVendorInsight({
+          vendorName: vendorName || undefined,
+          category: !vendorName ? selectedCategory : undefined,
+        });
 
-        const headers: HeadersInit = {};
-        if (getToken) {
-          const token = await getToken();
-          if (token) {
-            headers["Authorization"] = `Bearer ${token}`;
-          }
-        }
-
-        const response = await fetch(
-          `${WAM_URL}/api/public/vendor-pulse/insights?${params.toString()}`,
-          {
-            headers,
-          }
-        );
-
-        if (response.status === 403) {
-          setIsLocked(true);
-          setInsight(null);
-          return;
-        }
-
-        if (response.ok) {
-          const data = await response.json();
-          setInsight(data.insight);
+        if (insightData) {
+          setInsight(insightData);
         } else {
           setInsight(null);
         }
@@ -120,8 +93,8 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
       }
     };
 
-    fetchInsight();
-  }, [selectedCategory, searchQuery, selectedVendor, getToken]);
+    loadInsight();
+  }, [selectedCategory, searchQuery, selectedVendor]);
 
   // Hide AI Intelligence banner when search query is present (but show if vendor is selected)
   if (searchQuery && searchQuery.trim().length > 0 && !selectedVendor) {

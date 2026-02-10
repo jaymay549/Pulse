@@ -42,8 +42,8 @@ import { useVendorWebsites } from "@/hooks/useVendorWebsites";
 import { useVerifiedVendor } from "@/hooks/useVerifiedVendor";
 import { useVendorResponses } from "@/hooks/useVendorResponses";
 
-// Config
-import { WAM_URL } from "@/config/wam";
+// Supabase data
+import { fetchVendorPulseFeed, fetchVendorsList } from "@/hooks/useSupabaseVendorData";
 
 // Utils
 import { getAccessLevel, isProUser } from "@/utils/tierUtils";
@@ -113,27 +113,21 @@ const VendorsV2 = () => {
       const counts: Record<string, VendorCounts> = {};
       const names: Record<string, string> = {};
 
-      let page = 1;
-      const requestedPageSize = 500;
-      const maxPages = 500; // safety to avoid infinite loops
+      // Fetch all mentions for this category/search via Supabase RPC (single call, large page)
+      let offset = 0;
+      const pageSize = 500;
+      let hasMore = true;
 
-      while (page <= maxPages) {
-        const params = new URLSearchParams();
-        if (opts.category && opts.category !== "all") params.append("category", opts.category);
-        if (opts.search) params.append("search", opts.search);
-        params.append("pageSize", requestedPageSize.toString());
-        params.append("page", page.toString());
+      while (hasMore) {
+        const data = await fetchVendorPulseFeed({
+          category: opts.category || null,
+          search: opts.search || null,
+          page: Math.floor(offset / pageSize) + 1,
+          pageSize,
+        });
 
-        const response = await fetchWithAuth(
-          `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
-        );
-        if (!response.ok) break;
-
-        const data = await response.json();
-        const mentionsPage: any[] = data.mentions || [];
-
-        for (const mention of mentionsPage) {
-          const vendorNameRaw: string | undefined = mention.vendor_name || mention.vendorName;
+        for (const mention of data.mentions) {
+          const vendorNameRaw = mention.vendorName;
           if (!vendorNameRaw) continue;
 
           const key = vendorNameRaw.toLowerCase();
@@ -145,31 +139,14 @@ const VendorsV2 = () => {
           else if (mention.type === "warning") counts[key].warning += 1;
         }
 
-        const effectivePageSize =
-          typeof data.pageSize === "number" && data.pageSize > 0
-            ? data.pageSize
-            : requestedPageSize;
-        const effectivePage =
-          typeof data.page === "number" && data.page > 0 ? data.page : page;
-        const totalCount = typeof data.totalCount === "number" ? data.totalCount : undefined;
-        const serverHasMore = typeof data.hasMore === "boolean" ? data.hasMore : undefined;
-
-        const hasMore =
-          serverHasMore ??
-          (totalCount !== undefined
-            ? effectivePage * effectivePageSize < totalCount
-            : mentionsPage.length === effectivePageSize);
-
-        if (!hasMore || mentionsPage.length === 0) break;
-
-        page += 1;
-        // Small delay to avoid rate limiting
-        await new Promise((r) => setTimeout(r, 25));
+        hasMore = data.hasMore;
+        offset += pageSize;
+        if (data.mentions.length === 0) break;
       }
 
       return { counts, names };
     },
-    [fetchWithAuth],
+    [],
   );
 
   // Fallback vendor data from backend table (keeps /vendors usable if WAM is flaky)
@@ -333,43 +310,29 @@ const VendorsV2 = () => {
   const isDataLoading =
     isWamLoading || (wamMentions.length === 0 && isDbLoading);
 
-  // Fetch Vendor Pulse mentions from WAM
+  // Fetch Vendor Pulse mentions from Supabase
   // Note: searchQuery is NOT used here - it only affects autocomplete dropdown
   useEffect(() => {
     const fetchMentions = async () => {
       setIsWamLoading(true);
       try {
-        const params = new URLSearchParams();
-        if (selectedCategory !== "all") params.append("category", selectedCategory);
-        if (selectedVendor) params.append("vendorName", selectedVendor);
-        if (typeFilter !== "all" && typeFilter !== undefined) params.append("type", typeFilter);
+        const data = await fetchVendorPulseFeed({
+          category: selectedCategory !== "all" ? selectedCategory : null,
+          vendorName: selectedVendor || null,
+          type: typeFilter !== "all" ? typeFilter : null,
+        });
 
-        const response = await fetchWithAuth(
-          `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
-        );
-        if (response.ok) {
-          const data = await response.json();
-          // Transform snake_case fields to camelCase
-          const transformedMentions = (data.mentions || []).map((mention: any) => ({
-            ...mention,
-            vendorName: mention.vendor_name || mention.vendorName,
-            conversationTime: mention.conversation_time || mention.conversationTime,
-          }));
-          setWamMentions(transformedMentions);
-          // Store pagination info if provided
-          if (data.page !== undefined) {
-            setPaginationInfo({
-              page: data.page,
-              pageSize: data.pageSize,
-              totalCount: data.totalCount,
-              totalPositiveCount: data.totalPositiveCount,
-              totalWarningCount: data.totalWarningCount,
-              totalSystemCount: data.totalSystemCount,
-              categoryCounts: data.categoryCounts,
-              hasMore: data.hasMore,
-            });
-          }
-        }
+        setWamMentions(data.mentions as any[]);
+        setPaginationInfo({
+          page: data.page,
+          pageSize: data.pageSize,
+          totalCount: data.totalCount,
+          totalPositiveCount: data.totalPositiveCount,
+          totalWarningCount: data.totalWarningCount,
+          totalSystemCount: data.totalSystemCount,
+          categoryCounts: data.categoryCounts,
+          hasMore: data.hasMore,
+        });
       } catch (err) {
         console.error("Failed to fetch mentions:", err);
       } finally {
@@ -378,7 +341,7 @@ const VendorsV2 = () => {
     };
 
     fetchMentions();
-  }, [isAuthenticated, fetchWithAuth, selectedCategory, selectedVendor, typeFilter]);
+  }, [isAuthenticated, selectedCategory, selectedVendor, typeFilter]);
 
   // Fetch category vendor index (all vendors + accurate counts) for sidebar + category vendor chips
   useEffect(() => {
@@ -423,24 +386,19 @@ const VendorsV2 = () => {
 
   // Fetch all vendor names on mount for search autocomplete
   useEffect(() => {
-    const fetchAllVendors = async () => {
+    const loadAllVendors = async () => {
       try {
-        const response = await fetch(`${WAM_URL}/api/public/vendor-pulse/vendors-list`);
-        if (response.ok) {
-          const data = await response.json();
-          const vendorNames = (data.vendors || []).map((v: { name: string }) => v.name);
-          setAllVendorsList(vendorNames);
-        }
+        const vendors = await fetchVendorsList();
+        setAllVendorsList(vendors.map((v) => v.name));
       } catch (err) {
         console.error("Failed to fetch vendors list for search:", err);
       }
     };
 
-    fetchAllVendors();
+    loadAllVendors();
   }, []);
 
-  // Fetch vendor names for search autocomplete (quick, first page only)
-  // Uses plain fetch (no auth) to get vendor names from public endpoint for all users
+  // Fetch vendor names for search autocomplete (quick, single RPC call)
   useEffect(() => {
     const fetchSearchVendors = async () => {
       if (!searchQuery || searchQuery.trim().length < 2) {
@@ -450,27 +408,16 @@ const VendorsV2 = () => {
       }
 
       try {
-        // Quick search: just get first page with search filter for autocomplete
-        // Use plain fetch for public endpoint to potentially get vendor names for all users
-        const params = new URLSearchParams();
-        params.append("search", searchQuery.trim());
-        params.append("pageSize", "100"); // Get more results for better autocomplete
+        const data = await fetchVendorPulseFeed({
+          search: searchQuery.trim(),
+          pageSize: 100,
+        });
 
-        const response = await fetch(
-          `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`
-        );
-
-        if (!response.ok) return;
-
-        const data = await response.json();
-        const mentionsPage: any[] = data.mentions || [];
-
-        // Extract unique vendor names and counts
         const counts: Record<string, { total: number; positive: number; warning: number }> = {};
         const names: Record<string, string> = {};
 
-        for (const mention of mentionsPage) {
-          const vendorNameRaw: string | undefined = mention.vendor_name || mention.vendorName;
+        for (const mention of data.mentions) {
+          const vendorNameRaw = mention.vendorName;
           if (!vendorNameRaw) continue;
 
           const key = vendorNameRaw.toLowerCase();
@@ -513,47 +460,32 @@ const VendorsV2 = () => {
     setIsLoadingMore(true);
     try {
       const nextPage = paginationInfo.page + 1;
-      const params = new URLSearchParams();
-      if (selectedCategory !== "all") params.append("category", selectedCategory);
-      if (selectedVendor) params.append("vendorName", selectedVendor);
-      if (typeFilter !== "all" && typeFilter !== undefined) params.append("type", typeFilter);
-      params.append("page", nextPage.toString());
-      params.append("pageSize", (paginationInfo.pageSize || 40).toString());
+      const data = await fetchVendorPulseFeed({
+        category: selectedCategory !== "all" ? selectedCategory : null,
+        vendorName: selectedVendor || null,
+        type: typeFilter !== "all" ? typeFilter : null,
+        page: nextPage,
+        pageSize: paginationInfo.pageSize || 40,
+      });
 
-      const response = await fetchWithAuth(
-        `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
-      );
-      if (response.ok) {
-        const data = await response.json();
-        // Transform snake_case fields to camelCase
-        const transformedMentions = (data.mentions || []).map((mention: any) => ({
-          ...mention,
-          vendorName: mention.vendor_name || mention.vendorName,
-          conversationTime: mention.conversation_time || mention.conversationTime,
-        }));
-        // Append new mentions to existing ones
-        setWamMentions((prev) => [...prev, ...transformedMentions]);
-        // Update pagination info
-        if (data.page !== undefined) {
-          setPaginationInfo({
-            page: data.page,
-            pageSize: data.pageSize,
-            totalCount: data.totalCount,
-            totalPositiveCount: data.totalPositiveCount,
-            totalWarningCount: data.totalWarningCount,
-            totalSystemCount: data.totalSystemCount,
-            categoryCounts: data.categoryCounts,
-            hasMore: data.hasMore,
-          });
-        }
-      }
+      // Append new mentions to existing ones
+      setWamMentions((prev) => [...prev, ...(data.mentions as any[])]);
+      setPaginationInfo({
+        page: data.page,
+        pageSize: data.pageSize,
+        totalCount: data.totalCount,
+        totalPositiveCount: data.totalPositiveCount,
+        totalWarningCount: data.totalWarningCount,
+        totalSystemCount: data.totalSystemCount,
+        categoryCounts: data.categoryCounts,
+        hasMore: data.hasMore,
+      });
     } catch (err) {
       console.error("Failed to load more mentions:", err);
     } finally {
       setIsLoadingMore(false);
     }
   }, [
-    fetchWithAuth,
     isLoadingMore,
     paginationInfo,
     selectedCategory,
@@ -1388,7 +1320,7 @@ const VendorsV2 = () => {
 
       {/* AI Chat - only shown when ?ai_chat=true */}
       {showAIChat && (
-        <VendorAIChat fetchWithAuth={fetchWithAuth} />
+        <VendorAIChat />
       )}
     </>
   );
