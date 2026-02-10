@@ -40,3 +40,12 @@ export function isPaidTier(tier: string | null | undefined): boolean {
   const tierLower = tier.toLowerCase();
   return tierLower === "pro" || tierLower === "executive";
 }
+
+/**
+ * Check if user metadata indicates admin role
+ */
+export function isAdminUser(metadata: Record<string, unknown> | null | undefined): boolean {
+  if (!metadata) return false;
+  const circles = metadata.circles as { role?: string } | undefined;
+  return circles?.role === "admin";
+}

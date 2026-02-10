@@ -9,6 +9,7 @@ interface CirclesMetadata {
     circles?: {
         tier: ClerkUserTier;
         status: "active" | "past_due" | "canceled" | "unpaid" | "paused";
+        role?: "admin" | "user";
     };
 }
 
@@ -27,6 +28,12 @@ export const useClerkAuth = () => {
         if (tier === "community") return "Community";
         return "Guest";
     }, [tier]);
+
+    const isAdmin = useMemo((): boolean => {
+        if (!user) return false;
+        const metadata = user.publicMetadata as CirclesMetadata;
+        return metadata?.circles?.role === "admin";
+    }, [user]);
 
     const isAuthenticated = isSignedIn ?? false;
 
@@ -55,6 +62,7 @@ export const useClerkAuth = () => {
             : null,
         tier,
         role,
+        isAdmin,
         getToken,
         fetchWithAuth,
     };

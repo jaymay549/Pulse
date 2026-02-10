@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { LayoutGrid, Menu } from "lucide-react";
-import { Search, X, Crown, Share2, CreditCard, ArrowRight, Building2 } from "lucide-react";
+import { Search, X, Crown, Share2, CreditCard, ArrowRight, Building2, Shield } from "lucide-react";
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import { Button } from "@/components/ui/button";
@@ -72,6 +72,7 @@ const VendorsV2 = () => {
     user,
     role,
     tier,
+    isAdmin,
     isLoading: isAuthLoading,
     fetchWithAuth,
     getToken,
@@ -772,6 +773,15 @@ const VendorsV2 = () => {
                     <Crown className="h-4 w-4 mr-2" />
                     Upgrade
                   </Button>
+                )}
+
+                {isAuthenticated && isAdmin && (
+                  <Link to="/admin">
+                    <Button variant="outline" size="sm" className="hidden sm:flex text-xs">
+                      <Shield className="h-3.5 w-3.5 mr-1.5" />
+                      Admin
+                    </Button>
+                  </Link>
                 )}
 
                 {isAuthenticated && (
