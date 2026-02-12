@@ -1,0 +1,378 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
+const FIRECRAWL_BASE = "https://api.firecrawl.dev/v1";
+
+interface EnrichRequest {
+  vendor_names?: string[];
+  batch_size?: number;
+}
+
+interface EnrichResult {
+  vendor_name: string;
+  success: boolean;
+  error?: string;
+}
+
+// --- Firecrawl helpers ---
+
+async function firecrawlSearch(
+  apiKey: string,
+  query: string,
+  limit = 3
+): Promise<{ url: string; title: string; description: string }[]> {
+  const res = await fetch(`${FIRECRAWL_BASE}/search`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query, limit }),
+  });
+  if (res.status === 429) throw new Error("RATE_LIMITED");
+  if (!res.ok) throw new Error(`Firecrawl search failed: ${res.status}`);
+  const data = await res.json();
+  console.log(`[firecrawlSearch] query="${query}" results=${JSON.stringify(data).slice(0, 500)}`);
+  return data.data || [];
+}
+
+async function firecrawlScrapeJson(
+  apiKey: string,
+  url: string
+): Promise<Record<string, string>> {
+  const res = await fetch(`${FIRECRAWL_BASE}/scrape`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      url,
+      formats: ["json"],
+      jsonOptions: {
+        prompt:
+          "Extract company information: the company tagline or slogan, a 1-2 sentence summary of what the company does, the headquarters city and state, and the industry they operate in.",
+        schema: {
+          type: "object",
+          properties: {
+            tagline: { type: "string" },
+            summary: { type: "string" },
+            headquarters: { type: "string" },
+            industry: { type: "string" },
+          },
+        },
+      },
+      waitFor: 3000,
+    }),
+  });
+  if (res.status === 429) throw new Error("RATE_LIMITED");
+  const text = await res.text();
+  console.log(`[firecrawlScrapeJson] url="${url}" status=${res.status} body=${text.slice(0, 500)}`);
+  if (!res.ok) throw new Error(`Firecrawl scrape-json failed: ${res.status} — ${text.slice(0, 200)}`);
+  const data = JSON.parse(text);
+  return data.data?.json || {};
+}
+
+async function firecrawlScreenshot(
+  apiKey: string,
+  url: string
+): Promise<string | null> {
+  const res = await fetch(`${FIRECRAWL_BASE}/scrape`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      url,
+      formats: ["screenshot"],
+      waitFor: 3000,
+    }),
+  });
+  if (res.status === 429) throw new Error("RATE_LIMITED");
+  const text = await res.text();
+  console.log(`[firecrawlScreenshot] url="${url}" status=${res.status} body=${text.slice(0, 300)}`);
+  if (!res.ok) throw new Error(`Firecrawl screenshot failed: ${res.status} — ${text.slice(0, 200)}`);
+  const data = JSON.parse(text);
+  return data.data?.screenshot || null;
+}
+
+// --- Main enrichment logic ---
+
+async function enrichVendor(
+  supabase: ReturnType<typeof createClient>,
+  firecrawlKey: string,
+  vendor: { vendor_name: string; website_url: string | null }
+): Promise<EnrichResult> {
+  const { vendor_name } = vendor;
+  let website_url = vendor.website_url;
+  const slug = vendor_name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  try {
+    // Mark as enriching
+    await supabase
+      .from("vendor_metadata")
+      .update({ enrichment_status: "enriching" })
+      .eq("vendor_name", vendor_name);
+
+    const updates: Record<string, unknown> = {};
+
+    // Step 0: Find website URL if missing
+    if (!website_url) {
+      try {
+        const results = await firecrawlSearch(
+          firecrawlKey,
+          `${vendor_name} official website`,
+          5
+        );
+        // Pick the first non-linkedin, non-social-media result
+        const skipPatterns = /linkedin\.com|facebook\.com|twitter\.com|x\.com|instagram\.com|youtube\.com|glassdoor|crunchbase|wikipedia/i;
+        const siteResult = results.find((r) => !skipPatterns.test(r.url));
+        if (siteResult) {
+          // Extract just the origin (e.g. https://lotlinx.com)
+          try {
+            const parsed = new URL(siteResult.url);
+            website_url = `${parsed.protocol}//${parsed.hostname}`;
+          } catch {
+            website_url = siteResult.url;
+          }
+          updates.website_url = website_url;
+          console.log(`[${vendor_name}] Found website: ${website_url}`);
+        }
+      } catch (e) {
+        if ((e as Error).message === "RATE_LIMITED") throw e;
+        console.error(`[${vendor_name}] Website search failed:`, e);
+      }
+    }
+
+    // Step 1: Find LinkedIn URL
+    try {
+      const results = await firecrawlSearch(
+        firecrawlKey,
+        `"${vendor_name}" site:linkedin.com/company`,
+        3
+      );
+      const linkedinResult = results.find((r) =>
+        /linkedin\.com\/company\//.test(r.url)
+      );
+      if (linkedinResult) {
+        updates.linkedin_url = linkedinResult.url;
+      }
+    } catch (e) {
+      if ((e as Error).message === "RATE_LIMITED") throw e;
+      console.error(`[${vendor_name}] LinkedIn search failed:`, e);
+    }
+
+    // Step 2: Extract structured data from website (using scrape+JSON, which is synchronous)
+    if (website_url) {
+      try {
+        const extracted = await firecrawlScrapeJson(firecrawlKey, website_url);
+        if (extracted.tagline) updates.tagline = extracted.tagline;
+        if (extracted.headquarters)
+          updates.headquarters = extracted.headquarters;
+        // Only update description if currently empty
+        if (extracted.summary) {
+          const { data: current } = await supabase
+            .from("vendor_metadata")
+            .select("description")
+            .eq("vendor_name", vendor_name)
+            .single();
+          if (!current?.description) {
+            updates.description = extracted.summary;
+          }
+        }
+      } catch (e) {
+        if ((e as Error).message === "RATE_LIMITED") throw e;
+        console.error(`[${vendor_name}] Website extract failed:`, e);
+      }
+    }
+
+    // Step 3: Screenshot banner from website
+    if (website_url) {
+      try {
+        const screenshotUrl = await firecrawlScreenshot(
+          firecrawlKey,
+          website_url
+        );
+        if (screenshotUrl) {
+          // Download the temporary screenshot
+          const imgRes = await fetch(screenshotUrl);
+          if (imgRes.ok) {
+            const arrayBuffer = await imgRes.arrayBuffer();
+            const filePath = `${slug}.png`;
+
+            // Upload to Supabase Storage
+            const { error: uploadError } = await supabase.storage
+              .from("vendor-banners")
+              .upload(filePath, arrayBuffer, {
+                contentType: "image/png",
+                upsert: true,
+              });
+
+            if (uploadError) {
+              console.error(
+                `[${vendor_name}] Banner upload failed:`,
+                uploadError
+              );
+            } else {
+              const {
+                data: { publicUrl },
+              } = supabase.storage
+                .from("vendor-banners")
+                .getPublicUrl(filePath);
+              updates.banner_url = publicUrl;
+            }
+          }
+        }
+      } catch (e) {
+        if ((e as Error).message === "RATE_LIMITED") throw e;
+        console.error(`[${vendor_name}] Screenshot failed:`, e);
+      }
+    }
+
+    // Step 4: Update vendor_metadata
+    const updateKeys = Object.keys(updates);
+    console.log(`[${vendor_name}] Saving fields: ${updateKeys.join(", ") || "(none)"}`);
+
+    await supabase
+      .from("vendor_metadata")
+      .update({
+        ...updates,
+        enrichment_status: "enriched",
+        enrichment_error: updateKeys.length > 0 ? null : "No data found",
+        enriched_at: new Date().toISOString(),
+      })
+      .eq("vendor_name", vendor_name);
+
+    return { vendor_name, success: true };
+  } catch (e) {
+    const errorMsg = (e as Error).message || "Unknown error";
+    if (errorMsg === "RATE_LIMITED") throw e;
+
+    await supabase
+      .from("vendor_metadata")
+      .update({
+        enrichment_status: "failed",
+        enrichment_error: errorMsg,
+      })
+      .eq("vendor_name", vendor_name);
+
+    return { vendor_name, success: false, error: errorMsg };
+  }
+}
+
+// --- Edge function handler ---
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+    if (!FIRECRAWL_API_KEY) {
+      throw new Error("FIRECRAWL_API_KEY is not configured");
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const body: EnrichRequest = await req.json();
+    let vendors: { vendor_name: string; website_url: string | null }[] = [];
+
+    if (body.vendor_names?.length) {
+      const { data } = await supabase
+        .from("vendor_metadata")
+        .select("vendor_name, website_url")
+        .in("vendor_name", body.vendor_names);
+      vendors = data || [];
+    } else if (body.batch_size) {
+      const { data } = await supabase
+        .from("vendor_metadata")
+        .select("vendor_name, website_url")
+        .eq("enrichment_status", "pending")
+        .limit(body.batch_size);
+      vendors = data || [];
+    }
+
+    if (vendors.length === 0) {
+      // Count remaining
+      const { count } = await supabase
+        .from("vendor_metadata")
+        .select("id", { count: "exact", head: true })
+        .eq("enrichment_status", "pending");
+
+      return new Response(
+        JSON.stringify({
+          enriched: 0,
+          remaining: count || 0,
+          rate_limited: false,
+          results: [],
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const results: EnrichResult[] = [];
+    let rateLimited = false;
+
+    for (const vendor of vendors) {
+      try {
+        const result = await enrichVendor(supabase, FIRECRAWL_API_KEY, vendor);
+        results.push(result);
+      } catch (e) {
+        if ((e as Error).message === "RATE_LIMITED") {
+          rateLimited = true;
+          // Reset this vendor back to pending
+          await supabase
+            .from("vendor_metadata")
+            .update({ enrichment_status: "pending" })
+            .eq("vendor_name", vendor.vendor_name);
+          break;
+        }
+        results.push({
+          vendor_name: vendor.vendor_name,
+          success: false,
+          error: (e as Error).message,
+        });
+      }
+    }
+
+    // Count remaining
+    const { count } = await supabase
+      .from("vendor_metadata")
+      .select("id", { count: "exact", head: true })
+      .eq("enrichment_status", "pending");
+
+    return new Response(
+      JSON.stringify({
+        enriched: results.filter((r) => r.success).length,
+        remaining: count || 0,
+        rate_limited: rateLimited,
+        results,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Vendor enrich error:", error);
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+});

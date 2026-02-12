@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Users, Activity, MessageSquare, TrendingUp, Search, ArrowUpDown, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useWamApi } from "@/hooks/useWamApi";
+import { useMembers } from "@/hooks/useAdminData";
 import type { Member, MemberActivity } from "@/types/admin";
 
 const TIME_RANGES = [
@@ -68,22 +68,11 @@ const ActivitySquares = ({ activity, days }: { activity: MemberActivity[]; days:
 };
 
 const MembersPage = () => {
-  const wam = useWamApi();
-  const [members, setMembers] = useState<Member[]>([]);
-  const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(7);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("most_active");
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-
-  useEffect(() => {
-    setLoading(true);
-    wam
-      .getMembersWithActivity(days)
-      .then((res: any) => setMembers(res.members || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [days]);
+  const { data: members = [], isLoading: loading } = useMembers(days);
 
   const filtered = useMemo(() => {
     let list = members;

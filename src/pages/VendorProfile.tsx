@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Globe, TrendingUp, ThumbsUp, AlertTriangle, Loader2, Crown, Share2, CreditCard } from "lucide-react";
+import { ArrowLeft, Globe, TrendingUp, TrendingDown, ThumbsUp, AlertTriangle, Loader2, Crown, Share2, CreditCard, MessageCircle, Sparkles, Linkedin, MapPin, CalendarCheck, MessagesSquare, ExternalLink, BotMessageSquare, Send, ArrowLeftIcon } from "lucide-react";
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
@@ -10,12 +10,15 @@ import UpgradeModal from "@/components/UpgradeModal";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { VendorCard, VendorCardDetail, AIInsightBanner } from "@/components/vendors";
+import { Textarea } from "@/components/ui/textarea";
+import { ChatMarkdown } from "@/components/vendors/ChatMarkdown";
+import { VendorCard, VendorCardDetail } from "@/components/vendors";
 import { VendorEntry } from "@/hooks/useVendorReviews";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
-import { fetchVendorProfile, fetchVendorPulseFeed } from "@/hooks/useSupabaseVendorData";
+import { fetchVendorProfile, fetchVendorPulseFeed, fetchVendorInsight } from "@/hooks/useSupabaseVendorData";
 import { isProUser } from "@/utils/tierUtils";
 import { cn } from "@/lib/utils";
+import { categories as vendorCategories } from "@/hooks/useVendorFilters";
 
 interface VendorProfileData {
   vendorName: string;
@@ -31,6 +34,11 @@ interface VendorProfileData {
     website_url?: string;
     logo_url?: string;
     description?: string;
+    category?: string;
+    linkedin_url?: string;
+    banner_url?: string;
+    tagline?: string;
+    headquarters?: string;
   } | null;
   insight: any;
   mentions: VendorEntry[];
@@ -59,6 +67,14 @@ const VendorProfile = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
+
+  // Inline vendor chat state
+  const [ctaChatOpen, setCtaChatOpen] = useState(false);
+  const [ctaChatMessages, setCtaChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [ctaChatInput, setCtaChatInput] = useState("");
+  const [ctaChatLoading, setCtaChatLoading] = useState(false);
+  const ctaChatEndRef = useRef<HTMLDivElement>(null);
+  const ctaChatInputRef = useRef<HTMLTextAreaElement>(null);
 
   const vendorName = vendorSlug ? decodeURIComponent(vendorSlug) : "";
 
@@ -186,6 +202,112 @@ const VendorProfile = () => {
     return getLogoUrl(profileData.vendorName, profileData.metadata?.website_url);
   }, [profileData, getLogoUrl]);
 
+  // Pulse Score: weighted sentiment + volume bonus (0–100)
+  const pulseScore = useMemo(() => {
+    if (!profileData) return 0;
+    const raw =
+      profileData.stats.positivePercent * 0.85 +
+      Math.min(profileData.stats.totalMentions / 10, 15);
+    return Math.min(100, Math.max(0, Math.round(raw)));
+  }, [profileData]);
+
+  const scoreTheme = useMemo(() => {
+    if (pulseScore >= 70)
+      return {
+        color: "text-emerald-600",
+        bg: "bg-emerald-50/80",
+        border: "border-emerald-200/60",
+        ring: "#22c55e",
+        ringEnd: "#15803d",
+        glow: "rgba(34,197,94,0.15)",
+        label: "Excellent",
+      };
+    if (pulseScore >= 40)
+      return {
+        color: "text-amber-600",
+        bg: "bg-amber-50/80",
+        border: "border-amber-200/60",
+        ring: "#f59e0b",
+        ringEnd: "#d97706",
+        glow: "rgba(245,158,11,0.15)",
+        label: "Average",
+      };
+    return {
+      color: "text-red-600",
+      bg: "bg-red-50/80",
+      border: "border-red-200/60",
+      ring: "#ef4444",
+      ringEnd: "#dc2626",
+      glow: "rgba(239,68,68,0.15)",
+      label: "Low",
+    };
+  }, [pulseScore]);
+
+  // Ring + score number animation
+  const circumference = 2 * Math.PI * 42;
+  const [ringOffset, setRingOffset] = useState(circumference);
+  const [displayScore, setDisplayScore] = useState(0);
+
+  useEffect(() => {
+    if (!pulseScore) return;
+    const target = circumference - (pulseScore / 100) * circumference;
+    const ringTimer = setTimeout(() => setRingOffset(target), 100);
+    const duration = 1200;
+    const steps = 60;
+    const increment = pulseScore / steps;
+    let current = 0;
+    const countTimer = setInterval(() => {
+      current += increment;
+      if (current >= pulseScore) {
+        setDisplayScore(pulseScore);
+        clearInterval(countTimer);
+      } else {
+        setDisplayScore(Math.round(current));
+      }
+    }, duration / steps);
+    return () => {
+      clearTimeout(ringTimer);
+      clearInterval(countTimer);
+    };
+  }, [pulseScore, circumference]);
+
+  // CDG Intelligence — fetch pre-computed insight, fall back to local summary
+  const [aiInsight, setAiInsight] = useState<{ headline: string; sentiment: string } | null>(null);
+
+  useEffect(() => {
+    if (!vendorName) return;
+    fetchVendorInsight({ vendorName }).then((data) => {
+      if (data?.headline) setAiInsight({ headline: data.headline, sentiment: data.sentiment });
+    });
+  }, [vendorName]);
+
+  const intelligenceHeadline = useMemo(() => {
+    if (aiInsight) return { text: aiInsight.headline, sentiment: aiInsight.sentiment, isAI: true };
+    if (!profileData) return null;
+    const { positivePercent, warningPercent, totalMentions } = profileData.stats;
+    const name = profileData.vendorName;
+    if (positivePercent >= 75) {
+      return { text: `${name} enjoys strong positive sentiment — ${positivePercent}% favorable across ${totalMentions} community discussions.`, sentiment: "positive", isAI: false };
+    }
+    if (warningPercent >= 40) {
+      return { text: `${name} receives mixed reception — ${warningPercent}% of ${totalMentions} discussions flag concerns worth noting.`, sentiment: "negative", isAI: false };
+    }
+    return { text: `${name} has a balanced community profile with ${totalMentions} discussions and ${positivePercent}% positive sentiment.`, sentiment: "neutral", isAI: false };
+  }, [aiInsight, profileData]);
+
+  // Auto-scroll chat messages (must be before early returns)
+  useEffect(() => {
+    if (ctaChatMessages.length > 0) {
+      ctaChatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [ctaChatMessages]);
+
+  useEffect(() => {
+    if (ctaChatOpen) {
+      setTimeout(() => ctaChatInputRef.current?.focus(), 300);
+    }
+  }, [ctaChatOpen]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -222,11 +344,95 @@ const VendorProfile = () => {
     );
   }
 
+  // ── Inline vendor chat helpers ──
+  const VENDOR_CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vendor-ai-chat`;
+
+  const sendCtaChatMessage = async (text: string) => {
+    if (!text.trim() || ctaChatLoading) return;
+    const userMsg = { role: "user" as const, content: text.trim() };
+    setCtaChatMessages((prev) => [...prev, userMsg]);
+    setCtaChatInput("");
+    setCtaChatLoading(true);
+
+    // Build a compact context from the profile
+    const vendorContext = [{
+      name: profileData.vendorName,
+      category: profileData.metadata?.category || "",
+      positiveCount: profileData.stats.positiveCount,
+      warningCount: profileData.stats.warningCount,
+      mentions: profileData.mentions.slice(0, 30).map((m) => ({
+        title: m.title,
+        type: m.type,
+        quote: m.quote || m.explanation || "",
+      })),
+    }];
+
+    let assistantContent = "";
+    const updateAssistant = (chunk: string) => {
+      assistantContent += chunk;
+      setCtaChatMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant") {
+          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantContent } : m));
+        }
+        return [...prev, { role: "assistant", content: assistantContent }];
+      });
+    };
+
+    try {
+      const allMessages = [...ctaChatMessages, userMsg];
+      const res = await fetch(VENDOR_CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: allMessages, vendorData: vendorContext }),
+      });
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      if (!res.body) throw new Error("No response body");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buf.indexOf("\n")) !== -1) {
+          let line = buf.slice(0, nl);
+          buf = buf.slice(nl + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line.startsWith("data: ")) continue;
+          const json = line.slice(6).trim();
+          if (json === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(json);
+            const c = parsed.choices?.[0]?.delta?.content;
+            if (c) updateAssistant(c);
+          } catch { break; }
+        }
+      }
+    } catch (err) {
+      console.error("Vendor chat error:", err);
+      setCtaChatMessages((prev) => prev.slice(0, -1));
+    } finally {
+      setCtaChatLoading(false);
+    }
+  };
+
+  const neutralCount = profileData.stats.totalMentions - profileData.stats.positiveCount - profileData.stats.warningCount;
+  const neutralPercent = 100 - profileData.stats.positivePercent - profileData.stats.warningPercent;
+
   return (
     <>
       <Helmet>
         <title>{profileData.vendorName} - CDG Pulse</title>
         <meta name="description" content={`Reviews and insights about ${profileData.vendorName} from CDG Pulse`} />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" rel="stylesheet" />
       </Helmet>
 
       <div className="min-h-screen bg-[hsl(var(--vendor-bg))]">
@@ -234,7 +440,6 @@ const VendorProfile = () => {
         <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              {/* Left: Back + Logo */}
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
@@ -248,11 +453,7 @@ const VendorProfile = () => {
                   <img src={cdgPulseLogo} alt="CDG Pulse" className="h-7" />
                 </Link>
               </div>
-
-              {/* Spacer */}
               <div className="hidden md:flex flex-1" />
-
-              {/* Right: Actions */}
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
@@ -274,17 +475,11 @@ const VendorProfile = () => {
                   <Share2 className="h-4 w-4 mr-2" />
                   Share
                 </Button>
-
                 {!isAuthenticated && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowSignIn(true)}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => setShowSignIn(true)}>
                     Sign In
                   </Button>
                 )}
-
                 {isAuthenticated && !isProUserValue && (
                   <Button
                     variant="yellow"
@@ -302,29 +497,16 @@ const VendorProfile = () => {
                     Upgrade
                   </Button>
                 )}
-
                 {isAuthenticated && (
                   <UserButton
-                    appearance={{
-                      elements: {
-                        avatarBox: "h-8 w-8",
-                      },
-                    }}
+                    appearance={{ elements: { avatarBox: "h-8 w-8" } }}
                     afterSignOutUrl="/vendors"
                     signInUrl="/auth?redirect=/vendors"
                   >
                     <UserButton.MenuItems>
-                      <UserButton.Action
-                        label="Subscription"
-                        labelIcon={<CreditCard className="h-4 w-4" />}
-                        open="subscription"
-                      />
+                      <UserButton.Action label="Subscription" labelIcon={<CreditCard className="h-4 w-4" />} open="subscription" />
                     </UserButton.MenuItems>
-                    <UserButton.UserProfilePage
-                      label="Subscription"
-                      labelIcon={<CreditCard className="h-4 w-4" />}
-                      url="subscription"
-                    >
+                    <UserButton.UserProfilePage label="Subscription" labelIcon={<CreditCard className="h-4 w-4" />} url="subscription">
                       <SubscriptionManagement />
                     </UserButton.UserProfilePage>
                   </UserButton>
@@ -335,104 +517,534 @@ const VendorProfile = () => {
         </header>
 
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
 
-          {/* Header Section */}
-          <section className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-amber-50/50 via-white to-slate-50/60 p-4 sm:p-6 mb-4 sm:mb-6">
-            <div className="absolute right-0 top-0 h-24 w-24 -translate-y-1/3 translate-x-1/3 rounded-full bg-amber-200/30 blur-2xl" />
-            <div className="absolute left-0 bottom-0 h-24 w-24 -translate-x-1/3 translate-y-1/3 rounded-full bg-slate-200/40 blur-2xl" />
+          {/* ══════════════════════════════════════════
+              HERO SECTION — LinkedIn-style layout
+              ══════════════════════════════════════════ */}
+          <section className="relative overflow-hidden rounded-2xl border border-border/50 mb-6 bg-white">
+            {/* Banner */}
+            <div className="relative h-48 sm:h-56 lg:h-64 w-full overflow-hidden">
+              {profileData.metadata?.banner_url ? (
+                <img
+                  src={profileData.metadata.banner_url}
+                  alt={`${profileData.vendorName} banner`}
+                  className="w-full h-full object-cover object-top"
+                />
+              ) : (
+                <div
+                  className="w-full h-full"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(251,243,219,0.6) 0%, rgba(255,255,255,0.95) 40%, rgba(241,245,249,0.6) 100%)",
+                    backgroundImage: "radial-gradient(circle at 1px 1px, rgba(0,0,0,0.03) 1px, transparent 0)",
+                    backgroundSize: "24px 24px",
+                  }}
+                >
+                  <div className="absolute right-0 top-0 h-40 w-40 -translate-y-1/4 translate-x-1/4 rounded-full bg-amber-200/30 blur-3xl" />
+                  <div className="absolute left-1/3 bottom-0 h-32 w-32 translate-y-1/3 rounded-full bg-blue-200/20 blur-3xl" />
+                </div>
+              )}
+              {/* Gradient overlay for readability */}
+              {profileData.metadata?.banner_url && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+              )}
+            </div>
 
-            <div className="relative flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center">
-              {/* Logo */}
-              <div className="flex items-center gap-3">
-                <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border border-border bg-white">
-                  <AvatarImage src={logoUrl || undefined} alt={profileData.vendorName} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-base sm:text-lg font-bold">
-                    {profileData.vendorName.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight break-words">
+            {/* Pulse Score — overlapping banner, top-right */}
+            <div className={cn(
+              "absolute right-4 sm:right-6 lg:right-8 top-4 sm:top-6 z-10 flex flex-col items-center gap-1.5 rounded-2xl border p-3 sm:p-4 shadow-lg backdrop-blur-sm bg-white/90",
+              scoreTheme.border
+            )}>
+              <div className="relative h-16 w-16 sm:h-20 sm:w-20">
+                <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
+                  <defs>
+                    <linearGradient id="pulseScoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor={scoreTheme.ring} />
+                      <stop offset="100%" stopColor={scoreTheme.ringEnd} />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="42" fill="none" strokeWidth="6" className="stroke-black/[0.04]" />
+                  <circle
+                    cx="50" cy="50" r="42" fill="none" strokeWidth="7"
+                    strokeLinecap="round"
+                    stroke="url(#pulseScoreGrad)"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={ringOffset}
+                    style={{
+                      transition: "stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                      filter: `drop-shadow(0 0 8px ${scoreTheme.glow})`,
+                    }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span
+                    className={cn("text-xl sm:text-2xl font-extrabold tabular-nums", scoreTheme.color)}
+                    style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+                  >
+                    {displayScore}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-slate-400">
+                  Pulse Score
+                </span>
+                <span className={cn("text-[10px] font-semibold mt-0.5", scoreTheme.color)}>
+                  {scoreTheme.label}
+                </span>
+              </div>
+            </div>
+
+            {/* Profile info area */}
+            <div className="relative px-6 sm:px-8 lg:px-10 pb-5 sm:pb-6">
+              {/* Logo overlapping the banner */}
+              <Avatar className="h-20 w-20 sm:h-24 sm:w-24 -mt-10 sm:-mt-12 ring-4 ring-white shadow-lg bg-white flex-shrink-0">
+                <AvatarImage src={logoUrl || undefined} alt={profileData.vendorName} />
+                <AvatarFallback className="bg-primary/10 text-primary text-xl sm:text-2xl font-bold">
+                  {profileData.vendorName.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+
+              {/* Company info + CTA card */}
+              <div className="relative mt-2">
+                {/* Left — company details */}
+                <div className="lg:pr-[300px]">
+                  <h1
+                    className="text-2xl sm:text-3xl lg:text-[2.5rem] font-extrabold leading-[1.1] break-words tracking-tight text-slate-900"
+                    style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+                  >
                     {profileData.vendorName}
                   </h1>
-                  {profileData.metadata?.website_url && (
-                    <a
-                      href={profileData.metadata.website_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-primary hover:underline text-sm"
-                    >
-                      <Globe className="h-3.5 w-3.5" />
-                      <span>Visit Website</span>
-                    </a>
+
+                  {profileData.metadata?.tagline && (
+                    <p className="text-[15px] text-slate-500 mt-1.5 max-w-2xl leading-relaxed">
+                      {profileData.metadata.tagline}
+                    </p>
                   )}
+
+                  {/* Metadata pills */}
+                  <div className="flex items-center gap-2 mt-3 flex-wrap">
+                    {profileData.metadata?.headquarters && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 bg-slate-900/[0.04]">
+                        <MapPin className="h-3 w-3 text-slate-400" />
+                        {profileData.metadata.headquarters}
+                      </span>
+                    )}
+                    {profileData.metadata?.category && (() => {
+                      const catDef = vendorCategories.find(c => c.id === profileData.metadata!.category);
+                      const label = catDef?.label || profileData.metadata!.category!.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+                      const parts = label.split(" & ");
+                      return parts.map((part) => (
+                        <span
+                          key={part}
+                          className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase tracking-wide bg-slate-900/[0.04] text-slate-600"
+                        >
+                          {part}
+                        </span>
+                      ));
+                    })()}
+                    {profileData.metadata?.website_url && (
+                      <a
+                        href={profileData.metadata.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-primary hover:bg-primary/5 transition-colors"
+                      >
+                        <Globe className="h-3 w-3" />
+                        Website
+                      </a>
+                    )}
+                    {profileData.metadata?.linkedin_url && (
+                      <a
+                        href={profileData.metadata.linkedin_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-[#0A66C2] hover:bg-[#0A66C2]/5 transition-colors"
+                      >
+                        <Linkedin className="h-3 w-3" />
+                        LinkedIn
+                      </a>
+                    )}
+                  </div>
+
+                  {profileData.metadata?.description && (
+                    <p className="text-[15px] text-slate-500 mt-3.5 max-w-2xl leading-relaxed">
+                      {profileData.metadata.description}
+                    </p>
+                  )}
+
+                  <div className="flex items-center gap-1.5 mt-3.5 text-[11px] text-slate-400">
+                    <MessageCircle className="h-3 w-3" />
+                    <span>Based on {profileData.stats.totalMentions} community discussions</span>
+                  </div>
+                </div>
+
+                {/* Right — Vendor CTA / Chat card */}
+                <div className={cn(
+                  "overflow-hidden transition-all duration-300 ease-in-out",
+                  ctaChatOpen
+                    ? "fixed inset-0 z-50 bg-white lg:static lg:inset-auto lg:z-auto lg:mt-0 lg:absolute lg:top-0 lg:right-0 lg:w-[280px] lg:h-[320px] lg:rounded-xl lg:border lg:border-border/60 lg:shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
+                    : "mt-4 lg:mt-0 lg:absolute lg:top-0 lg:right-0 w-full lg:w-[280px] lg:h-[320px] rounded-xl border border-border/60 shadow-[0_2px_8px_rgba(0,0,0,0.04)] bg-gradient-to-b from-slate-50/80 to-white"
+                )}>
+                  {/* Both modes rendered; slide transition */}
+                  <div className="relative h-full w-full">
+
+                  {/* ── CTA mode ── */}
+                  <div
+                    className={cn(
+                      "p-5 flex flex-col h-full transition-transform duration-300 ease-in-out",
+                      ctaChatOpen ? "-translate-x-full" : "translate-x-0"
+                    )}
+                  >
+                      <p className="text-[13px] font-semibold text-slate-800 leading-snug">
+                        Interested in {profileData.vendorName}?
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                        Connect directly or see what dealers are saying.
+                      </p>
+
+                      <div className="mt-4 flex flex-col gap-2">
+                        <a
+                          href={profileData.metadata?.website_url || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm hover:bg-slate-800 transition-colors"
+                        >
+                          <CalendarCheck className="h-3.5 w-3.5" />
+                          Request a Demo
+                        </a>
+
+                        <button
+                          onClick={() => {
+                            setCtaChatOpen(true);
+                            setCtaChatMessages([]);
+                          }}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm hover:bg-primary/90 transition-colors"
+                        >
+                          <BotMessageSquare className="h-3.5 w-3.5" />
+                          Chat with Vendor AI
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            const mentionsSection = document.getElementById("vendor-mentions");
+                            mentionsSection?.scrollIntoView({ behavior: "smooth" });
+                          }}
+                          className="inline-flex items-center justify-center gap-2 rounded-lg border border-border/60 bg-white px-4 py-2.5 text-[13px] font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+                        >
+                          <MessagesSquare className="h-3.5 w-3.5 text-slate-400" />
+                          See Dealer Feedback
+                        </button>
+                      </div>
+
+                      <div className="mt-3.5 pt-3 border-t border-black/[0.04]">
+                        <p className="text-[10px] text-slate-400 leading-relaxed">
+                          Data sourced from <span className="font-medium text-slate-500">{profileData.stats.totalMentions}</span> real dealer conversations across CDG communities.
+                        </p>
+                      </div>
+                    </div>
+
+                  {/* ── Chat mode ── */}
+                  <div
+                    className={cn(
+                      "absolute inset-0 flex flex-col h-full transition-transform duration-300 ease-in-out",
+                      ctaChatOpen ? "translate-x-0" : "translate-x-full"
+                    )}
+                  >
+                      {/* Chat header */}
+                      <div className="flex items-center gap-2 px-4 py-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] lg:pt-2.5 border-b border-border/40 bg-slate-50/50">
+                        <button
+                          onClick={() => setCtaChatOpen(false)}
+                          className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-slate-200/60 transition-colors text-slate-500"
+                        >
+                          <ArrowLeftIcon className="h-3.5 w-3.5" />
+                        </button>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <BotMessageSquare className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                          <span className="text-[12px] font-semibold text-slate-700 truncate">
+                            Ask about {profileData.vendorName}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Messages */}
+                      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+                        {ctaChatMessages.length === 0 && (
+                          <div className="space-y-2 pt-1">
+                            <p className="text-[11px] text-slate-400 text-center">
+                              Ask anything about {profileData.vendorName}
+                            </p>
+                            {[
+                              `What do dealers think about ${profileData.vendorName}?`,
+                              `Is ${profileData.vendorName} worth the investment?`,
+                              `Common issues with ${profileData.vendorName}?`,
+                            ].map((q, i) => (
+                              <button
+                                key={i}
+                                onClick={() => sendCtaChatMessage(q)}
+                                className="w-full text-left text-[11px] px-3 py-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 transition-colors leading-relaxed"
+                              >
+                                {q}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {ctaChatMessages.map((msg, i) => (
+                          <div key={i} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
+                            <div className={cn(
+                              "max-w-[88%] rounded-xl px-3 py-2 text-[12px] leading-relaxed",
+                              msg.role === "user"
+                                ? "bg-primary text-white rounded-br-sm"
+                                : "bg-slate-100 text-slate-700 rounded-bl-sm"
+                            )}>
+                              {msg.role === "assistant" ? (
+                                <div className="prose prose-xs max-w-none [&_p]:mb-1.5 [&_p]:last:mb-0 [&_ul]:mb-1.5 [&_li]:mb-0.5">
+                                  <ChatMarkdown content={msg.content} knownVendors={[profileData.vendorName]} />
+                                </div>
+                              ) : (
+                                <p className="whitespace-pre-wrap">{msg.content}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+
+                        {ctaChatLoading && ctaChatMessages[ctaChatMessages.length - 1]?.role === "user" && (
+                          <div className="flex justify-start">
+                            <div className="bg-slate-100 rounded-xl rounded-bl-sm px-3 py-2.5">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" />
+                            </div>
+                          </div>
+                        )}
+
+                        <div ref={ctaChatEndRef} />
+                      </div>
+
+                      {/* Input */}
+                      <form
+                        onSubmit={(e) => { e.preventDefault(); sendCtaChatMessage(ctaChatInput); }}
+                        className="px-3 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] lg:pb-2.5 border-t border-border/40 bg-white"
+                      >
+                        <div className="flex items-end gap-1.5">
+                          <Textarea
+                            ref={ctaChatInputRef}
+                            value={ctaChatInput}
+                            onChange={(e) => setCtaChatInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                sendCtaChatMessage(ctaChatInput);
+                              }
+                            }}
+                            placeholder={`Ask about ${profileData.vendorName}...`}
+                            disabled={ctaChatLoading}
+                            className="min-h-[38px] max-h-24 resize-none text-[12px] py-2"
+                            rows={1}
+                          />
+                          <button
+                            type="submit"
+                            disabled={!ctaChatInput.trim() || ctaChatLoading}
+                            className="h-[38px] w-[38px] flex-shrink-0 rounded-lg bg-primary text-white flex items-center justify-center disabled:opacity-40 hover:bg-primary/90 transition-colors"
+                          >
+                            <Send className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </form>
+                  </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Description */}
-              {profileData.metadata?.description && (
-                <p className="text-sm sm:text-base text-muted-foreground lg:max-w-2xl">
-                  {profileData.metadata.description}
-                </p>
+              {/* ── CDG Intelligence Strip ── */}
+              {intelligenceHeadline && (
+                <div className="relative mt-6 pt-5 border-t border-black/[0.04]">
+                  <div className="flex items-start gap-3.5">
+                    <div className="flex-shrink-0 mt-0.5 h-7 w-7 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center">
+                      <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">
+                          CDG Intelligence
+                        </span>
+                        <div className="h-0.5 w-0.5 rounded-full bg-slate-300" />
+                        <span className="text-[9px] text-slate-400 font-medium uppercase tracking-wider">
+                          {intelligenceHeadline.isAI ? "AI Analysis" : "Real-time Insight"}
+                        </span>
+                      </div>
+                      <p className="text-[13px] sm:text-sm text-slate-600 leading-relaxed font-medium">
+                        {intelligenceHeadline.sentiment === "negative" && (
+                          <TrendingDown className="inline h-3.5 w-3.5 text-red-500 mr-1.5 -mt-0.5" />
+                        )}
+                        {intelligenceHeadline.sentiment === "positive" && (
+                          <TrendingUp className="inline h-3.5 w-3.5 text-emerald-500 mr-1.5 -mt-0.5" />
+                        )}
+                        {intelligenceHeadline.text}
+                      </p>
+                      <p className="text-[8px] text-slate-400/50 mt-2 tracking-wide">
+                        AI-generated summary — may not be fully accurate
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </section>
 
-          {/* Stats Summary */}
-          <section className="mb-4 sm:mb-6">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs sm:text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">
-                {profileData.stats.totalMentions} mentions
+          {/* ══════════════════════════════════════════
+              STATS ROW
+              ══════════════════════════════════════════ */}
+          <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            {/* Sentiment Breakdown */}
+            <div className="sm:col-span-2 bg-white rounded-2xl border border-border/50 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 mb-4">
+                Sentiment Breakdown
+              </h3>
+
+              {/* Distribution bar */}
+              <div className="flex h-3.5 rounded-full overflow-hidden bg-slate-100/80 mb-4">
+                {profileData.stats.positivePercent > 0 && (
+                  <div
+                    className="bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-1000 ease-out"
+                    style={{ width: `${profileData.stats.positivePercent}%` }}
+                  />
+                )}
+                {neutralPercent > 0 && (
+                  <div
+                    className="bg-gradient-to-r from-slate-200 to-slate-300 transition-all duration-1000 ease-out"
+                    style={{ width: `${neutralPercent}%` }}
+                  />
+                )}
+                {profileData.stats.warningPercent > 0 && (
+                  <div
+                    className="bg-gradient-to-r from-red-300 to-red-400 transition-all duration-1000 ease-out"
+                    style={{ width: `${profileData.stats.warningPercent}%` }}
+                  />
+                )}
+              </div>
+
+              {/* Legend */}
+              <div className="flex flex-wrap gap-x-6 gap-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                  <span className="text-xs text-slate-500">Positive</span>
+                  <span className="text-xs font-bold text-slate-800">{profileData.stats.positivePercent}%</span>
+                  <span className="text-[10px] text-slate-400">({profileData.stats.positiveCount})</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-slate-300" />
+                  <span className="text-xs text-slate-500">Neutral</span>
+                  <span className="text-xs font-bold text-slate-800">{neutralPercent}%</span>
+                  <span className="text-[10px] text-slate-400">({neutralCount})</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-red-400" />
+                  <span className="text-xs text-slate-500">Warnings</span>
+                  <span className="text-xs font-bold text-slate-800">{profileData.stats.warningPercent}%</span>
+                  <span className="text-[10px] text-slate-400">({profileData.stats.warningCount})</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Total Mentions */}
+            <div className="bg-white rounded-2xl border border-border/50 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex flex-col justify-between">
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 mb-3">
+                Total Mentions
+              </h3>
+              <span
+                className="text-5xl sm:text-6xl font-extrabold text-slate-900 leading-none tabular-nums"
+                style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+              >
+                {profileData.stats.totalMentions}
               </span>
-              <span className="hidden sm:inline">•</span>
-              <span className="inline-flex items-center gap-1">
-                <ThumbsUp className="h-3.5 w-3.5 text-green-600" />
-                {profileData.stats.positiveCount} positive ({profileData.stats.positivePercent}%)
-              </span>
-              <span className="hidden sm:inline">•</span>
-              <span className="inline-flex items-center gap-1">
-                <AlertTriangle className="h-3.5 w-3.5 text-red-600" />
-                {profileData.stats.warningCount} warnings ({profileData.stats.warningPercent}%)
-              </span>
-              <span className="hidden sm:inline">•</span>
-              <span className="inline-flex items-center gap-1">
-                <TrendingUp className="h-3.5 w-3.5 text-primary" />
-                Sentiment:{" "}
-                <span className="font-semibold text-foreground">
-                  {profileData.stats.positivePercent >= 70
-                    ? "Positive"
-                    : profileData.stats.warningPercent >= 50
-                      ? "Mixed"
-                      : "Neutral"}
+              <div className="mt-3 flex items-center gap-1.5">
+                <TrendingUp className={cn(
+                  "h-3.5 w-3.5",
+                  profileData.stats.positivePercent >= 70 ? "text-emerald-500" :
+                  profileData.stats.warningPercent >= 50 ? "text-red-400" : "text-amber-400"
+                )} />
+                <span className="text-xs text-slate-500">
+                  Overall:{" "}
+                  <span className={cn(
+                    "font-bold",
+                    profileData.stats.positivePercent >= 70 ? "text-emerald-600" :
+                    profileData.stats.warningPercent >= 50 ? "text-red-500" : "text-amber-500"
+                  )}>
+                    {profileData.stats.positivePercent >= 70 ? "Positive" :
+                     profileData.stats.warningPercent >= 50 ? "Mixed" : "Neutral"}
+                  </span>
                 </span>
-              </span>
+              </div>
             </div>
           </section>
 
-          {/* AI Insights */}
-          {profileData.insight && (
-            <div className="mb-6">
-              <AIInsightBanner
-                data={allMentions}
-                selectedVendor={vendorName}
-                isProUser={isProUserValue}
-                onUpgradeClick={() => {
-                  if (isAuthenticated) {
-                    setShowUpgradeModal(true);
-                  } else {
-                    window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
-                  }
-                }}
-              />
-            </div>
-          )}
+          {/* ══════════════════════════════════════════
+              PROS & CONS — Coming Soon
+              ══════════════════════════════════════════ */}
+          <section className="mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* What people like */}
+              <div className="bg-white rounded-2xl border border-border/50 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                <div className="flex items-center gap-2.5 mb-5">
+                  <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                    <ThumbsUp className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-800">What people like</h3>
+                </div>
+                <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-slate-200/60 rounded-xl bg-slate-50/30">
+                  <div className="h-10 w-10 rounded-full bg-white shadow-sm flex items-center justify-center mb-3">
+                    <Sparkles className="h-5 w-5 text-slate-300" />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-400">AI-powered insights coming soon</p>
+                  <p className="text-[11px] text-slate-400/60 mt-1 max-w-[220px] text-center leading-relaxed">
+                    Analyzing community discussions to surface what people love
+                  </p>
+                </div>
+              </div>
 
-          {/* Mentions Feed */}
-          <div className="mb-4 sm:mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Recent Reviews</h2>
+              {/* Common concerns */}
+              <div className="bg-white rounded-2xl border border-border/50 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                <div className="flex items-center gap-2.5 mb-5">
+                  <div className="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center">
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-800">Common concerns</h3>
+                </div>
+                <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-slate-200/60 rounded-xl bg-slate-50/30">
+                  <div className="h-10 w-10 rounded-full bg-white shadow-sm flex items-center justify-center mb-3">
+                    <Sparkles className="h-5 w-5 text-slate-300" />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-400">AI-powered insights coming soon</p>
+                  <p className="text-[11px] text-slate-400/60 mt-1 max-w-[220px] text-center leading-relaxed">
+                    Analyzing community discussions to surface common pain points
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ══════════════════════════════════════════
+              COMMUNITY MENTIONS
+              ══════════════════════════════════════════ */}
+          <section id="vendor-mentions" className="mb-6">
+            <div className="flex items-end justify-between mb-5">
+              <div>
+                <h2
+                  className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900"
+                  style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+                >
+                  Community Mentions
+                </h2>
+                <p className="text-[11px] text-slate-400 mt-1">Real discussions from the community</p>
+              </div>
+              <span className="text-[11px] font-medium text-slate-400 hidden sm:block tabular-nums">
+                {allMentions.length} shown
+              </span>
+            </div>
+
             {allMentions.length === 0 ? (
-              <div className="bg-white rounded-lg shadow-sm border border-border/50 p-6 sm:p-8 text-center">
-                <p className="text-sm sm:text-base text-muted-foreground">No reviews found for this vendor.</p>
+              <div className="bg-white rounded-2xl shadow-sm border border-border/50 p-6 sm:p-8 text-center">
+                <p className="text-sm text-slate-500">No mentions found for this vendor.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
@@ -452,7 +1064,6 @@ const VendorProfile = () => {
                       if (isAuthenticated) {
                         setShowUpgradeModal(true);
                       } else {
-                        // Redirect to Stripe checkout for Viewer tier
                         window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
                       }
                     }}
@@ -461,15 +1072,16 @@ const VendorProfile = () => {
               </div>
             )}
 
-            {/* Load More */}
+            {/* Infinite scroll trigger */}
             {isProUserValue && hasMore && (
               <div ref={loadMoreRef} className="mt-6 text-center">
                 {isLoadingMore && (
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto" />
+                  <Loader2 className="h-6 w-6 animate-spin text-slate-400 mx-auto" />
                 )}
               </div>
             )}
 
+            {/* Upgrade CTA */}
             {!isProUserValue && allMentions.length > 0 && (
               <button
                 onClick={() => {
@@ -479,18 +1091,18 @@ const VendorProfile = () => {
                     window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
                   }
                 }}
-                className="mt-6 w-full bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center hover:bg-yellow-100 transition-colors cursor-pointer"
+                className="mt-6 w-full bg-amber-50/80 border border-amber-200/60 rounded-2xl p-5 text-center hover:bg-amber-100/60 transition-colors cursor-pointer group"
               >
-                <Crown className="h-5 w-5 text-yellow-600 mx-auto mb-2" />
-                <p className="text-sm text-yellow-800 font-medium mb-1">
-                  Upgrade to Pro to see all reviews
+                <Crown className="h-5 w-5 text-amber-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                <p className="text-sm text-amber-800 font-semibold mb-1">
+                  Upgrade to Pro to see all mentions
                 </p>
-                <p className="text-xs text-yellow-700">
-                  Pro members get unlimited access to all vendor reviews and insights
+                <p className="text-[11px] text-amber-600/70">
+                  Pro members get unlimited access to all vendor mentions and insights
                 </p>
               </button>
             )}
-          </div>
+          </section>
         </div>
       </div>
 
@@ -506,14 +1118,14 @@ const VendorProfile = () => {
         />
       )}
 
-      {/* Upgrade Modal for authenticated users */}
+      {/* Upgrade Modal */}
       <UpgradeModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         targetTier="pro"
       />
 
-      {/* Sign In Modal for non-authenticated users */}
+      {/* Sign In Modal */}
       <Dialog open={showSignIn} onOpenChange={setShowSignIn}>
         <DialogContent
           className="p-0 border-0 bg-transparent shadow-none sm:max-w-md [&>button]:hidden"

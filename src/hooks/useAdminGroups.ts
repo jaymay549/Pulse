@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useWamApi } from "@/hooks/useWamApi";
 import type { WhatsAppGroup, GroupMessage } from "@/types/admin";
 
 const wam = () => supabase.schema("wam" as any);
@@ -68,17 +67,15 @@ export function useToggleGroupFavorite() {
 }
 
 export function useGroupActivity(days = 30) {
-  const wamApi = useWamApi();
-
   return useQuery({
     queryKey: ["group-activity", days],
     queryFn: async () => {
-      try {
-        const data = await wamApi.getGroupsMembersActivity(days);
-        return data as { groupId: number; dailyActivity: { date: string; count: number }[] }[];
-      } catch {
-        return [];
-      }
+      const { data, error } = await supabase.rpc(
+        "admin_get_groups_members_activity" as any,
+        { p_days: days }
+      );
+      if (error) throw error;
+      return (data || []) as { groupId: number; dailyActivity: { date: string; count: number }[] }[];
     },
     staleTime: 5 * 60 * 1000,
   });

@@ -213,8 +213,16 @@ export interface VendorMetadata {
   website_url: string | null;
   logo_url: string | null;
   description: string | null;
+  category: string | null;
+  enrichment_status: string | null;
+  enrichment_error: string | null;
+  enriched_at: string | null;
   created_at: string;
   updated_at: string;
+  linkedin_url: string | null;
+  banner_url: string | null;
+  tagline: string | null;
+  headquarters: string | null;
 }
 
 // ── Dimension/Category Constants ──

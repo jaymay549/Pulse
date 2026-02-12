@@ -38,6 +38,11 @@ export interface VendorProfileResult {
     website_url?: string;
     logo_url?: string;
     description?: string;
+    category?: string;
+    linkedin_url?: string;
+    banner_url?: string;
+    tagline?: string;
+    headquarters?: string;
   } | null;
   insight: any;
   mentions: VendorPulseMention[];
@@ -180,25 +185,21 @@ export async function fetchVendorInsight(params: {
   vendorName?: string | null;
   category?: string | null;
 }): Promise<any | null> {
-  let insightKey: string;
-  if (params.vendorName) {
-    insightKey = `vendor:${params.vendorName}`;
-  } else if (params.category) {
-    insightKey = `category:${params.category}`;
-  } else {
-    return null;
-  }
+  if (!params.vendorName && !params.category) return null;
 
+  const slug = (params.vendorName || params.category || "").replace(/ /g, "_");
+  const prefix = params.vendorName ? "weekly_vendor_" : "weekly_category_";
+
+  // Keys may or may not have a _v2 suffix — try both, prefer the newest
   const { data, error } = await supabase
     .from("vendor_pulse_insights")
     .select("insight_json, expires_at")
-    .eq("insight_key", insightKey)
-    .gt("expires_at", new Date().toISOString())
-    .single();
+    .or(`insight_key.eq.${prefix}${slug}_v2,insight_key.eq.${prefix}${slug}`)
+    .order("expires_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  if (error || !data) {
-    return null;
-  }
+  if (error || !data) return null;
 
   return data.insight_json;
 }

@@ -1,48 +1,27 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Send, Clock, Paperclip, X, Loader2, AlertCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useWamApi } from "@/hooks/useWamApi";
 import { useAdminGroups } from "@/hooks/useAdminGroups";
+import { useScheduledMessages, usePdfExports } from "@/hooks/useAdminData";
+import { useQueryClient } from "@tanstack/react-query";
 import type { WhatsAppGroup, ScheduledMessage, PdfExport } from "@/types/admin";
 
 const SendMessagePage = () => {
   const wam = useWamApi();
+  const queryClient = useQueryClient();
   const { data: groups = [] } = useAdminGroups();
+  const { data: scheduledMessages = [], isLoading: loadingScheduled } = useScheduledMessages();
+  const { data: pdfs = [] } = usePdfExports();
 
   const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>([]);
   const [message, setMessage] = useState("");
   const [scheduledFor, setScheduledFor] = useState("");
   const [sending, setSending] = useState(false);
-  const [scheduledMessages, setScheduledMessages] = useState<any[]>([]);
-  const [loadingScheduled, setLoadingScheduled] = useState(false);
   const [groupSearch, setGroupSearch] = useState("");
-  const [pdfs, setPdfs] = useState<PdfExport[]>([]);
   const [attachedPdfId, setAttachedPdfId] = useState<number | null>(null);
-
-  const loadScheduledMessages = async () => {
-    setLoadingScheduled(true);
-    try {
-      const res = await wam.getScheduledMessages();
-      setScheduledMessages(Array.isArray(res) ? res : res.messages || []);
-    } catch {}
-    setLoadingScheduled(false);
-  };
-
-  const loadPdfs = async () => {
-    try {
-      const res = await wam.listPdfs();
-      setPdfs(res.exports || []);
-    } catch {}
-  };
-
-  useEffect(() => {
-    loadScheduledMessages();
-    loadPdfs();
-    const interval = setInterval(loadScheduledMessages, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleSend = async () => {
     if (selectedGroupIds.length === 0 || (!message.trim() && !attachedPdfId)) return;
@@ -57,7 +36,7 @@ const SendMessagePage = () => {
       setMessage("");
       setScheduledFor("");
       setAttachedPdfId(null);
-      if (scheduledFor) loadScheduledMessages();
+      if (scheduledFor) queryClient.invalidateQueries({ queryKey: ["admin-scheduled-messages"] });
     } catch {}
     setSending(false);
   };
@@ -65,7 +44,7 @@ const SendMessagePage = () => {
   const handleCancel = async (id: number) => {
     try {
       await wam.cancelScheduledMessage(id);
-      setScheduledMessages((prev) => prev.filter((m: any) => m.id !== id));
+      queryClient.invalidateQueries({ queryKey: ["admin-scheduled-messages"] });
     } catch {}
   };
 

@@ -79,9 +79,6 @@ export const useWamApi = () => {
         body: JSON.stringify(params),
       }),
 
-    getChatStatus: (requestId: number) =>
-      callWam(`/api/ai/chat/status/${requestId}`),
-
     // ── Conversations ──
     saveConversation: (params: {
       id?: number;
@@ -99,10 +96,6 @@ export const useWamApi = () => {
         method: "POST",
         body: JSON.stringify(params),
       }),
-
-    listConversations: () => callWam("/api/chat"),
-
-    getConversation: (id: number) => callWam(`/api/chat/${id}`),
 
     deleteConversation: (id: number) =>
       callWam(`/api/chat/${id}`, { method: "DELETE" }),
@@ -130,8 +123,6 @@ export const useWamApi = () => {
         method: "POST",
         body: JSON.stringify(params),
       }),
-
-    listPdfs: () => callWam("/api/pdf/list"),
 
     downloadPdf: async (id: number): Promise<Blob> => {
       const headers = new Headers();
@@ -169,15 +160,10 @@ export const useWamApi = () => {
         body: JSON.stringify(params),
       }),
 
-    getScheduledMessages: () => callWam("/api/scheduled"),
-
     cancelScheduledMessage: (id: number) =>
       callWam(`/api/scheduled/${id}`, { method: "DELETE" }),
 
     // ── Task occurrence operations ──
-    getOccurrenceHtml: (occurrenceId: number) =>
-      callWam(`/api/occurrences/${occurrenceId}/html`),
-
     updateOccurrenceHtml: (occurrenceId: number, html: string) =>
       callWam(`/api/occurrences/${occurrenceId}/html`, {
         method: "PUT",
@@ -219,9 +205,6 @@ export const useWamApi = () => {
         `/api/vendor-pulse/queue/${queueId}/mentions/${mentionIndex}/thinking`
       ),
 
-    getQueueItemThinking: (queueId: number) =>
-      callWam(`/api/vendor-pulse/queue/${queueId}/thinking`),
-
     rerunAll: (includeCurrentVersion = false) =>
       callWam("/api/vendor-pulse/queue/rerun-all", {
         method: "POST",
@@ -229,17 +212,6 @@ export const useWamApi = () => {
       }),
 
     // ── Trends ──
-    getTrendReport: (type: "daily" | "weekly") =>
-      callWam(`/api/trends/latest?type=${type}`),
-
-    getTrendHistory: (type: "daily" | "weekly", limit = 10) =>
-      callWam(`/api/trends/history?type=${type}&limit=${limit}`),
-
-    getTopicMessages: (topic: string, startDate: string, endDate: string) =>
-      callWam(
-        `/api/trends/topic-messages?topic=${encodeURIComponent(topic)}&startDate=${startDate}&endDate=${endDate}`
-      ),
-
     generateTrendReport: (params: {
       type: "daily" | "weekly";
       startDate?: string;
@@ -250,15 +222,6 @@ export const useWamApi = () => {
         method: "POST",
         body: JSON.stringify(params),
       }),
-
-    // ── Members ──
-    getMembersWithActivity: (days = 365) =>
-      callWam(
-        `/api/members-with-activity?days=${days}&timezoneOffset=${new Date().getTimezoneOffset()}`
-      ),
-
-    getGroupsMembersActivity: (days = 365) =>
-      callWam(`/api/groups-members-activity?days=${days}`),
 
     // ── Debug ──
     testGeminiRequest: (params: Record<string, unknown>) =>

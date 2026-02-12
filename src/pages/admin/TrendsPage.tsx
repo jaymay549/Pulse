@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { TrendingUp, Loader2, MessageSquare, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useWamApi } from "@/hooks/useWamApi";
+import { useTrendReport, useTopicMessages } from "@/hooks/useAdminData";
 import type { TrendReport, TrendTopic } from "@/types/admin";
 
 const CATEGORIES = [
@@ -23,43 +23,24 @@ const SENTIMENT_COLORS: Record<string, string> = {
 };
 
 const TrendsPage = () => {
-  const wam = useWamApi();
   const [reportType, setReportType] = useState<"daily" | "weekly">("daily");
-  const [report, setReport] = useState<TrendReport | null>(null);
-  const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("All Topics");
   const [selectedTopic, setSelectedTopic] = useState<TrendTopic | null>(null);
-  const [topicMessages, setTopicMessages] = useState<any[]>([]);
-  const [loadingMessages, setLoadingMessages] = useState(false);
 
-  useEffect(() => {
-    setLoading(true);
-    wam
-      .getTrendReport(reportType)
-      .then((res: any) => setReport(res.report || res))
-      .catch(() => setReport(null))
-      .finally(() => setLoading(false));
-  }, [reportType]);
+  const { data: report = null, isLoading: loading } = useTrendReport(reportType);
+
+  const { data: topicMessages = [], isLoading: loadingMessages } = useTopicMessages(
+    selectedTopic?.title || null,
+    report?.date_range_start || null,
+    report?.date_range_end || null
+  );
 
   const topics = report?.topics?.filter(
     (t) => category === "All Topics" || t.category === category
   ) || [];
 
-  const handleTopicClick = async (topic: TrendTopic) => {
+  const handleTopicClick = (topic: TrendTopic) => {
     setSelectedTopic(topic);
-    if (!report) return;
-    setLoadingMessages(true);
-    try {
-      const res = await wam.getTopicMessages(
-        topic.title,
-        report.date_range_start,
-        report.date_range_end
-      );
-      setTopicMessages(res.messages || []);
-    } catch {
-      setTopicMessages([]);
-    }
-    setLoadingMessages(false);
   };
 
   return (

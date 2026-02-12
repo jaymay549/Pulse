@@ -13,6 +13,7 @@ import AIReasoningModal from "./AIReasoningModal";
 import IgnoreDialog from "./IgnoreDialog";
 import { useQueueItems, useApproveMention, useUndoApproveMention } from "@/hooks/useVendorQueue";
 import { useWamApi } from "@/hooks/useWamApi";
+import { fetchQueueItemThinking } from "@/hooks/useAdminData";
 import { toast } from "sonner";
 import type { QueueItemMention, QueueStatus, VendorQueueItem } from "@/types/admin";
 
@@ -125,8 +126,8 @@ const ConversationView = () => {
 
   const handleShowItemThinking = async (id: number) => {
     try {
-      const result = await wamApi.getQueueItemThinking(id);
-      setThinkingModal({ open: true, text: result.thinking || "No thinking data available", vendor: `Queue Item #${id}` });
+      const thinking = await fetchQueueItemThinking(id);
+      setThinkingModal({ open: true, text: thinking, vendor: `Queue Item #${id}` });
     } catch {
       toast.error("Failed to load thinking data");
     }

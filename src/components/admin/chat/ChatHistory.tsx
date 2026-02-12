@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { History, Trash2, Loader2, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,6 +8,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useWamApi } from "@/hooks/useWamApi";
+import { useChatConversations } from "@/hooks/useAdminData";
+import { useQueryClient } from "@tanstack/react-query";
 import type { ChatConversation } from "@/types/admin";
 
 interface ChatHistoryProps {
@@ -24,28 +26,16 @@ const ChatHistory = ({
   currentConversationId,
 }: ChatHistoryProps) => {
   const wam = useWamApi();
-  const [conversations, setConversations] = useState<ChatConversation[]>([]);
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const { data: conversations = [], isLoading: loading } = useChatConversations(open);
   const [deleting, setDeleting] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    setLoading(true);
-    wam
-      .listConversations()
-      .then((res: any) => {
-        setConversations(res.conversations || []);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [open]);
 
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setDeleting(id);
     try {
       await wam.deleteConversation(id);
-      setConversations((prev) => prev.filter((c) => c.id !== id));
+      queryClient.invalidateQueries({ queryKey: ["admin-chat-conversations"] });
     } catch {
       // ignore
     }

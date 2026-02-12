@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useWamApi } from "@/hooks/useWamApi";
+import { fetchOccurrenceHtml } from "@/hooks/useAdminData";
 
 interface HtmlEditorModalProps {
   open: boolean;
@@ -32,9 +33,8 @@ const HtmlEditorModal = ({
   useEffect(() => {
     if (!open || !occurrenceId) return;
     setLoading(true);
-    wam
-      .getOccurrenceHtml(occurrenceId)
-      .then((res: any) => setHtml(res.html || ""))
+    fetchOccurrenceHtml(occurrenceId)
+      .then((html) => setHtml(html))
       .catch(() => setHtml(""))
       .finally(() => setLoading(false));
   }, [open, occurrenceId]);

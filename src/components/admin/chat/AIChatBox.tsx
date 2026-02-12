@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useWamApi } from "@/hooks/useWamApi";
 import { useAdminGroups } from "@/hooks/useAdminGroups";
+import { fetchConversation, fetchChatStatus } from "@/hooks/useAdminData";
 import GroupSelectionTable from "./GroupSelectionTable";
 import ChatMessageBubble from "./ChatMessageBubble";
 import ChatHistory from "./ChatHistory";
@@ -115,7 +116,7 @@ const AIChatBox = ({ initialChatId, onChatIdChange }: AIChatBoxProps) => {
   const pollForResponse = async (requestId: number): Promise<string> => {
     for (let i = 0; i < MAX_POLL_ATTEMPTS; i++) {
       await new Promise((r) => setTimeout(r, POLL_INTERVAL));
-      const status = await wam.getChatStatus(requestId);
+      const status = await fetchChatStatus(requestId);
       if (status.status === "completed") return status.response;
       if (status.status === "failed") throw new Error(status.error || "AI request failed");
     }
@@ -338,8 +339,7 @@ const AIChatBox = ({ initialChatId, onChatIdChange }: AIChatBoxProps) => {
 
   const loadConversation = async (id: number) => {
     try {
-      const result = await wam.getConversation(id);
-      const conv = result.conversation as ChatConversation;
+      const conv = await fetchConversation(id);
       setMessages(
         conv.messages.map((m) => ({
           type: "message" as const,
