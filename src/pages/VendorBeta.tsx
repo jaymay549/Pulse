@@ -30,11 +30,12 @@ const VendorBeta = () => {
     const fetchCounts = async () => {
       try {
         const res = await fetch(
-          `${WAM_URL}/api/public/vendor-pulse/mentions?pageSize=1&page=1`
+          `${WAM_URL}/api/public/vendor-pulse/mentions?pageSize=1&page=1`,
         );
         if (res.ok) {
           const data = await res.json();
-          if (typeof data.totalCount === "number") setTotalReviews(data.totalCount);
+          if (typeof data.totalCount === "number")
+            setTotalReviews(data.totalCount);
           if (typeof data.totalWarningCount === "number")
             setTotalWarnings(data.totalWarningCount);
         }
@@ -120,7 +121,10 @@ const VendorBeta = () => {
         <footer className="py-6 border-t border-border bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-center gap-4">
-              <Link to="/vendors" className="text-sm text-muted-foreground hover:text-foreground">
+              <Link
+                to="/vendors"
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
                 ← Back to Vendor Reviews
               </Link>
               <p className="text-xs text-muted-foreground/70">

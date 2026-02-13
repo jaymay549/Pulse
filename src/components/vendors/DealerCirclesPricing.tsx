@@ -32,7 +32,9 @@ export const DealerCirclesPricing: React.FC<DealerCirclesPricingProps> = ({
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Crown className="h-5 w-5 text-yellow-600" />
-                <span className="font-bold text-foreground">Circles Member</span>
+                <span className="font-bold text-foreground">
+                  Circles Member
+                </span>
               </div>
               <p className="text-xs text-muted-foreground mb-2">
                 Private dealer peer groups + all vendor intel

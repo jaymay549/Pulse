@@ -1,8 +1,22 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { LayoutGrid, Menu } from "lucide-react";
-import { Search, X, Crown, Share2, CreditCard, ArrowRight, Building2 } from "lucide-react";
+import {
+  Search,
+  X,
+  Crown,
+  Share2,
+  CreditCard,
+  ArrowRight,
+  Building2,
+} from "lucide-react";
 import { SignIn, UserButton } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import { Button } from "@/components/ui/button";
@@ -114,20 +128,31 @@ const VendorsV2 = () => {
     categoryCounts?: Record<string, number>;
     hasMore: boolean;
   } | null>(null);
-  
+
   // Vendor counts for search results (fetched separately to get accurate totals)
   type VendorCounts = { total: number; positive: number; warning: number };
-  const [searchVendorCounts, setSearchVendorCounts] = useState<Record<string, VendorCounts>>({});
-  const [searchVendorNames, setSearchVendorNames] = useState<Record<string, string>>({});
-  const [categoryVendorCounts, setCategoryVendorCounts] = useState<Record<string, VendorCounts>>({});
-  const [categoryVendorNames, setCategoryVendorNames] = useState<Record<string, string>>({});
+  const [searchVendorCounts, setSearchVendorCounts] = useState<
+    Record<string, VendorCounts>
+  >({});
+  const [searchVendorNames, setSearchVendorNames] = useState<
+    Record<string, string>
+  >({});
+  const [categoryVendorCounts, setCategoryVendorCounts] = useState<
+    Record<string, VendorCounts>
+  >({});
+  const [categoryVendorNames, setCategoryVendorNames] = useState<
+    Record<string, string>
+  >({});
 
   // All vendor names for search autocomplete (fetched from vendors-list endpoint)
   const [allVendorsList, setAllVendorsList] = useState<string[]>([]);
 
   // Cache category vendor index so switching filters doesn't re-paginate every time
   const categoryVendorIndexCacheRef = useRef<
-    Record<string, { counts: Record<string, VendorCounts>; names: Record<string, string> }>
+    Record<
+      string,
+      { counts: Record<string, VendorCounts>; names: Record<string, string> }
+    >
   >({});
 
   const fetchVendorCountsIndex = useCallback(
@@ -141,7 +166,8 @@ const VendorsV2 = () => {
 
       while (page <= maxPages) {
         const params = new URLSearchParams();
-        if (opts.category && opts.category !== "all") params.append("category", opts.category);
+        if (opts.category && opts.category !== "all")
+          params.append("category", opts.category);
         if (opts.search) params.append("search", opts.search);
         params.append("pageSize", requestedPageSize.toString());
         params.append("page", page.toString());
@@ -155,7 +181,8 @@ const VendorsV2 = () => {
         const mentionsPage: any[] = data.mentions || [];
 
         for (const mention of mentionsPage) {
-          const vendorNameRaw: string | undefined = mention.vendor_name || mention.vendorName;
+          const vendorNameRaw: string | undefined =
+            mention.vendor_name || mention.vendorName;
           if (!vendorNameRaw) continue;
 
           const key = vendorNameRaw.toLowerCase();
@@ -173,8 +200,10 @@ const VendorsV2 = () => {
             : requestedPageSize;
         const effectivePage =
           typeof data.page === "number" && data.page > 0 ? data.page : page;
-        const totalCount = typeof data.totalCount === "number" ? data.totalCount : undefined;
-        const serverHasMore = typeof data.hasMore === "boolean" ? data.hasMore : undefined;
+        const totalCount =
+          typeof data.totalCount === "number" ? data.totalCount : undefined;
+        const serverHasMore =
+          typeof data.hasMore === "boolean" ? data.hasMore : undefined;
 
         const hasMore =
           serverHasMore ??
@@ -198,41 +227,48 @@ const VendorsV2 = () => {
   const { reviews: dbReviews, isLoading: isDbLoading } = useVendorReviews();
 
   // Verified vendor hooks
-  const { profile: vendorProfile, isVerified, canRespondTo } = useVerifiedVendor();
+  const {
+    profile: vendorProfile,
+    isVerified,
+    canRespondTo,
+  } = useVerifiedVendor();
   const { getWebsiteForVendor, getLogoForVendor } = useVendorWebsites();
 
   // Helper to get logo URL from logo.dev or metadata
-  const getVendorLogoUrl = useCallback((vendorName: string, websiteUrl?: string | null) => {
-    const metadataLogo = getLogoForVendor(vendorName);
-    if (metadataLogo) return metadataLogo;
+  const getVendorLogoUrl = useCallback(
+    (vendorName: string, websiteUrl?: string | null) => {
+      const metadataLogo = getLogoForVendor(vendorName);
+      if (metadataLogo) return metadataLogo;
 
-    const logoDevToken = import.meta.env.VITE_LOGO_DEV_TOKEN;
-    if (!logoDevToken || !vendorName) return null;
+      const logoDevToken = import.meta.env.VITE_LOGO_DEV_TOKEN;
+      if (!logoDevToken || !vendorName) return null;
 
-    let domain = websiteUrl || "";
-    if (domain && !domain.startsWith("http")) {
-      domain = `https://${domain}`;
-    }
-
-    if (domain) {
-      try {
-        const url = new URL(domain);
-        domain = url.hostname.replace("www.", "");
-      } catch {
-        domain = "";
+      let domain = websiteUrl || "";
+      if (domain && !domain.startsWith("http")) {
+        domain = `https://${domain}`;
       }
-    }
 
-    if (!domain) {
-      domain =
-        vendorName
-          .toLowerCase()
-          .replace(/\s+/g, "")
-          .replace(/[^a-z0-9.-]/g, "") + ".com";
-    }
+      if (domain) {
+        try {
+          const url = new URL(domain);
+          domain = url.hostname.replace("www.", "");
+        } catch {
+          domain = "";
+        }
+      }
 
-    return `https://img.logo.dev/${domain}?token=${logoDevToken}&size=128&format=png&fallback=monogram`;
-  }, [getLogoForVendor]);
+      if (!domain) {
+        domain =
+          vendorName
+            .toLowerCase()
+            .replace(/\s+/g, "")
+            .replace(/[^a-z0-9.-]/g, "") + ".com";
+      }
+
+      return `https://img.logo.dev/${domain}?token=${logoDevToken}&size=128&format=png&fallback=monogram`;
+    },
+    [getLogoForVendor],
+  );
 
   const mentions = useMemo(() => {
     return wamMentions.length > 0 ? wamMentions : dbReviews;
@@ -244,7 +280,9 @@ const VendorsV2 = () => {
     vendorOrg: { isActive: isVendorActive, isPro: isVendorPro },
   });
   const isProUserValue = vendorAccess.hasFullAccess;
-  const accessLevel = vendorAccess.hasFullAccess ? getAccessLevel("pro") : getAccessLevel(tier);
+  const accessLevel = vendorAccess.hasFullAccess
+    ? getAccessLevel("pro")
+    : getAccessLevel(tier);
 
   // Filter hook
   const {
@@ -283,17 +321,18 @@ const VendorsV2 = () => {
     const urlType = searchParams.get("type") || "all";
 
     // Check if any URL param differs from state
-    const needsUpdate = 
+    const needsUpdate =
       urlSearch !== searchQuery ||
       urlCategory !== selectedCategory ||
       urlVendor !== selectedVendor ||
-      (urlType !== typeFilter && (urlType === "all" || urlType === "positive" || urlType === "warning"));
+      (urlType !== typeFilter &&
+        (urlType === "all" || urlType === "positive" || urlType === "warning"));
 
     if (!needsUpdate) return;
 
     // Update state from URL params
     isUpdatingFromUrlRef.current = true;
-    
+
     if (urlSearch !== searchQuery) {
       setSearchQuery(urlSearch);
     }
@@ -303,7 +342,10 @@ const VendorsV2 = () => {
     if (urlVendor !== selectedVendor) {
       setSelectedVendor(urlVendor);
     }
-    if (urlType !== typeFilter && (urlType === "all" || urlType === "positive" || urlType === "warning")) {
+    if (
+      urlType !== typeFilter &&
+      (urlType === "all" || urlType === "positive" || urlType === "warning")
+    ) {
       setTypeFilter(urlType as "all" | "positive" | "warning");
     }
 
@@ -354,7 +396,10 @@ const VendorsV2 = () => {
     if (!isVendorAuthLoaded || !isAuthenticated) return;
     if (!isVendorSignedIn || !isVendorActive) return;
     if (!vendorNames || vendorNames.length === 0) return;
-    if (typeof window !== "undefined" && sessionStorage.getItem(vendorLandingRedirectKey) === "1") {
+    if (
+      typeof window !== "undefined" &&
+      sessionStorage.getItem(vendorLandingRedirectKey) === "1"
+    ) {
       return;
     }
 
@@ -400,9 +445,11 @@ const VendorsV2 = () => {
       setIsWamLoading(true);
       try {
         const params = new URLSearchParams();
-        if (selectedCategory !== "all") params.append("category", selectedCategory);
+        if (selectedCategory !== "all")
+          params.append("category", selectedCategory);
         if (selectedVendor) params.append("vendorName", selectedVendor);
-        if (typeFilter !== "all" && typeFilter !== undefined) params.append("type", typeFilter);
+        if (typeFilter !== "all" && typeFilter !== undefined)
+          params.append("type", typeFilter);
 
         const response = await fetchVendorPulse(
           `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
@@ -410,11 +457,14 @@ const VendorsV2 = () => {
         if (response.ok) {
           const data = await response.json();
           // Transform snake_case fields to camelCase
-          const transformedMentions = (data.mentions || []).map((mention: any) => ({
-            ...mention,
-            vendorName: mention.vendor_name || mention.vendorName,
-            conversationTime: mention.conversation_time || mention.conversationTime,
-          }));
+          const transformedMentions = (data.mentions || []).map(
+            (mention: any) => ({
+              ...mention,
+              vendorName: mention.vendor_name || mention.vendorName,
+              conversationTime:
+                mention.conversation_time || mention.conversationTime,
+            }),
+          );
           setWamMentions(transformedMentions);
           // Store pagination info if provided
           if (data.page !== undefined) {
@@ -438,7 +488,13 @@ const VendorsV2 = () => {
     };
 
     fetchMentions();
-  }, [isAuthenticated, fetchVendorPulse, selectedCategory, selectedVendor, typeFilter]);
+  }, [
+    isAuthenticated,
+    fetchVendorPulse,
+    selectedCategory,
+    selectedVendor,
+    typeFilter,
+  ]);
 
   // Fetch category vendor index (all vendors + accurate counts) for sidebar + category vendor chips
   useEffect(() => {
@@ -472,7 +528,8 @@ const VendorsV2 = () => {
       try {
         await fetchCategoryVendorIndex();
       } catch (err) {
-        if (!cancelled) console.error("Failed to fetch category vendor index:", err);
+        if (!cancelled)
+          console.error("Failed to fetch category vendor index:", err);
       }
     })();
 
@@ -485,10 +542,14 @@ const VendorsV2 = () => {
   useEffect(() => {
     const fetchAllVendors = async () => {
       try {
-        const response = await fetch(`${WAM_URL}/api/public/vendor-pulse/vendors-list`);
+        const response = await fetch(
+          `${WAM_URL}/api/public/vendor-pulse/vendors-list`,
+        );
         if (response.ok) {
           const data = await response.json();
-          const vendorNames = (data.vendors || []).map((v: { name: string }) => v.name);
+          const vendorNames = (data.vendors || []).map(
+            (v: { name: string }) => v.name,
+          );
           setAllVendorsList(vendorNames);
         }
       } catch (err) {
@@ -517,7 +578,7 @@ const VendorsV2 = () => {
         params.append("pageSize", "100"); // Get more results for better autocomplete
 
         const response = await fetch(
-          `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`
+          `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
         );
 
         if (!response.ok) return;
@@ -526,11 +587,15 @@ const VendorsV2 = () => {
         const mentionsPage: any[] = data.mentions || [];
 
         // Extract unique vendor names and counts
-        const counts: Record<string, { total: number; positive: number; warning: number }> = {};
+        const counts: Record<
+          string,
+          { total: number; positive: number; warning: number }
+        > = {};
         const names: Record<string, string> = {};
 
         for (const mention of mentionsPage) {
-          const vendorNameRaw: string | undefined = mention.vendor_name || mention.vendorName;
+          const vendorNameRaw: string | undefined =
+            mention.vendor_name || mention.vendorName;
           if (!vendorNameRaw) continue;
 
           const key = vendorNameRaw.toLowerCase();
@@ -564,7 +629,12 @@ const VendorsV2 = () => {
       .sort((a, b) => b.count - a.count);
 
     return fromIndex.length > 0 ? fromIndex : vendorsInCategory;
-  }, [selectedCategory, vendorsInCategory, categoryVendorCounts, categoryVendorNames]);
+  }, [
+    selectedCategory,
+    vendorsInCategory,
+    categoryVendorCounts,
+    categoryVendorNames,
+  ]);
 
   // Load more mentions (for pro users)
   const loadMoreMentions = useCallback(async () => {
@@ -574,9 +644,11 @@ const VendorsV2 = () => {
     try {
       const nextPage = paginationInfo.page + 1;
       const params = new URLSearchParams();
-      if (selectedCategory !== "all") params.append("category", selectedCategory);
+      if (selectedCategory !== "all")
+        params.append("category", selectedCategory);
       if (selectedVendor) params.append("vendorName", selectedVendor);
-      if (typeFilter !== "all" && typeFilter !== undefined) params.append("type", typeFilter);
+      if (typeFilter !== "all" && typeFilter !== undefined)
+        params.append("type", typeFilter);
       params.append("page", nextPage.toString());
       params.append("pageSize", (paginationInfo.pageSize || 40).toString());
 
@@ -586,11 +658,14 @@ const VendorsV2 = () => {
       if (response.ok) {
         const data = await response.json();
         // Transform snake_case fields to camelCase
-        const transformedMentions = (data.mentions || []).map((mention: any) => ({
-          ...mention,
-          vendorName: mention.vendor_name || mention.vendorName,
-          conversationTime: mention.conversation_time || mention.conversationTime,
-        }));
+        const transformedMentions = (data.mentions || []).map(
+          (mention: any) => ({
+            ...mention,
+            vendorName: mention.vendor_name || mention.vendorName,
+            conversationTime:
+              mention.conversation_time || mention.conversationTime,
+          }),
+        );
         // Append new mentions to existing ones
         setWamMentions((prev) => [...prev, ...transformedMentions]);
         // Update pagination info
@@ -633,7 +708,7 @@ const VendorsV2 = () => {
           loadMoreMentions();
         }
       },
-      { threshold: 0.1, rootMargin: "100px" }
+      { threshold: 0.1, rootMargin: "100px" },
     );
 
     const sentinel = loadMoreRef.current;
@@ -646,7 +721,12 @@ const VendorsV2 = () => {
         observer.unobserve(sentinel);
       }
     };
-  }, [isProUserValue, paginationInfo?.hasMore, isLoadingMore, loadMoreMentions]);
+  }, [
+    isProUserValue,
+    paginationInfo?.hasMore,
+    isLoadingMore,
+    loadMoreMentions,
+  ]);
 
   // Sort categories by mention count (descending), keeping "All" at the top
   const sortedCategories = useMemo(() => {
@@ -683,8 +763,12 @@ const VendorsV2 = () => {
   const showTeaserCard = !accessLevel.unlimitedAccess && remainingCount > 0;
 
   // Use total counts from paginationInfo if available, otherwise fall back to mentions length
-  const totalVerifiedCount = paginationInfo?.totalPositiveCount ?? mentions.filter(e => e.type === "positive").length;
-  const totalWarningCountValue = paginationInfo?.totalWarningCount ?? mentions.filter((e) => e.type === "warning").length;
+  const totalVerifiedCount =
+    paginationInfo?.totalPositiveCount ??
+    mentions.filter((e) => e.type === "positive").length;
+  const totalWarningCountValue =
+    paginationInfo?.totalWarningCount ??
+    mentions.filter((e) => e.type === "warning").length;
 
   // Handle share
   const handleShare = async () => {
@@ -740,7 +824,7 @@ const VendorsV2 = () => {
   const matchingVendors = useMemo(() => {
     if (!searchQuery || searchQuery.trim().length < 2) return [];
     const query = searchQuery.toLowerCase().trim();
-    
+
     // Get vendors that match the search query
     const matching = allVendorNames
       .filter((name) => name.toLowerCase().includes(query))
@@ -748,7 +832,7 @@ const VendorsV2 = () => {
         // Use vendor counts from separate fetch if available, otherwise fall back to paginated data
         const vendorNameLower = name.toLowerCase();
         const counts = searchVendorCounts[vendorNameLower];
-        
+
         if (counts) {
           return {
             name,
@@ -757,35 +841,37 @@ const VendorsV2 = () => {
             warningCount: counts.warning,
           };
         }
-        
+
         // Fallback: count from current page (less accurate)
         const vendorReviews = mentions.filter(
-          (m) => m.vendorName?.toLowerCase() === vendorNameLower
+          (m) => m.vendorName?.toLowerCase() === vendorNameLower,
         );
         return {
           name,
           reviewCount: vendorReviews.length,
-          positiveCount: vendorReviews.filter((r) => r.type === "positive").length,
-          warningCount: vendorReviews.filter((r) => r.type === "warning").length,
+          positiveCount: vendorReviews.filter((r) => r.type === "positive")
+            .length,
+          warningCount: vendorReviews.filter((r) => r.type === "warning")
+            .length,
         };
       })
       .filter((v) => v.reviewCount > 0) // Only show vendors with reviews
       .sort((a, b) => b.reviewCount - a.reviewCount) // Sort by review count
       .slice(0, 12); // Limit to top 12 vendors
-    
+
     return matching;
   }, [searchQuery, allVendorNames, searchVendorCounts, mentions]);
 
   // Category vendors - similar to matchingVendors but for category pages
   const categoryVendors = useMemo(() => {
     if (selectedCategory === "all" || selectedVendor !== null) return [];
-    
+
     return vendorsInCategoryAccurate
       .map((vendor) => {
         // Use category vendor index if available, otherwise fall back to paginated data
         const vendorNameLower = vendor.name.toLowerCase();
         const counts = categoryVendorCounts[vendorNameLower];
-        
+
         if (counts) {
           return {
             name: vendor.name,
@@ -794,22 +880,30 @@ const VendorsV2 = () => {
             warningCount: counts.warning,
           };
         }
-        
+
         // Fallback: count from current filtered data (less accurate)
         const vendorReviews = filteredData.filter(
-          (m) => m.vendorName?.toLowerCase() === vendorNameLower
+          (m) => m.vendorName?.toLowerCase() === vendorNameLower,
         );
         return {
           name: vendor.name,
           reviewCount: vendorReviews.length,
-          positiveCount: vendorReviews.filter((r) => r.type === "positive").length,
-          warningCount: vendorReviews.filter((r) => r.type === "warning").length,
+          positiveCount: vendorReviews.filter((r) => r.type === "positive")
+            .length,
+          warningCount: vendorReviews.filter((r) => r.type === "warning")
+            .length,
         };
       })
       .filter((v) => v.reviewCount > 0) // Only show vendors with reviews
       .sort((a, b) => b.reviewCount - a.reviewCount) // Sort by review count
       .slice(0, 12); // Limit to top 12 vendors
-  }, [selectedCategory, selectedVendor, vendorsInCategoryAccurate, categoryVendorCounts, filteredData]);
+  }, [
+    selectedCategory,
+    selectedVendor,
+    vendorsInCategoryAccurate,
+    categoryVendorCounts,
+    filteredData,
+  ]);
 
   // Handle type filter change
   const handleTypeFilterChange = (filter: "all" | "positive" | "warning") => {
@@ -863,20 +957,25 @@ const VendorsV2 = () => {
 
               {/* Right: Actions */}
               <div className="flex items-center gap-2">
-                {isVendorSignedIn && isVendorActive && vendorNames.length > 0 && (
-                  <ManageVendorButton
-                    vendorNames={vendorNames}
-                    currentVendorName={selectedVendor}
-                    onSelectVendor={(vendorName) =>
-                      navigate(`/vendors/${encodeURIComponent(vendorName)}`)
-                    }
-                    getLogoUrl={(vendorName) =>
-                      getVendorLogoUrl(vendorName, getWebsiteForVendor(vendorName))
-                    }
-                    showManagingLabel={false}
-                    className="hidden md:flex"
-                  />
-                )}
+                {isVendorSignedIn &&
+                  isVendorActive &&
+                  vendorNames.length > 0 && (
+                    <ManageVendorButton
+                      vendorNames={vendorNames}
+                      currentVendorName={selectedVendor}
+                      onSelectVendor={(vendorName) =>
+                        navigate(`/vendors/${encodeURIComponent(vendorName)}`)
+                      }
+                      getLogoUrl={(vendorName) =>
+                        getVendorLogoUrl(
+                          vendorName,
+                          getWebsiteForVendor(vendorName),
+                        )
+                      }
+                      showManagingLabel={false}
+                      className="hidden md:flex"
+                    />
+                  )}
 
                 <Button
                   variant="ghost"
@@ -905,8 +1004,9 @@ const VendorsV2 = () => {
                     onClick={() => {
                       const email = user?.email;
                       const portalUrl = email
-                        ? `${import.meta.env.VITE_STRIPE_PORTAL_URL
-                        }?prefilled_email=${encodeURIComponent(email)}`
+                        ? `${
+                            import.meta.env.VITE_STRIPE_PORTAL_URL
+                          }?prefilled_email=${encodeURIComponent(email)}`
                         : import.meta.env.VITE_STRIPE_PORTAL_URL;
                       window.open(portalUrl, "_blank");
                     }}
@@ -986,65 +1086,60 @@ const VendorsV2 = () => {
                 )}
 
                 {/* Main Hero - Only on default "all" view */}
-                {selectedCategory === "all" &&
-                  selectedVendor === null && (
-                    <div className="py-4 sm:py-6">
-                      {/* Content */}
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/20 border border-secondary/30 text-xs font-semibold text-yellow-800 mb-4">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-500 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+                {selectedCategory === "all" && selectedVendor === null && (
+                  <div className="py-4 sm:py-6">
+                    {/* Content */}
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/20 border border-secondary/30 text-xs font-semibold text-yellow-800 mb-4">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-500 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+                      </span>
+                      Updated Daily
+                    </div>
+
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground mb-4 leading-[1.1] tracking-tight">
+                      Unfiltered Vendor Intel{" "}
+                      <span className="text-yellow-600">From Real Dealers</span>
+                    </h1>
+
+                    <p className="text-lg sm:text-xl text-muted-foreground mb-6 max-w-xl leading-relaxed">
+                      Real feedback from verified dealers. No paid placements,
+                      just honest experiences.
+                    </p>
+
+                    {/* Value Props */}
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-2 sm:gap-y-2 text-sm sm:text-base text-foreground/80">
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-500 font-bold">✓</span>
+                        <span>
+                          <strong className="text-foreground">
+                            {totalVerifiedCount}+
+                          </strong>{" "}
+                          recommendations
                         </span>
-                        Updated Daily
                       </div>
-
-                      <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground mb-4 leading-[1.1] tracking-tight">
-                        Unfiltered Vendor Intel{" "}
-                        <span className="text-yellow-600">
-                          From Real Dealers
+                      <span className="text-border hidden sm:inline">•</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-red-500 font-bold">⚠️</span>
+                        <span>
+                          <strong className="text-foreground">
+                            {totalWarningCountValue}+
+                          </strong>{" "}
+                          warnings to avoid
                         </span>
-                      </h1>
-
-                      <p className="text-lg sm:text-xl text-muted-foreground mb-6 max-w-xl leading-relaxed">
-                        Real feedback from verified dealers. No paid placements,
-                        just honest experiences.
-                      </p>
-
-                      {/* Value Props */}
-                      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-2 sm:gap-y-2 text-sm sm:text-base text-foreground/80">
-                        <div className="flex items-center gap-2">
-                          <span className="text-green-500 font-bold">✓</span>
-                          <span>
-                            <strong className="text-foreground">
-                              {totalVerifiedCount}+
-                            </strong>{" "}
-                            recommendations
-                          </span>
-                        </div>
-                        <span className="text-border hidden sm:inline">•</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-red-500 font-bold">⚠️</span>
-                          <span>
-                            <strong className="text-foreground">
-                              {totalWarningCountValue}+
-                            </strong>{" "}
-                            warnings to avoid
-                          </span>
-                        </div>
-                        <span className="text-border hidden sm:inline">•</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-yellow-500 font-bold">💰</span>
-                          <span>
-                            Save{" "}
-                            <strong className="text-foreground">
-                              thousands
-                            </strong>{" "}
-                            in bad contracts
-                          </span>
-                        </div>
+                      </div>
+                      <span className="text-border hidden sm:inline">•</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-yellow-500 font-bold">💰</span>
+                        <span>
+                          Save{" "}
+                          <strong className="text-foreground">thousands</strong>{" "}
+                          in bad contracts
+                        </span>
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
                 {/* Search Bar - Below hero */}
                 <div className="pt-1 pb-0 sm:pb-0">
@@ -1060,7 +1155,10 @@ const VendorsV2 = () => {
                           <LayoutGrid className="h-5 w-5 text-muted-foreground" />
                         </Button>
                       </SheetTrigger>
-                      <SheetContent side="left" className="w-72 p-0 bg-white z-[60]">
+                      <SheetContent
+                        side="left"
+                        className="w-72 p-0 bg-white z-[60]"
+                      >
                         <SheetHeader className="p-4 border-b bg-white">
                           <SheetTitle>Categories</SheetTitle>
                         </SheetHeader>
@@ -1098,16 +1196,16 @@ const VendorsV2 = () => {
 
               {/* AI Insight Banner - Only show when vendor selected or category filtered */}
               {(selectedVendor !== null || selectedCategory !== "all") && (
-                  <AIInsightBanner
-                    data={wamMentions}
-                    selectedCategory={selectedCategory}
-                    searchQuery={searchQuery}
-                    selectedVendor={selectedVendor}
-                    fetchWithAuth={fetchVendorPulse}
-                    onUpgradeClick={() => setShowUpgradeModal(true)}
-                    className="mb-6"
-                  />
-                )}
+                <AIInsightBanner
+                  data={wamMentions}
+                  selectedCategory={selectedCategory}
+                  searchQuery={searchQuery}
+                  selectedVendor={selectedVendor}
+                  fetchWithAuth={fetchVendorPulse}
+                  onUpgradeClick={() => setShowUpgradeModal(true)}
+                  className="mb-6"
+                />
+              )}
 
               {/* Filter Bar - Only show when vendor is selected */}
               {selectedVendor !== null && (
@@ -1145,8 +1243,11 @@ const VendorsV2 = () => {
                   <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
                     {categoryVendors.map((vendor) => {
                       const vendorWebsiteUrl = getWebsiteForVendor(vendor.name);
-                      const vendorLogoUrl = getVendorLogoUrl(vendor.name, vendorWebsiteUrl);
-                      
+                      const vendorLogoUrl = getVendorLogoUrl(
+                        vendor.name,
+                        vendorWebsiteUrl,
+                      );
+
                       return (
                         <button
                           key={vendor.name}
@@ -1156,12 +1257,15 @@ const VendorsV2 = () => {
                           <div className="flex items-start gap-2.5 sm:gap-3">
                             {/* Vendor Logo */}
                             <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border border-border/50 shrink-0">
-                              <AvatarImage src={vendorLogoUrl || undefined} alt={vendor.name} />
+                              <AvatarImage
+                                src={vendorLogoUrl || undefined}
+                                alt={vendor.name}
+                              />
                               <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs sm:text-sm">
                                 {vendor.name.slice(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            
+
                             {/* Vendor Info */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 sm:gap-2">
@@ -1171,7 +1275,10 @@ const VendorsV2 = () => {
                                 <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 opacity-0 group-hover:opacity-100" />
                               </div>
                               <div className="mt-1 sm:mt-1.5 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground">
-                                <span className="font-medium">{vendor.reviewCount} review{vendor.reviewCount !== 1 ? "s" : ""}</span>
+                                <span className="font-medium">
+                                  {vendor.reviewCount} review
+                                  {vendor.reviewCount !== 1 ? "s" : ""}
+                                </span>
                                 {vendor.positiveCount > 0 && (
                                   <span className="px-1.5 py-0.5 rounded bg-green-50 text-green-700 font-medium text-xs">
                                     {vendor.positiveCount} positive
@@ -1179,7 +1286,8 @@ const VendorsV2 = () => {
                                 )}
                                 {vendor.warningCount > 0 && (
                                   <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-700 font-medium text-xs">
-                                    {vendor.warningCount} warning{vendor.warningCount !== 1 ? "s" : ""}
+                                    {vendor.warningCount} warning
+                                    {vendor.warningCount !== 1 ? "s" : ""}
                                   </span>
                                 )}
                               </div>
@@ -1201,18 +1309,22 @@ const VendorsV2 = () => {
                     isFullAccess={accessLevel.unlimitedAccess}
                     responses={responses}
                     isLocked={(entry) => {
-                      const isSearchingAsNonPro = !isProUserValue && searchQuery.trim().length > 0;
+                      const isSearchingAsNonPro =
+                        !isProUserValue && searchQuery.trim().length > 0;
                       return entry.isLocked === true || isSearchingAsNonPro;
                     }}
                     showVendorNames={(entry) => {
-                      const isSearchingAsNonPro = !isProUserValue && searchQuery.trim().length > 0;
+                      const isSearchingAsNonPro =
+                        !isProUserValue && searchQuery.trim().length > 0;
                       return isSearchingAsNonPro ? false : !!entry.vendorName;
                     }}
                     getVendorWebsite={(vendorName) =>
                       vendorName ? getWebsiteForVendor(vendorName) : null
                     }
                     getVendorLogo={(vendorName, vendorWebsite) =>
-                      vendorName ? getVendorLogoUrl(vendorName, vendorWebsite) : null
+                      vendorName
+                        ? getVendorLogoUrl(vendorName, vendorWebsite)
+                        : null
                     }
                     canRespondToVendor={(vendorName) =>
                       vendorName ? canRespondTo(vendorName) : false
@@ -1226,7 +1338,10 @@ const VendorsV2 = () => {
                       if (isAuthenticated) {
                         setShowUpgradeModal(true);
                       } else {
-                        window.open("https://cdgcircles.com/#pricing", "_blank");
+                        window.open(
+                          "https://cdgcircles.com/#pricing",
+                          "_blank",
+                        );
                       }
                     }}
                   />
@@ -1240,7 +1355,10 @@ const VendorsV2 = () => {
                         if (isAuthenticated) {
                           setShowUpgradeModal(true);
                         } else {
-                          window.open("https://cdgcircles.com/#pricing", "_blank");
+                          window.open(
+                            "https://cdgcircles.com/#pricing",
+                            "_blank",
+                          );
                         }
                       }}
                     />
@@ -1249,16 +1367,21 @@ const VendorsV2 = () => {
               )}
 
               {/* Infinite scroll sentinel - loads more when scrolled into view */}
-              {isProUserValue && paginationInfo?.hasMore && visibleEntries.length > 0 && (
-                <div ref={loadMoreRef} className="mt-8 flex justify-center py-4">
-                  {isLoadingMore && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      <span className="text-sm">Loading more reviews...</span>
-                    </div>
-                  )}
-                </div>
-              )}
+              {isProUserValue &&
+                paginationInfo?.hasMore &&
+                visibleEntries.length > 0 && (
+                  <div
+                    ref={loadMoreRef}
+                    className="mt-8 flex justify-center py-4"
+                  >
+                    {isLoadingMore && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                        <span className="text-sm">Loading more reviews...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
               {/* Empty State - no reviews found */}
               {!isWamLoading && filteredData.length === 0 && (
@@ -1288,7 +1411,9 @@ const VendorsV2 = () => {
               {/* Dealer pricing only - Circles member tier */}
               {!accessLevel.unlimitedAccess && !isAuthenticated && (
                 <DealerCirclesPricing
-                  totalReviews={paginationInfo?.totalSystemCount ?? wamMentions.length}
+                  totalReviews={
+                    paginationInfo?.totalSystemCount ?? wamMentions.length
+                  }
                   totalWarnings={totalWarningCountValue}
                   onSignInClick={() => setShowSignIn(true)}
                 />
@@ -1307,8 +1432,10 @@ const VendorsV2 = () => {
                           Upgrade to See All Reviews
                         </h3>
                         <p className="text-muted-foreground text-sm">
-                          Unlock all {paginationInfo?.totalSystemCount ?? wamMentions.length} reviews including{" "}
-                          {totalWarningCountValue} warnings.
+                          Unlock all{" "}
+                          {paginationInfo?.totalSystemCount ??
+                            wamMentions.length}{" "}
+                          reviews including {totalWarningCountValue} warnings.
                         </p>
                       </div>
                     </div>
@@ -1408,26 +1535,30 @@ const VendorsV2 = () => {
         onDeleteResponse={deleteResponse}
       />
 
-      {selectedCardForShare && (() => {
-        const vendorWebsiteUrl = selectedCardForShare.vendorName
-          ? getWebsiteForVendor(selectedCardForShare.vendorName)
-          : null;
-        const vendorLogoUrl = selectedCardForShare.vendorName
-          ? getVendorLogoUrl(selectedCardForShare.vendorName, vendorWebsiteUrl)
-          : null;
-        
-        return (
-          <QuoteCardModal
-            isOpen={!!selectedCardForShare}
-            onClose={() => setSelectedCardForShare(null)}
-            quote={selectedCardForShare.quote}
-            title={selectedCardForShare.title}
-            type={selectedCardForShare.type}
-            vendorName={selectedCardForShare.vendorName || undefined}
-            vendorLogo={vendorLogoUrl}
-          />
-        );
-      })()}
+      {selectedCardForShare &&
+        (() => {
+          const vendorWebsiteUrl = selectedCardForShare.vendorName
+            ? getWebsiteForVendor(selectedCardForShare.vendorName)
+            : null;
+          const vendorLogoUrl = selectedCardForShare.vendorName
+            ? getVendorLogoUrl(
+                selectedCardForShare.vendorName,
+                vendorWebsiteUrl,
+              )
+            : null;
+
+          return (
+            <QuoteCardModal
+              isOpen={!!selectedCardForShare}
+              onClose={() => setSelectedCardForShare(null)}
+              quote={selectedCardForShare.quote}
+              title={selectedCardForShare.title}
+              type={selectedCardForShare.type}
+              vendorName={selectedCardForShare.vendorName || undefined}
+              vendorLogo={vendorLogoUrl}
+            />
+          );
+        })()}
 
       <UpgradeModal
         isOpen={showUpgradeModal}
@@ -1457,9 +1588,7 @@ const VendorsV2 = () => {
       </Dialog>
 
       {/* AI Chat - only shown when ?ai_chat=true */}
-      {showAIChat && (
-        <VendorAIChat fetchWithAuth={fetchVendorPulse} />
-      )}
+      {showAIChat && <VendorAIChat fetchWithAuth={fetchVendorPulse} />}
     </>
   );
 };
