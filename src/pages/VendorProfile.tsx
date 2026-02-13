@@ -17,6 +17,8 @@ import {
   Crown,
   Share2,
   CreditCard,
+  ArrowRight,
+  ArrowUpRight,
 } from "lucide-react";
 import { SignIn, UserButton } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
@@ -32,6 +34,7 @@ import VendorReviewGrid from "@/components/vendors/VendorReviewGrid";
 import { VendorEntry } from "@/hooks/useVendorReviews";
 import { useVendorResponses } from "@/hooks/useVendorResponses";
 import { useVerifiedVendor } from "@/hooks/useVerifiedVendor";
+import { categories } from "@/hooks/useVendorFilters";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { useVendorAuth } from "@/hooks/useVendorAuth";
 import { WAM_URL } from "@/config/wam";
@@ -90,6 +93,14 @@ const VendorProfile = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
+  const [categoryMentions, setCategoryMentions] = useState<VendorEntry[]>([]);
+  const [categoryVendorCounts, setCategoryVendorCounts] = useState<
+    Record<string, { total: number; positive: number; warning: number }>
+  >({});
+  const [categoryVendorNames, setCategoryVendorNames] = useState<
+    Record<string, string>
+  >({});
+  const [isCategoryLoading, setIsCategoryLoading] = useState(false);
   const { canRespondTo } = useVerifiedVendor();
 
   const vendorName = vendorSlug ? decodeURIComponent(vendorSlug) : "";
@@ -103,8 +114,11 @@ const VendorProfile = () => {
     [tier, isVendorActive, isVendorPro],
   );
   const reviewIds = useMemo(
-    () => allMentions.map((m) => String(m.id)),
-    [allMentions],
+    () => [
+      ...allMentions.map((m) => String(m.id)),
+      ...categoryMentions.map((m) => String(m.id)),
+    ],
+    [allMentions, categoryMentions],
   );
   const { responses, addResponse, updateResponse, deleteResponse } =
     useVendorResponses(reviewIds);
@@ -153,6 +167,18 @@ const VendorProfile = () => {
     },
     [profileData?.metadata?.logo_url],
   );
+
+  // Logo URL for other vendors (category section) - uses logo.dev from name only
+  const getOtherVendorLogoUrl = useCallback((name: string) => {
+    const logoDevToken = import.meta.env.VITE_LOGO_DEV_TOKEN;
+    if (!logoDevToken || !name) return null;
+    const domain =
+      name
+        .toLowerCase()
+        .replace(/\s+/g, "")
+        .replace(/[^a-z0-9.-]/g, "") + ".com";
+    return `https://img.logo.dev/${domain}?token=${logoDevToken}&size=128&format=png&fallback=monogram`;
+  }, []);
 
   // Fetch vendor profile (metadata, stats, insight) and mentions from same API as VendorsV2
   // Uses public mentions API so vendor responses use same ID scheme and display correctly
@@ -231,6 +257,102 @@ const VendorProfile = () => {
 
     fetchProfile();
   }, [vendorName, fetchVendorPulse]);
+
+  // Primary category for "More vendors" section - derive from vendor's mentions
+  // (allMentions from public API) since profile API may use different data source
+  const primaryCategory = useMemo(() => {
+    const cats = allMentions
+      .map((m) => m.category)
+      .filter(Boolean);
+    if (cats.length === 0) return undefined;
+    // Use most frequent category
+    const freq: Record<string, number> = {};
+    cats.forEach((c) => {
+      freq[c] = (freq[c] || 0) + 1;
+    });
+    return Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0];
+  }, [allMentions]);
+
+  // Fetch "More [category] vendors and reviews" when vendor has categories
+  useEffect(() => {
+    if (!primaryCategory || primaryCategory === "all" || !vendorName) {
+      setCategoryMentions([]);
+      setCategoryVendorCounts({});
+      setCategoryVendorNames({});
+      return;
+    }
+
+    let cancelled = false;
+    const fetchCategoryData = async () => {
+      setIsCategoryLoading(true);
+      try {
+        const counts: Record<
+          string,
+          { total: number; positive: number; warning: number }
+        > = {};
+        const names: Record<string, string> = {};
+        const allMentionsList: VendorEntry[] = [];
+        const currentVendorLower = vendorName.toLowerCase();
+
+        let page = 1;
+        const pageSize = 100;
+        const maxPages = 5;
+
+        while (page <= maxPages) {
+          const params = new URLSearchParams();
+          params.append("category", primaryCategory);
+          params.append("page", page.toString());
+          params.append("pageSize", pageSize.toString());
+
+          const res = await fetchVendorPulse(
+            `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
+          );
+          if (!res.ok) break;
+
+          const data = await res.json();
+          const mentionsPage = (data.mentions || []).map((m: any) => ({
+            ...m,
+            vendorName: m.vendor_name || m.vendorName,
+            conversationTime: m.conversation_time || m.conversationTime,
+            vendorResponse: m.vendorResponse || null,
+          }));
+
+          for (const m of mentionsPage) {
+            const v = m.vendorName;
+            if (!v || v.toLowerCase() === currentVendorLower) continue;
+
+            const key = v.toLowerCase();
+            if (!counts[key]) counts[key] = { total: 0, positive: 0, warning: 0 };
+            if (!names[key]) names[key] = v;
+            counts[key].total += 1;
+            if (m.type === "positive") counts[key].positive += 1;
+            else if (m.type === "warning") counts[key].warning += 1;
+
+            allMentionsList.push(m);
+          }
+
+          if (!data.hasMore || mentionsPage.length < pageSize) break;
+          page += 1;
+          await new Promise((r) => setTimeout(r, 25));
+        }
+
+        if (!cancelled) {
+          setCategoryVendorCounts(counts);
+          setCategoryVendorNames(names);
+          setCategoryMentions(allMentionsList);
+        }
+      } catch (err) {
+        if (!cancelled) console.error("Failed to fetch category vendors:", err);
+      } finally {
+        if (!cancelled) setIsCategoryLoading(false);
+      }
+    };
+
+    fetchCategoryData();
+    return () => {
+      cancelled = true;
+    };
+  }, [primaryCategory, vendorName, fetchVendorPulse]);
 
   // Load more mentions
   const loadMoreMentions = useCallback(async () => {
@@ -650,6 +772,160 @@ const VendorProfile = () => {
               </button>
             )}
           </div>
+
+          {/* More [category] vendors and reviews - limited preview */}
+          {primaryCategory && primaryCategory !== "all" && (
+            <section className="mt-10 sm:mt-12 pt-8 sm:pt-10 border-t border-border">
+              <div className="mb-4 sm:mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl sm:text-3xl shrink-0">
+                    {categories.find((c) => c.id === primaryCategory)?.icon || "📦"}
+                  </span>
+                  <Link
+                    to={`/vendors?category=${encodeURIComponent(primaryCategory)}`}
+                    title="View all"
+                    className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
+                  >
+                    <h2 className="text-lg sm:text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+                      More{" "}
+                      {categories.find((c) => c.id === primaryCategory)?.label ||
+                        primaryCategory}{" "}
+                      Vendors and Reviews
+                    </h2>
+                    <ArrowUpRight className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                  </Link>
+                </div>
+              </div>
+
+              {isCategoryLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  {/* Vendor chips - limited preview */}
+                  {(() => {
+                    const categoryVendors = Object.entries(categoryVendorCounts)
+                      .map(([key, c]) => ({
+                        name: categoryVendorNames[key] ?? key,
+                        ...c,
+                      }))
+                      .filter((v) => v.total > 0)
+                      .sort((a, b) => b.total - a.total)
+                      .slice(0, 4);
+                    if (categoryVendors.length === 0) return null;
+                    return (
+                      <div className="mb-6 sm:mb-8">
+                        <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                          {categoryVendors.map((vendor) => (
+                            <button
+                              key={vendor.name}
+                              onClick={() =>
+                                navigate(
+                                  `/vendors/${encodeURIComponent(vendor.name)}`,
+                                )
+                              }
+                              className="text-left p-3 sm:p-4 bg-white rounded-lg border border-border/50 hover:border-primary/50 hover:shadow-md transition-all group shrink-0 w-[280px] sm:w-[300px]"
+                            >
+                              <div className="flex items-start gap-2.5 sm:gap-3">
+                                <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border border-border/50 shrink-0">
+                                  <AvatarImage
+                                    src={
+                                      getOtherVendorLogoUrl(vendor.name) ||
+                                      undefined
+                                    }
+                                    alt={vendor.name}
+                                  />
+                                  <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs sm:text-sm">
+                                    {vendor.name.slice(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 sm:gap-2">
+                                    <h3 className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                                      {vendor.name}
+                                    </h3>
+                                    <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 opacity-0 group-hover:opacity-100" />
+                                  </div>
+                                  <div className="mt-1 sm:mt-1.5 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground">
+                                    <span className="font-medium">
+                                      {vendor.total} review
+                                      {vendor.total !== 1 ? "s" : ""}
+                                    </span>
+                                    {vendor.positive > 0 && (
+                                      <span className="px-1.5 py-0.5 rounded bg-green-50 text-green-700 font-medium text-xs">
+                                        {vendor.positive} positive
+                                      </span>
+                                    )}
+                                    {vendor.warning > 0 && (
+                                      <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-700 font-medium text-xs">
+                                        {vendor.warning} warning
+                                        {vendor.warning !== 1 ? "s" : ""}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Category reviews grid - limited preview */}
+                  {categoryMentions.length > 0 && (
+                    <>
+                      <VendorReviewGrid
+                        entries={categoryMentions.slice(0, 4)}
+                        isAuthenticated={isAuthenticated}
+                        isFullAccess={isProUserValue}
+                        responses={responses}
+                        isLocked={(entry) =>
+                          entry.isLocked === true || !isProUserValue
+                        }
+                        showVendorNames={() => true}
+                        getVendorWebsite={() => null}
+                        getVendorLogo={(name) =>
+                          name ? getOtherVendorLogoUrl(name) : null
+                        }
+                        canRespondToVendor={(name) =>
+                          name ? canRespondTo(name) : false
+                        }
+                        onAddResponse={addResponse}
+                        onUpdateResponse={updateResponse}
+                        onDeleteResponse={deleteResponse}
+                        onCardClick={setSelectedCard}
+                        onVendorClick={(name) =>
+                          navigate(`/vendors/${encodeURIComponent(name)}`)
+                        }
+                        onUpgradeClick={() => {
+                          if (isAuthenticated) {
+                            setShowUpgradeModal(true);
+                          } else {
+                            window.open(
+                              "https://cdgcircles.com/#pricing",
+                              "_blank",
+                            );
+                          }
+                        }}
+                      />
+                      <Link
+                        to={`/vendors?category=${encodeURIComponent(primaryCategory)}`}
+                        className="mt-6 flex items-center justify-center gap-2 w-full sm:w-auto sm:inline-flex py-2.5 px-4 rounded-lg border border-border bg-white hover:bg-muted/50 hover:border-primary/50 transition-colors text-sm font-medium text-foreground"
+                      >
+                        See all{" "}
+                        {categories.find((c) => c.id === primaryCategory)?.label ||
+                          primaryCategory}{" "}
+                        vendors and reviews
+                        <ArrowUpRight className="h-4 w-4 shrink-0" />
+                      </Link>
+                    </>
+                  )}
+                </>
+              )}
+            </section>
+          )}
         </div>
       </div>
 

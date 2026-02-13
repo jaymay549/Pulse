@@ -145,10 +145,14 @@ export const VendorCard: React.FC<VendorCardProps> = ({
   // - If showVendorNames is false (main page browsing): show blurred content preview (safe since vendor is hidden)
   if (isLocked) {
     // Check if vendor name is valid (not redacted) for navigation
-    const hasValidVendorName = entry.vendorName && !entry.vendorName.includes("****");
+    const hasValidVendorName =
+      entry.vendorName && !entry.vendorName.includes("****");
 
     // Determine if we should show content preview (only on main page where vendor is hidden)
-    const showContentPreview = !showVendorNames && entry.quote && !entry.quote.includes("[Content locked");
+    const showContentPreview =
+      !showVendorNames &&
+      entry.quote &&
+      !entry.quote.includes("[Content locked");
 
     const handleLockedCardClick = () => {
       // Navigate to vendor profile page if vendor name is valid and shown
@@ -172,7 +176,10 @@ export const VendorCard: React.FC<VendorCardProps> = ({
           {showVendorNames && hasValidVendorName && (
             <div className="mb-3 flex items-center gap-3">
               <Avatar className="h-10 w-10 border border-border shrink-0">
-                <AvatarImage src={vendorLogo || undefined} alt={entry.vendorName} />
+                <AvatarImage
+                  src={vendorLogo || undefined}
+                  alt={entry.vendorName}
+                />
                 <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
                   {entry.vendorName!.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
@@ -295,19 +302,22 @@ export const VendorCard: React.FC<VendorCardProps> = ({
     >
       <div className="px-5 py-4 flex flex-col flex-1 min-h-0">
         <div className="flex-1 min-h-0 flex flex-col">
-        {/* Vendor Name - Editorial style with logo */}
-        {entry.vendorName && showVendorNames && (
-          <div className="mb-2 flex items-center gap-3">
-            {/* Vendor Logo - Always show Avatar with logo or initials fallback */}
-            <Avatar className="h-10 w-10 border border-border shrink-0">
-              <AvatarImage src={vendorLogo || undefined} alt={entry.vendorName} />
-              <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                {entry.vendorName.slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <h3
-                className={`
+          {/* Vendor Name - Editorial style with logo */}
+          {entry.vendorName && showVendorNames && (
+            <div className="mb-2 flex items-center gap-3">
+              {/* Vendor Logo - Always show Avatar with logo or initials fallback */}
+              <Avatar className="h-10 w-10 border border-border shrink-0">
+                <AvatarImage
+                  src={vendorLogo || undefined}
+                  alt={entry.vendorName}
+                />
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                  {entry.vendorName.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <h3
+                  className={`
                   text-lg font-bold text-foreground leading-tight inline
                   ${
                     onVendorClick
@@ -315,81 +325,77 @@ export const VendorCard: React.FC<VendorCardProps> = ({
                       : ""
                   }
                 `}
-                onClick={(e) => {
-                  if (onVendorClick && entry.vendorName) {
-                    e.stopPropagation();
-                    onVendorClick(entry.vendorName);
-                  }
-                }}
-              >
-                {entry.vendorName}
-              </h3>
-              {/* Verified vendor website link */}
-              {vendorWebsite && (
-                <a
-                  href={vendorWebsite}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-1 ml-2 text-xs text-primary hover:underline"
+                  onClick={(e) => {
+                    if (onVendorClick && entry.vendorName) {
+                      e.stopPropagation();
+                      onVendorClick(entry.vendorName);
+                    }
+                  }}
                 >
-                  <Globe className="h-3 w-3" />
-                  <span className="hidden sm:inline">Website</span>
-                </a>
-              )}
+                  {entry.vendorName}
+                </h3>
+                {/* Verified vendor website link */}
+                {vendorWebsite && (
+                  <a
+                    href={vendorWebsite}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 ml-2 text-xs text-primary hover:underline"
+                  >
+                    <Globe className="h-3 w-3" />
+                    <span className="hidden sm:inline">Website</span>
+                  </a>
+                )}
+              </div>
             </div>
+          )}
+
+          {/* Title/Headline */}
+          {entry.title && (
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+              {parseMarkdownWithBlur(entry.title, !showVendorNames)}
+            </p>
+          )}
+
+          {/* Quote - Handle locked placeholder gracefully */}
+          <div className="relative">
+            {hasLockedPlaceholder ? (
+              <div className="py-4 px-4 rounded-lg bg-muted/40 border border-border/50 text-center">
+                <Lock className="h-5 w-5 text-muted-foreground/50 mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground font-medium">
+                  Full review available to members
+                </p>
+                <p className="text-xs text-muted-foreground/70 mt-1">
+                  Join to read what dealers are saying
+                </p>
+              </div>
+            ) : (
+              <>
+                <Quote className="absolute left-0 top-0 h-4 w-4 text-muted-foreground/30 mr-2" />
+                <p className="text-sm text-foreground/80 leading-relaxed line-clamp-4 pl-6">
+                  "{renderQuote(entry.quote, !showVendorNames)}"
+                </p>
+              </>
+            )}
           </div>
-        )}
 
-        {/* Title/Headline */}
-        {entry.title && (
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-            {parseMarkdownWithBlur(entry.title, !showVendorNames)}
-          </p>
-        )}
-
-        {/* Quote - Handle locked placeholder gracefully */}
-        <div className="relative">
-          {hasLockedPlaceholder ? (
-            <div className="py-4 px-4 rounded-lg bg-muted/40 border border-border/50 text-center">
-              <Lock className="h-5 w-5 text-muted-foreground/50 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground font-medium">
-                Full review available to members
-              </p>
-              <p className="text-xs text-muted-foreground/70 mt-1">
-                Join to read what dealers are saying
-              </p>
-            </div>
-          ) : (
-            <>
-              <Quote className="absolute left-0 top-0 h-4 w-4 text-muted-foreground/30 mr-2" />
-              <p className="text-sm text-foreground/80 leading-relaxed line-clamp-4 pl-6">
-                "{renderQuote(entry.quote, !showVendorNames)}"
-              </p>
-            </>
-          )}
-        </div>
-
-        {/* Vendor response: display when exists, or show "Respond" when vendor can add */}
-        {(vendorResponse || (canRespondAsVendor && entry.vendorName)) &&
-          onAddResponse &&
-          onUpdateResponse &&
-          onDeleteResponse && (
-            <div
-              className="mb-3"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <VendorResponseSection
-                response={vendorResponse || null}
-                canRespond={canRespondAsVendor ?? false}
-                vendorName={entry.vendorName || ""}
-                onAddResponse={onAddResponse}
-                onUpdateResponse={onUpdateResponse}
-                onDeleteResponse={onDeleteResponse}
-              />
-            </div>
-          )}
-
+          {/* Vendor response: display when exists, or show "Respond" when vendor can add */}
+          {(vendorResponse || (canRespondAsVendor && entry.vendorName)) &&
+            onAddResponse &&
+            onUpdateResponse &&
+            onDeleteResponse && (
+              <div className="mb-3" onClick={(e) => e.stopPropagation()}>
+                <VendorResponseSection
+                  response={vendorResponse || null}
+                  canRespond={canRespondAsVendor ?? false}
+                  vendorName={entry.vendorName || ""}
+                  onAddResponse={onAddResponse}
+                  onUpdateResponse={onUpdateResponse}
+                  onDeleteResponse={onDeleteResponse}
+                />
+              </div>
+            )}
         </div>
         {/* Footer: Type badge + Member attribution - pinned to bottom */}
         <div className="mt-auto pt-3 border-t border-border/50">

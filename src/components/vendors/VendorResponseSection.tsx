@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { ShieldCheck, MessageSquare, Edit2, Trash2, Send, X } from "lucide-react";
+import {
+  ShieldCheck,
+  MessageSquare,
+  Edit2,
+  Trash2,
+  Send,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { VendorResponse } from "@/hooks/useVendorResponses";
