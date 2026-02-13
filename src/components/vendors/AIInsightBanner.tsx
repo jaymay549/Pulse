@@ -17,8 +17,7 @@ interface AIInsightBannerProps {
   selectedCategory?: string | null;
   searchQuery?: string;
   selectedVendor?: string | null;
-  isProUser?: boolean;
-  getToken?: () => Promise<string | null>;
+  fetchWithAuth?: (url: string, options?: RequestInit) => Promise<Response>;
   className?: string;
   onUpgradeClick?: () => void;
 }
@@ -42,8 +41,7 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
   selectedCategory,
   searchQuery,
   selectedVendor,
-  isProUser,
-  getToken,
+  fetchWithAuth,
   className,
   onUpgradeClick,
 }) => {
@@ -85,20 +83,10 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
           params.append("category", selectedCategory);
         }
 
-        const headers: HeadersInit = {};
-        if (getToken) {
-          const token = await getToken();
-          if (token) {
-            headers["Authorization"] = `Bearer ${token}`;
-          }
-        }
-
-        const response = await fetch(
-          `${WAM_URL}/api/public/vendor-pulse/insights?${params.toString()}`,
-          {
-            headers,
-          }
-        );
+        const url = `${WAM_URL}/api/public/vendor-pulse/insights?${params.toString()}`;
+        const response = fetchWithAuth
+          ? await fetchWithAuth(url)
+          : await fetch(url);
 
         if (response.status === 403) {
           setIsLocked(true);
@@ -121,7 +109,7 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
     };
 
     fetchInsight();
-  }, [selectedCategory, searchQuery, selectedVendor, getToken]);
+  }, [selectedCategory, searchQuery, selectedVendor, fetchWithAuth]);
 
   // Hide AI Intelligence banner when search query is present (but show if vendor is selected)
   if (searchQuery && searchQuery.trim().length > 0 && !selectedVendor) {
@@ -137,7 +125,7 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
       className={cn(
         "relative overflow-hidden rounded-xl border bg-gradient-to-r from-primary/5 via-card to-yellow-500/5 transition-colors duration-500",
         "border-border/50 shadow-sm",
-        className
+        className,
       )}
     >
       <div className="p-5">
@@ -282,8 +270,8 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
             insight.sentiment === "positive"
               ? "bg-gradient-to-l from-green-500/5 to-transparent"
               : insight.sentiment === "negative"
-              ? "bg-gradient-to-l from-red-500/5 to-transparent"
-              : "bg-gradient-to-l from-yellow-500/5 to-transparent"
+                ? "bg-gradient-to-l from-red-500/5 to-transparent"
+                : "bg-gradient-to-l from-yellow-500/5 to-transparent",
           )}
         />
       )}

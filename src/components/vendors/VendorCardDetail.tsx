@@ -8,7 +8,6 @@ import {
   Quote,
   Lock,
   Crown,
-  ShieldCheck,
   Globe,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -333,36 +332,15 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
           </div>
         )}
 
-        {/* Existing Vendor Response Display */}
-        {vendorResponse && (
-          <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl p-4 border border-primary/20">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                Verified Vendor Response
-              </div>
-              <span className="text-xs text-muted-foreground">
-                {new Date(vendorResponse.updated_at).toLocaleDateString(
-                  "en-US",
-                  { month: "short", day: "numeric", year: "numeric" },
-                )}
-              </span>
-            </div>
-            <p className="text-sm text-foreground leading-relaxed">
-              {vendorResponse.response_text}
-            </p>
-          </div>
-        )}
-
-        {/* Vendor Response Section (for adding/editing) */}
-        {canRespondAsVendor &&
+        {/* Vendor Response (display + edit/add via shared component) */}
+        {(vendorResponse || canRespondAsVendor) &&
           onAddResponse &&
           onUpdateResponse &&
           onDeleteResponse &&
           entry.vendorName && (
             <VendorResponseSection
               response={vendorResponse || null}
-              canRespond={canRespondAsVendor}
+              canRespond={canRespondAsVendor ?? false}
               vendorName={entry.vendorName}
               onAddResponse={onAddResponse}
               onUpdateResponse={onUpdateResponse}

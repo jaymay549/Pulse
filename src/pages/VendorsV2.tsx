@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { LayoutGrid, Menu } from "lucide-react";
 import { Search, X, Crown, Share2, CreditCard, ArrowRight, Building2 } from "lucide-react";
-import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
+import { SignIn, UserButton } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,7 +20,6 @@ import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
 
 // Components
 import {
-  VendorCard,
   VendorCardDetail,
   VendorSidebar,
   AIInsightBanner,
@@ -30,9 +29,11 @@ import {
 } from "@/components/vendors";
 import UpgradeModal from "@/components/UpgradeModal";
 import QuoteCardModal from "@/components/wins/QuoteCardModal";
-import VendorPricingTiers from "@/components/vendors/VendorPricingTiers";
 import ReviewMarquee from "@/components/vendors/ReviewMarquee";
+import DealerCirclesPricing from "@/components/vendors/DealerCirclesPricing";
 import VendorAIChat from "@/components/vendors/VendorAIChat";
+import ManageVendorButton from "@/components/vendors/ManageVendorButton";
+import VendorReviewGrid from "@/components/vendors/VendorReviewGrid";
 
 // Hooks
 import { useVendorFilters, categories } from "@/hooks/useVendorFilters";
@@ -41,12 +42,14 @@ import { useVendorReviews, VendorEntry } from "@/hooks/useVendorReviews";
 import { useVendorWebsites } from "@/hooks/useVendorWebsites";
 import { useVerifiedVendor } from "@/hooks/useVerifiedVendor";
 import { useVendorResponses } from "@/hooks/useVendorResponses";
+import { useVendorAuth } from "@/hooks/useVendorAuth";
 
 // Config
 import { WAM_URL } from "@/config/wam";
 
 // Utils
-import { getAccessLevel, isProUser } from "@/utils/tierUtils";
+import { getAccessLevel } from "@/utils/tierUtils";
+import { resolveVendorAccess } from "@/utils/accessControl";
 
 const VendorsV2 = () => {
   // URL params
@@ -70,13 +73,32 @@ const VendorsV2 = () => {
   const {
     isAuthenticated,
     user,
-    role,
     tier,
     isLoading: isAuthLoading,
     fetchWithAuth,
-    getToken,
   } = useClerkAuth();
-  const { signOut } = useClerk();
+  const {
+    isLoaded: isVendorAuthLoaded,
+    isSignedIn: isVendorSignedIn,
+    isActive: isVendorActive,
+    isPro: isVendorPro,
+    vendorNames,
+    organization,
+    fetchWithVendorAuth,
+  } = useVendorAuth();
+  const hasAutoRedirectedVendorRef = useRef(false);
+  const vendorLandingRedirectKey = useMemo(
+    () => `vendor-first-landing:${organization?.id || "default"}`,
+    [organization?.id],
+  );
+  const fetchVendorPulse = useCallback(
+    (url: string, options: RequestInit = {}) => {
+      return organization?.id
+        ? fetchWithVendorAuth(url, options)
+        : fetchWithAuth(url, options);
+    },
+    [organization?.id, fetchWithVendorAuth, fetchWithAuth],
+  );
 
   // Vendor data from WAM
   const [wamMentions, setWamMentions] = useState<VendorEntry[]>([]);
@@ -124,7 +146,7 @@ const VendorsV2 = () => {
         params.append("pageSize", requestedPageSize.toString());
         params.append("page", page.toString());
 
-        const response = await fetchWithAuth(
+        const response = await fetchVendorPulse(
           `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
         );
         if (!response.ok) break;
@@ -169,7 +191,7 @@ const VendorsV2 = () => {
 
       return { counts, names };
     },
-    [fetchWithAuth],
+    [fetchVendorPulse],
   );
 
   // Fallback vendor data from backend table (keeps /vendors usable if WAM is flaky)
@@ -217,8 +239,12 @@ const VendorsV2 = () => {
   }, [wamMentions, dbReviews]);
 
   // Access level - simplified 2-tier system
-  const accessLevel = getAccessLevel(tier);
-  const isProUserValue = isProUser(tier);
+  const vendorAccess = resolveVendorAccess({
+    tier,
+    vendorOrg: { isActive: isVendorActive, isPro: isVendorPro },
+  });
+  const isProUserValue = vendorAccess.hasFullAccess;
+  const accessLevel = vendorAccess.hasFullAccess ? getAccessLevel("pro") : getAccessLevel(tier);
 
   // Filter hook
   const {
@@ -322,9 +348,43 @@ const VendorsV2 = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory, selectedVendor, typeFilter]); // Depend on state, not searchParams
 
+  // Vendor-first landing: signed-in vendor org users go straight to their first assigned vendor.
+  useEffect(() => {
+    if (hasAutoRedirectedVendorRef.current) return;
+    if (!isVendorAuthLoaded || !isAuthenticated) return;
+    if (!isVendorSignedIn || !isVendorActive) return;
+    if (!vendorNames || vendorNames.length === 0) return;
+    if (typeof window !== "undefined" && sessionStorage.getItem(vendorLandingRedirectKey) === "1") {
+      return;
+    }
+
+    const hasFilters =
+      !!searchParams.get("vendor") ||
+      !!searchParams.get("category") ||
+      !!searchParams.get("type") ||
+      !!searchParams.get("search");
+
+    if (hasFilters) return;
+
+    hasAutoRedirectedVendorRef.current = true;
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(vendorLandingRedirectKey, "1");
+    }
+    navigate(`/vendors/${encodeURIComponent(vendorNames[0])}`);
+  }, [
+    isVendorAuthLoaded,
+    isAuthenticated,
+    isVendorSignedIn,
+    isVendorActive,
+    vendorNames,
+    vendorLandingRedirectKey,
+    searchParams,
+    navigate,
+  ]);
+
   // Get review IDs for fetching responses
   const reviewIds = useMemo(
-    () => mentions.map((m) => Number(m.id)),
+    () => mentions.map((m) => String(m.id)),
     [mentions],
   );
   const { responses, addResponse, updateResponse, deleteResponse } =
@@ -344,7 +404,7 @@ const VendorsV2 = () => {
         if (selectedVendor) params.append("vendorName", selectedVendor);
         if (typeFilter !== "all" && typeFilter !== undefined) params.append("type", typeFilter);
 
-        const response = await fetchWithAuth(
+        const response = await fetchVendorPulse(
           `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
         );
         if (response.ok) {
@@ -378,7 +438,7 @@ const VendorsV2 = () => {
     };
 
     fetchMentions();
-  }, [isAuthenticated, fetchWithAuth, selectedCategory, selectedVendor, typeFilter]);
+  }, [isAuthenticated, fetchVendorPulse, selectedCategory, selectedVendor, typeFilter]);
 
   // Fetch category vendor index (all vendors + accurate counts) for sidebar + category vendor chips
   useEffect(() => {
@@ -520,7 +580,7 @@ const VendorsV2 = () => {
       params.append("page", nextPage.toString());
       params.append("pageSize", (paginationInfo.pageSize || 40).toString());
 
-      const response = await fetchWithAuth(
+      const response = await fetchVendorPulse(
         `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
       );
       if (response.ok) {
@@ -553,7 +613,7 @@ const VendorsV2 = () => {
       setIsLoadingMore(false);
     }
   }, [
-    fetchWithAuth,
+    fetchVendorPulse,
     isLoadingMore,
     paginationInfo,
     selectedCategory,
@@ -803,6 +863,21 @@ const VendorsV2 = () => {
 
               {/* Right: Actions */}
               <div className="flex items-center gap-2">
+                {isVendorSignedIn && isVendorActive && vendorNames.length > 0 && (
+                  <ManageVendorButton
+                    vendorNames={vendorNames}
+                    currentVendorName={selectedVendor}
+                    onSelectVendor={(vendorName) =>
+                      navigate(`/vendors/${encodeURIComponent(vendorName)}`)
+                    }
+                    getLogoUrl={(vendorName) =>
+                      getVendorLogoUrl(vendorName, getWebsiteForVendor(vendorName))
+                    }
+                    showManagingLabel={false}
+                    className="hidden md:flex"
+                  />
+                )}
+
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1028,8 +1103,7 @@ const VendorsV2 = () => {
                     selectedCategory={selectedCategory}
                     searchQuery={searchQuery}
                     selectedVendor={selectedVendor}
-                    isProUser={isProUserValue}
-                    getToken={getToken}
+                    fetchWithAuth={fetchVendorPulse}
                     onUpgradeClick={() => setShowUpgradeModal(true)}
                     className="mb-6"
                   />
@@ -1120,46 +1194,42 @@ const VendorsV2 = () => {
 
               {/* Results Grid */}
               {visibleEntries.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                  {visibleEntries.map((entry) => {
-                    // Backend handles all redaction - but force redaction for non-pro users when searching
-                    const isSearchingAsNonPro = !isProUserValue && searchQuery.trim().length > 0;
-                    const isLocked = entry.isLocked === true || isSearchingAsNonPro;
-                    // Hide vendor names when searching as non-pro user
-                    const showVendorNames = isSearchingAsNonPro ? false : !!entry.vendorName;
-
-                    // Get website and logo for this vendor
-                    const vendorWebsiteUrl = entry.vendorName
-                      ? getWebsiteForVendor(entry.vendorName)
-                      : null;
-                    const vendorLogoUrl = entry.vendorName
-                      ? getVendorLogoUrl(entry.vendorName, vendorWebsiteUrl)
-                      : null;
-                    const vendorResponse = responses[Number(entry.id)] || null;
-
-                    return (
-                      <VendorCard
-                        key={entry.id}
-                        entry={entry}
-                        isLocked={isLocked}
-                        showVendorNames={showVendorNames}
-                        isFullAccess={accessLevel.unlimitedAccess}
-                        isAuthenticated={isAuthenticated}
-                        vendorResponse={vendorResponse}
-                        vendorWebsite={vendorWebsiteUrl}
-                        vendorLogo={vendorLogoUrl}
-                        onCardClick={(e) => setSelectedCard(e)}
-                        onVendorClick={handleVendorSelect}
-                        onUpgradeClick={() => {
-                          if (isAuthenticated) {
-                            setShowUpgradeModal(true);
-                          } else {
-                            window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
-                          }
-                        }}
-                      />
-                    );
-                  })}
+                <div>
+                  <VendorReviewGrid
+                    entries={visibleEntries}
+                    isAuthenticated={isAuthenticated}
+                    isFullAccess={accessLevel.unlimitedAccess}
+                    responses={responses}
+                    isLocked={(entry) => {
+                      const isSearchingAsNonPro = !isProUserValue && searchQuery.trim().length > 0;
+                      return entry.isLocked === true || isSearchingAsNonPro;
+                    }}
+                    showVendorNames={(entry) => {
+                      const isSearchingAsNonPro = !isProUserValue && searchQuery.trim().length > 0;
+                      return isSearchingAsNonPro ? false : !!entry.vendorName;
+                    }}
+                    getVendorWebsite={(vendorName) =>
+                      vendorName ? getWebsiteForVendor(vendorName) : null
+                    }
+                    getVendorLogo={(vendorName, vendorWebsite) =>
+                      vendorName ? getVendorLogoUrl(vendorName, vendorWebsite) : null
+                    }
+                    canRespondToVendor={(vendorName) =>
+                      vendorName ? canRespondTo(vendorName) : false
+                    }
+                    onAddResponse={addResponse}
+                    onUpdateResponse={updateResponse}
+                    onDeleteResponse={deleteResponse}
+                    onCardClick={(entry) => setSelectedCard(entry)}
+                    onVendorClick={handleVendorSelect}
+                    onUpgradeClick={() => {
+                      if (isAuthenticated) {
+                        setShowUpgradeModal(true);
+                      } else {
+                        window.open("https://cdgcircles.com/#pricing", "_blank");
+                      }
+                    }}
+                  />
 
                   {/* Teaser Card */}
                   {showTeaserCard && (
@@ -1170,7 +1240,7 @@ const VendorsV2 = () => {
                         if (isAuthenticated) {
                           setShowUpgradeModal(true);
                         } else {
-                          window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
+                          window.open("https://cdgcircles.com/#pricing", "_blank");
                         }
                       }}
                     />
@@ -1215,9 +1285,9 @@ const VendorsV2 = () => {
                 </div>
               )}
 
-              {/* Upgrade Section for Non-Pro Users */}
+              {/* Dealer pricing only - Circles member tier */}
               {!accessLevel.unlimitedAccess && !isAuthenticated && (
-                <VendorPricingTiers
+                <DealerCirclesPricing
                   totalReviews={paginationInfo?.totalSystemCount ?? wamMentions.length}
                   totalWarnings={totalWarningCountValue}
                   onSignInClick={() => setShowSignIn(true)}
@@ -1322,7 +1392,7 @@ const VendorsV2 = () => {
             : null
         }
         vendorResponse={
-          selectedCard ? responses[Number(selectedCard.id)] : null
+          selectedCard ? responses[String(selectedCard.id)] : null
         }
         canRespondAsVendor={
           selectedCard?.vendorName
@@ -1331,7 +1401,7 @@ const VendorsV2 = () => {
         }
         onAddResponse={(text) =>
           selectedCard
-            ? addResponse(Number(selectedCard.id), text)
+            ? addResponse(String(selectedCard.id), text)
             : Promise.resolve(false)
         }
         onUpdateResponse={updateResponse}
@@ -1388,7 +1458,7 @@ const VendorsV2 = () => {
 
       {/* AI Chat - only shown when ?ai_chat=true */}
       {showAIChat && (
-        <VendorAIChat fetchWithAuth={fetchWithAuth} />
+        <VendorAIChat fetchWithAuth={fetchVendorPulse} />
       )}
     </>
   );

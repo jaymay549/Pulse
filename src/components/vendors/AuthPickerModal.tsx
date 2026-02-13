@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,8 @@ interface AuthPickerModalProps {
 }
 
 export const AuthPickerModal = ({ isOpen, onClose, onSelectPhone, onSelectViewer }: AuthPickerModalProps) => {
+  const navigate = useNavigate();
+
   const handleCirclesMember = () => {
     onClose();
     onSelectPhone();
@@ -23,11 +26,8 @@ export const AuthPickerModal = ({ isOpen, onClose, onSelectPhone, onSelectViewer
 
   const handleViewer = () => {
     onClose();
-    // If callback provided, use it (opens modal on same page)
-    // Otherwise fall back to navigation (for backwards compatibility)
-    if (onSelectViewer) {
-      onSelectViewer();
-    }
+    // Use shared auth flow and return to unified Vendors experience
+    navigate("/auth?redirect=/vendors");
   };
 
   return (
@@ -92,7 +92,7 @@ export const AuthPickerModal = ({ isOpen, onClose, onSelectPhone, onSelectViewer
           <p className="text-xs text-muted-foreground">
             Don't have an account?{" "}
             <a
-              href={import.meta.env.VITE_STRIPE_CHECKOUT_URL}
+              href="https://cdgcircles.com/#pricing"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline font-medium"
