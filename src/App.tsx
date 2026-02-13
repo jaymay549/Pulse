@@ -37,11 +37,6 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/vendor-beta" element={<VendorBeta />} />
 
-              {/* Vendor portal is now unified with the shared Vendors page */}
-              <Route
-                path="/vendor-portal/auth"
-                element={<Navigate to="/auth?redirect=/vendors" replace />}
-              />
               <Route
                 path="/vendor-portal/*"
                 element={<Navigate to="/vendors" replace />}

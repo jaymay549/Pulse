@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { SignIn, UserButton } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
+import ManageOrgModal from "@/components/vendors/ManageOrgModal";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VendorSearchBar } from "@/components/ui/vendor-search-bar";
@@ -79,6 +80,7 @@ const VendorsV2 = () => {
     useState<VendorEntry | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
+  const [manageOrgModalOpen, setManageOrgModalOpen] = useState(false);
 
   // AI Chat feature flag
   const showAIChat = searchParams.get("ai_chat") === "true";
@@ -113,6 +115,12 @@ const VendorsV2 = () => {
     },
     [organization?.id, fetchWithVendorAuth, fetchWithAuth],
   );
+  const isVendorOrganization = useMemo(() => {
+    const metadata = organization?.publicMetadata as
+      | { vendor?: Record<string, unknown> }
+      | undefined;
+    return Boolean(metadata?.vendor);
+  }, [organization?.publicMetadata]);
 
   // Vendor data from WAM
   const [wamMentions, setWamMentions] = useState<VendorEntry[]>([]);
@@ -1028,19 +1036,29 @@ const VendorsV2 = () => {
                     signInUrl="/auth?redirect=/vendors"
                   >
                     <UserButton.MenuItems>
-                      <UserButton.Action
+                      {isVendorOrganization ? (
+                        <UserButton.Action
+                          label="Manage Organization"
+                          labelIcon={<Building2 className="h-4 w-4" />}
+                          onClick={() => setManageOrgModalOpen(true)}
+                        />
+                      ) : (
+                        <UserButton.Action
+                          label="Subscription"
+                          labelIcon={<CreditCard className="h-4 w-4" />}
+                          open="subscription"
+                        />
+                      )}
+                    </UserButton.MenuItems>
+                    {!isVendorOrganization && (
+                      <UserButton.UserProfilePage
                         label="Subscription"
                         labelIcon={<CreditCard className="h-4 w-4" />}
-                        open="subscription"
-                      />
-                    </UserButton.MenuItems>
-                    <UserButton.UserProfilePage
-                      label="Subscription"
-                      labelIcon={<CreditCard className="h-4 w-4" />}
-                      url="subscription"
-                    >
-                      <SubscriptionManagement />
-                    </UserButton.UserProfilePage>
+                        url="subscription"
+                      >
+                        <SubscriptionManagement />
+                      </UserButton.UserProfilePage>
+                    )}
                   </UserButton>
                 )}
               </div>
@@ -1560,6 +1578,12 @@ const VendorsV2 = () => {
           );
         })()}
 
+      {isVendorOrganization && (
+        <ManageOrgModal
+          open={manageOrgModalOpen}
+          onOpenChange={setManageOrgModalOpen}
+        />
+      )}
       <UpgradeModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}

@@ -19,9 +19,11 @@ import {
   CreditCard,
   ArrowRight,
   ArrowUpRight,
+  Building2,
 } from "lucide-react";
 import { SignIn, UserButton } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
+import ManageOrgModal from "@/components/vendors/ManageOrgModal";
 import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import UpgradeModal from "@/components/UpgradeModal";
@@ -80,6 +82,12 @@ const VendorProfile = () => {
     },
     [organization?.id, fetchWithVendorAuth, fetchWithAuth],
   );
+  const isVendorOrganization = useMemo(() => {
+    const metadata = organization?.publicMetadata as
+      | { vendor?: Record<string, unknown> }
+      | undefined;
+    return Boolean(metadata?.vendor);
+  }, [organization?.publicMetadata]);
 
   const [profileData, setProfileData] = useState<VendorProfileData | null>(
     null,
@@ -93,6 +101,7 @@ const VendorProfile = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
+  const [manageOrgModalOpen, setManageOrgModalOpen] = useState(false);
   const [categoryMentions, setCategoryMentions] = useState<VendorEntry[]>([]);
   const [categoryVendorCounts, setCategoryVendorCounts] = useState<
     Record<string, { total: number; positive: number; warning: number }>
@@ -580,19 +589,29 @@ const VendorProfile = () => {
                     signInUrl="/auth?redirect=/vendors"
                   >
                     <UserButton.MenuItems>
-                      <UserButton.Action
+                      {isVendorOrganization ? (
+                        <UserButton.Action
+                          label="Manage Organization"
+                          labelIcon={<Building2 className="h-4 w-4" />}
+                          onClick={() => setManageOrgModalOpen(true)}
+                        />
+                      ) : (
+                        <UserButton.Action
+                          label="Subscription"
+                          labelIcon={<CreditCard className="h-4 w-4" />}
+                          open="subscription"
+                        />
+                      )}
+                    </UserButton.MenuItems>
+                    {!isVendorOrganization && (
+                      <UserButton.UserProfilePage
                         label="Subscription"
                         labelIcon={<CreditCard className="h-4 w-4" />}
-                        open="subscription"
-                      />
-                    </UserButton.MenuItems>
-                    <UserButton.UserProfilePage
-                      label="Subscription"
-                      labelIcon={<CreditCard className="h-4 w-4" />}
-                      url="subscription"
-                    >
-                      <SubscriptionManagement />
-                    </UserButton.UserProfilePage>
+                        url="subscription"
+                      >
+                        <SubscriptionManagement />
+                      </UserButton.UserProfilePage>
+                    )}
                   </UserButton>
                 )}
               </div>
@@ -972,6 +991,12 @@ const VendorProfile = () => {
         })()}
 
       {/* Upgrade Modal for authenticated users */}
+      {isVendorOrganization && (
+        <ManageOrgModal
+          open={manageOrgModalOpen}
+          onOpenChange={setManageOrgModalOpen}
+        />
+      )}
       <UpgradeModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
