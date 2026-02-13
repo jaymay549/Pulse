@@ -261,9 +261,7 @@ const VendorProfile = () => {
   // Primary category for "More vendors" section - derive from vendor's mentions
   // (allMentions from public API) since profile API may use different data source
   const primaryCategory = useMemo(() => {
-    const cats = allMentions
-      .map((m) => m.category)
-      .filter(Boolean);
+    const cats = allMentions.map((m) => m.category).filter(Boolean);
     if (cats.length === 0) return undefined;
     // Use most frequent category
     const freq: Record<string, number> = {};
@@ -322,7 +320,8 @@ const VendorProfile = () => {
             if (!v || v.toLowerCase() === currentVendorLower) continue;
 
             const key = v.toLowerCase();
-            if (!counts[key]) counts[key] = { total: 0, positive: 0, warning: 0 };
+            if (!counts[key])
+              counts[key] = { total: 0, positive: 0, warning: 0 };
             if (!names[key]) names[key] = v;
             counts[key].total += 1;
             if (m.type === "positive") counts[key].positive += 1;
@@ -779,7 +778,8 @@ const VendorProfile = () => {
               <div className="mb-4 sm:mb-6">
                 <div className="flex items-center gap-2">
                   <span className="text-2xl sm:text-3xl shrink-0">
-                    {categories.find((c) => c.id === primaryCategory)?.icon || "📦"}
+                    {categories.find((c) => c.id === primaryCategory)?.icon ||
+                      "📦"}
                   </span>
                   <Link
                     to={`/vendors?category=${encodeURIComponent(primaryCategory)}`}
@@ -788,8 +788,8 @@ const VendorProfile = () => {
                   >
                     <h2 className="text-lg sm:text-xl font-bold text-foreground group-hover:text-primary transition-colors">
                       More{" "}
-                      {categories.find((c) => c.id === primaryCategory)?.label ||
-                        primaryCategory}{" "}
+                      {categories.find((c) => c.id === primaryCategory)
+                        ?.label || primaryCategory}{" "}
                       Vendors and Reviews
                     </h2>
                     <ArrowUpRight className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
@@ -915,8 +915,8 @@ const VendorProfile = () => {
                         className="mt-6 flex items-center justify-center gap-2 w-full sm:w-auto sm:inline-flex py-2.5 px-4 rounded-lg border border-border bg-white hover:bg-muted/50 hover:border-primary/50 transition-colors text-sm font-medium text-foreground"
                       >
                         See all{" "}
-                        {categories.find((c) => c.id === primaryCategory)?.label ||
-                          primaryCategory}{" "}
+                        {categories.find((c) => c.id === primaryCategory)
+                          ?.label || primaryCategory}{" "}
                         vendors and reviews
                         <ArrowUpRight className="h-4 w-4 shrink-0" />
                       </Link>

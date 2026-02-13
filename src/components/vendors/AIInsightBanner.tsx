@@ -125,7 +125,7 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
       className={cn(
         "relative overflow-hidden rounded-xl border bg-gradient-to-r from-primary/5 via-card to-yellow-500/5 transition-colors duration-500",
         "border-border/50 shadow-sm",
-        className
+        className,
       )}
     >
       <div className="p-5">
@@ -270,8 +270,8 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
             insight.sentiment === "positive"
               ? "bg-gradient-to-l from-green-500/5 to-transparent"
               : insight.sentiment === "negative"
-              ? "bg-gradient-to-l from-red-500/5 to-transparent"
-              : "bg-gradient-to-l from-yellow-500/5 to-transparent"
+                ? "bg-gradient-to-l from-red-500/5 to-transparent"
+                : "bg-gradient-to-l from-yellow-500/5 to-transparent",
           )}
         />
       )}
