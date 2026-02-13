@@ -24,6 +24,14 @@ interface UseVerifiedVendorResult {
 export function useVerifiedVendor(): UseVerifiedVendorResult {
   const { isLoaded, isActive, isPro, vendorNames, organization, user } = useVendorAuth();
 
+  const normalizeVendorName = (value: string): string => {
+    return value
+      .toLowerCase()
+      .replace(/\b(incorporated|inc|llc|ltd|corp|corporation|co|company)\b/g, "")
+      .replace(/[^a-z0-9]/g, "")
+      .trim();
+  };
+
   const profile: VerifiedVendorProfile | null = isActive && organization
     ? {
         id: organization.id,
@@ -37,9 +45,18 @@ export function useVerifiedVendor(): UseVerifiedVendorResult {
 
   const canRespondTo = (vendorName: string): boolean => {
     if (!isPro || !isActive) return false;
-    return vendorNames.some(
-      (vn) => vn.toLowerCase() === vendorName.toLowerCase()
-    );
+    const target = normalizeVendorName(vendorName);
+    if (!target) return false;
+
+    return vendorNames.some((vn) => {
+      const normalized = normalizeVendorName(vn);
+      if (!normalized) return false;
+      return (
+        normalized === target ||
+        normalized.includes(target) ||
+        target.includes(normalized)
+      );
+    });
   };
 
   const refetch = async () => {

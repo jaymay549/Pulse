@@ -26,8 +26,8 @@ export const AuthPickerModal = ({ isOpen, onClose, onSelectPhone, onSelectViewer
 
   const handleViewer = () => {
     onClose();
-    // Navigate to vendor portal auth
-    navigate("/vendor-portal/auth");
+    // Use shared auth flow and return to unified Vendors experience
+    navigate("/auth?redirect=/vendors");
   };
 
   return (
@@ -92,7 +92,7 @@ export const AuthPickerModal = ({ isOpen, onClose, onSelectPhone, onSelectViewer
           <p className="text-xs text-muted-foreground">
             Don't have an account?{" "}
             <a
-              href={import.meta.env.VITE_STRIPE_CHECKOUT_URL}
+              href="https://cdgcircles.com/#pricing"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline font-medium"

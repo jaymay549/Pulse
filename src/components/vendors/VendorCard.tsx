@@ -6,13 +6,13 @@ import {
   AlertTriangle,
   Lightbulb,
   Crown,
-  ShieldCheck,
   Globe,
 } from "lucide-react";
 import { VendorEntry } from "@/hooks/useVendorReviews";
 import { VendorResponse } from "@/hooks/useVendorResponses";
 import { parseMarkdown } from "@/utils/markdown";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import VendorResponseSection from "./VendorResponseSection";
 
 /**
  * Replaces **** patterns (redacted vendor names from backend) with a blur effect
@@ -77,6 +77,10 @@ interface VendorCardProps {
   vendorResponse?: VendorResponse | null;
   vendorWebsite?: string | null;
   vendorLogo?: string | null;
+  canRespondAsVendor?: boolean;
+  onAddResponse?: (text: string) => Promise<boolean>;
+  onUpdateResponse?: (responseId: string, text: string) => Promise<boolean>;
+  onDeleteResponse?: (responseId: string) => Promise<boolean>;
   onCardClick?: (entry: VendorEntry) => void;
   onVendorClick?: (vendorName: string) => void;
   onUpgradeClick?: () => void;
@@ -91,6 +95,10 @@ export const VendorCard: React.FC<VendorCardProps> = ({
   vendorResponse,
   vendorWebsite,
   vendorLogo,
+  canRespondAsVendor,
+  onAddResponse,
+  onUpdateResponse,
+  onDeleteResponse,
   onCardClick,
   onVendorClick,
   onUpgradeClick,
@@ -281,11 +289,12 @@ export const VendorCard: React.FC<VendorCardProps> = ({
       onClick={handleClick}
       className={`
         relative overflow-hidden border border-border/40
-        transition-colors duration-200 cursor-pointer group
+        transition-colors duration-200 cursor-pointer group flex flex-col h-full
         ${styles.border} ${styles.bg}
       `}
     >
-      <div className="px-5 py-4">
+      <div className="px-5 py-4 flex flex-col flex-1 min-h-0">
+        <div className="flex-1 min-h-0 flex flex-col">
         {/* Vendor Name - Editorial style with logo */}
         {entry.vendorName && showVendorNames && (
           <div className="mb-2 flex items-center gap-3">
@@ -361,21 +370,29 @@ export const VendorCard: React.FC<VendorCardProps> = ({
           )}
         </div>
 
-        {/* Vendor Response Indicator */}
-        {vendorResponse && (
-          <div className="mb-3 px-3 py-2 rounded-lg bg-primary/5 border border-primary/10">
-            <div className="flex items-center gap-1.5 text-xs text-primary font-medium">
-              <ShieldCheck className="h-3 w-3" />
-              <span>Vendor Response</span>
+        {/* Vendor response: display when exists, or show "Respond" when vendor can add */}
+        {(vendorResponse || (canRespondAsVendor && entry.vendorName)) &&
+          onAddResponse &&
+          onUpdateResponse &&
+          onDeleteResponse && (
+            <div
+              className="mb-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <VendorResponseSection
+                response={vendorResponse || null}
+                canRespond={canRespondAsVendor ?? false}
+                vendorName={entry.vendorName || ""}
+                onAddResponse={onAddResponse}
+                onUpdateResponse={onUpdateResponse}
+                onDeleteResponse={onDeleteResponse}
+              />
             </div>
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-              {vendorResponse.response_text}
-            </p>
-          </div>
-        )}
+          )}
 
-        {/* Footer: Type badge + Member attribution */}
-        <div className="mt-4 pt-3 border-t border-border/50">
+        </div>
+        {/* Footer: Type badge + Member attribution - pinned to bottom */}
+        <div className="mt-auto pt-3 border-t border-border/50">
           <div className="flex flex-row flex-wrap items-center justify-between gap-2">
             <p className="text-[11px] text-muted-foreground leading-snug">
               Circles Member

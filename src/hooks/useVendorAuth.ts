@@ -18,7 +18,26 @@ interface VendorMetadata {
     tier?: VendorTier;
     status?: string;
     vendorNames?: string[];
+    [key: string]: unknown;
   };
+}
+
+function extractVendorNames(vendor: VendorMetadata["vendor"] | undefined): string[] {
+  if (!vendor) return [];
+
+  const fromArray = Array.isArray(vendor.vendorNames)
+    ? vendor.vendorNames.filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+    : [];
+
+  if (fromArray.length > 0) return fromArray;
+
+  // Backward compatibility: some org metadata stores vendor names as numeric keys: { "0": "...", "1": "..." }
+  const fromIndexedKeys = Object.entries(vendor)
+    .filter(([key, value]) => /^\d+$/.test(key) && typeof value === "string" && value.trim().length > 0)
+    .sort((a, b) => Number(a[0]) - Number(b[0]))
+    .map(([, value]) => value as string);
+
+  return fromIndexedKeys;
 }
 
 export function useVendorAuth() {
@@ -37,7 +56,7 @@ export function useVendorAuth() {
   const isActive = isPaid && isVerified;
   const vendorTier = vendorMeta?.tier || null;
   const isPro = isActive && vendorTier === "pro";
-  const vendorNames: string[] = vendorMeta?.vendorNames || [];
+  const vendorNames: string[] = useMemo(() => extractVendorNames(vendorMeta), [vendorMeta]);
 
   const accessStatus: VendorAccessStatus = useMemo(() => {
     if (!isSignedIn) return "unauthenticated";
@@ -98,10 +117,13 @@ export function useVendorAuth() {
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
+      if (organization?.id) {
+        headers.set("X-Organization-Id", organization.id);
+      }
       headers.set("Content-Type", "application/json");
       return fetch(url, { ...options, headers });
     },
-    [getOrgToken]
+    [getOrgToken, organization?.id]
   );
 
   const getOrgId = useCallback(() => {

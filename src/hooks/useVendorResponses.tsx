@@ -4,7 +4,7 @@ import { createVendorPortalApi } from "@/lib/vendorPortalApi";
 
 export interface VendorResponse {
   id: string;
-  review_id: number;
+  review_id: string;
   vendor_profile_id: string;
   response_text: string;
   created_at: string;
@@ -14,9 +14,9 @@ export interface VendorResponse {
 }
 
 interface UseVendorResponsesResult {
-  responses: Record<number, VendorResponse | null>;
+  responses: Record<string, VendorResponse | null>;
   isLoading: boolean;
-  addResponse: (reviewId: number, text: string) => Promise<boolean>;
+  addResponse: (reviewId: string, text: string) => Promise<boolean>;
   updateResponse: (responseId: string, text: string) => Promise<boolean>;
   deleteResponse: (responseId: string) => Promise<boolean>;
 }
@@ -25,10 +25,10 @@ interface UseVendorResponsesResult {
  * Hook for vendor responses - uses the vendor portal API for Pro vendors.
  * Falls back to no-op for non-Pro vendors.
  */
-export function useVendorResponses(reviewIds: number[]): UseVendorResponsesResult {
+export function useVendorResponses(reviewIds: string[]): UseVendorResponsesResult {
   const { isPro, getToken, getOrgId, organization } = useVendorAuth();
   const api = useMemo(() => createVendorPortalApi(getToken, getOrgId), [getToken, getOrgId]);
-  const [responses, setResponses] = useState<Record<number, VendorResponse | null>>({});
+  const [responses, setResponses] = useState<Record<string, VendorResponse | null>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchResponses = useCallback(async () => {
@@ -36,21 +36,18 @@ export function useVendorResponses(reviewIds: number[]): UseVendorResponsesResul
     setIsLoading(true);
     try {
       const data = await api.getResponses();
-      const map: Record<number, VendorResponse | null> = {};
+      const map: Record<string, VendorResponse | null> = {};
       (data.responses || []).forEach((r: any) => {
-        // Map mention_id (string like "5-0") -> reviewId might be numeric,
-        // but we store the mapping by the mention_id the API returns
-        const mentionIdNum = parseInt(r.mention_id, 10);
-        if (!isNaN(mentionIdNum)) {
-          map[mentionIdNum] = {
-            id: String(r.id),
-            review_id: mentionIdNum,
-            vendor_profile_id: r.org_id,
-            response_text: r.response_text,
-            created_at: r.created_at,
-            updated_at: r.updated_at,
-          };
-        }
+        const mentionId = String(r.mention_id || "");
+        if (!mentionId) return;
+        map[mentionId] = {
+          id: String(r.id),
+          review_id: mentionId,
+          vendor_profile_id: r.org_id,
+          response_text: r.response_text,
+          created_at: r.created_at,
+          updated_at: r.updated_at,
+        };
       });
       setResponses(map);
     } catch (error) {
@@ -64,10 +61,10 @@ export function useVendorResponses(reviewIds: number[]): UseVendorResponsesResul
     fetchResponses();
   }, [fetchResponses]);
 
-  const addResponse = async (reviewId: number, text: string): Promise<boolean> => {
+  const addResponse = async (reviewId: string, text: string): Promise<boolean> => {
     if (!isPro) return false;
     try {
-      await api.createResponse(String(reviewId), text);
+      await api.createResponse(reviewId, text);
       await fetchResponses();
       return true;
     } catch (error) {
