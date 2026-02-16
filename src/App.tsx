@@ -8,6 +8,7 @@ import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import VendorsV2 from "./pages/VendorsV2";
 import VendorProfile from "./pages/VendorProfile";
+import VendorBeta from "./pages/VendorBeta";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -51,6 +52,8 @@ const App = () => (
             <Route path="/vendors/2" element={<Navigate to="/vendors" replace />} />
             <Route path="/wins-warnings" element={<Navigate to="/vendors" replace />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/vendor-beta" element={<VendorBeta />} />
+            <Route path="/vendor-portal/*" element={<Navigate to="/vendors" replace />} />
 
             {/* Admin routes */}
             <Route

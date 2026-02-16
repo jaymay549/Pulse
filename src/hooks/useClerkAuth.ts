@@ -1,4 +1,5 @@
 import { useUser, useAuth } from "@clerk/clerk-react";
+import { useOrganization } from "@clerk/clerk-react";
 import { useMemo, useCallback } from "react";
 
 export type ClerkUserTier = "pro" | "community" | "free" | "executive";
@@ -16,6 +17,7 @@ interface CirclesMetadata {
 export const useClerkAuth = () => {
     const { isLoaded, isSignedIn, user } = useUser();
     const { getToken } = useAuth();
+    const { organization } = useOrganization();
 
     const tier = useMemo((): ClerkUserTier => {
         if (!user) return "free";
@@ -39,14 +41,20 @@ export const useClerkAuth = () => {
 
     const fetchWithAuth = useCallback(
         async (url: string, options: RequestInit = {}) => {
-            const token = await getToken();
+            // Prefer org-scoped token so backend can evaluate vendor org permissions.
+            const token = organization
+                ? await getToken({ organizationId: organization.id }).catch(() => getToken())
+                : await getToken();
             const headers = new Headers(options.headers);
             if (token) {
                 headers.set("Authorization", `Bearer ${token}`);
             }
+            if (organization?.id) {
+                headers.set("X-Organization-Id", organization.id);
+            }
             return fetch(url, { ...options, headers });
         },
-        [getToken]
+        [getToken, organization]
     );
 
     return {

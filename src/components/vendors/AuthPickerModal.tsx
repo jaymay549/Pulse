@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +16,14 @@ interface AuthPickerModalProps {
   onSelectViewer?: () => void;
 }
 
-export const AuthPickerModal = ({ isOpen, onClose, onSelectPhone, onSelectViewer }: AuthPickerModalProps) => {
+export const AuthPickerModal = ({
+  isOpen,
+  onClose,
+  onSelectPhone,
+  onSelectViewer,
+}: AuthPickerModalProps) => {
+  const navigate = useNavigate();
+
   const handleCirclesMember = () => {
     onClose();
     onSelectPhone();
@@ -23,18 +31,17 @@ export const AuthPickerModal = ({ isOpen, onClose, onSelectPhone, onSelectViewer
 
   const handleViewer = () => {
     onClose();
-    // If callback provided, use it (opens modal on same page)
-    // Otherwise fall back to navigation (for backwards compatibility)
-    if (onSelectViewer) {
-      onSelectViewer();
-    }
+    // Use shared auth flow and return to unified Vendors experience
+    navigate("/auth?redirect=/vendors");
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="text-center">
-          <DialogTitle className="text-xl">How would you like to sign in?</DialogTitle>
+          <DialogTitle className="text-xl">
+            How would you like to sign in?
+          </DialogTitle>
           <DialogDescription>
             Choose the option that matches your account type
           </DialogDescription>
@@ -51,8 +58,12 @@ export const AuthPickerModal = ({ isOpen, onClose, onSelectPhone, onSelectViewer
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-foreground">Circles Member</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">Pro / Exec</span>
+                <span className="font-bold text-foreground">
+                  Circles Member
+                </span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                  Pro / Exec
+                </span>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Sign in with your phone number
@@ -75,7 +86,9 @@ export const AuthPickerModal = ({ isOpen, onClose, onSelectPhone, onSelectViewer
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-foreground">Viewer</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">$299/mo</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                  $299/mo
+                </span>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 For vendors & partners tracking their brand
@@ -92,7 +105,7 @@ export const AuthPickerModal = ({ isOpen, onClose, onSelectPhone, onSelectViewer
           <p className="text-xs text-muted-foreground">
             Don't have an account?{" "}
             <a
-              href={import.meta.env.VITE_STRIPE_CHECKOUT_URL}
+              href="https://cdgcircles.com/#pricing"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline font-medium"

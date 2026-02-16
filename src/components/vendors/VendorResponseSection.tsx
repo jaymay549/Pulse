@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { ShieldCheck, MessageSquare, Edit2, Trash2, Send, X } from "lucide-react";
+import {
+  ShieldCheck,
+  MessageSquare,
+  Edit2,
+  Trash2,
+  Send,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { VendorResponse } from "@/hooks/useVendorResponses";
@@ -14,6 +21,15 @@ interface VendorResponseSectionProps {
   onDeleteResponse: (responseId: string) => Promise<boolean>;
 }
 
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
 export const VendorResponseSection: React.FC<VendorResponseSectionProps> = ({
   response,
   canRespond,
@@ -25,25 +41,25 @@ export const VendorResponseSection: React.FC<VendorResponseSectionProps> = ({
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
-  const [responseText, setResponseText] = useState(response?.response_text || "");
+  const [responseText, setResponseText] = useState(
+    response?.response_text || "",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  };
 
   const handleSubmitNew = async () => {
     if (!responseText.trim()) return;
     setIsSubmitting(true);
-    
     const success = await onAddResponse(responseText.trim());
     if (success) {
-      toast({ title: "Response posted", description: "Your response is now visible." });
+      toast({ title: "Response posted" });
       setIsAdding(false);
       setResponseText("");
     } else {
-      toast({ title: "Error", description: "Failed to post response.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to post response.",
+        variant: "destructive",
+      });
     }
     setIsSubmitting(false);
   };
@@ -51,13 +67,16 @@ export const VendorResponseSection: React.FC<VendorResponseSectionProps> = ({
   const handleUpdate = async () => {
     if (!response || !responseText.trim()) return;
     setIsSubmitting(true);
-
     const success = await onUpdateResponse(response.id, responseText.trim());
     if (success) {
       toast({ title: "Response updated" });
       setIsEditing(false);
     } else {
-      toast({ title: "Error", description: "Failed to update response.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to update response.",
+        variant: "destructive",
+      });
     }
     setIsSubmitting(false);
   };
@@ -65,172 +84,153 @@ export const VendorResponseSection: React.FC<VendorResponseSectionProps> = ({
   const handleDelete = async () => {
     if (!response) return;
     setIsSubmitting(true);
-
     const success = await onDeleteResponse(response.id);
     if (success) {
       toast({ title: "Response removed" });
       setResponseText("");
     } else {
-      toast({ title: "Error", description: "Failed to delete response.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to delete response.",
+        variant: "destructive",
+      });
     }
     setIsSubmitting(false);
   };
 
-  // Existing response display
+  // --- Display existing response ---
   if (response && !isEditing) {
     return (
-      <div className="mt-4 border-t pt-4">
-        <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg p-4 border border-primary/20">
-          {/* Header */}
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Verified Vendor
-            </div>
-            <span className="text-xs text-muted-foreground">
-              {formatDate(response.updated_at)}
-            </span>
+      <div className="mt-3 pt-3 border-t border-border/40">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <ShieldCheck className="h-3 w-3 text-primary/70" />
+          <span className="text-[11px] font-medium text-primary/70 tracking-wide uppercase">
+            Vendor Response
+          </span>
+          <span className="text-[11px] text-muted-foreground/60">
+            · {formatDate(response.updated_at)}
+          </span>
+        </div>
+        <p className="text-[13px] text-foreground/75 leading-relaxed">
+          {response.response_text}
+        </p>
+        {canRespond && (
+          <div className="flex items-center gap-3 mt-2">
+            <button
+              type="button"
+              onClick={() => {
+                setIsEditing(true);
+                setResponseText(response.response_text);
+              }}
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Edit2 className="h-2.5 w-2.5" />
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-red-600 transition-colors disabled:opacity-50"
+            >
+              <Trash2 className="h-2.5 w-2.5" />
+              Delete
+            </button>
           </div>
+        )}
+      </div>
+    );
+  }
 
-          {/* Response text */}
-          <p className="text-sm text-foreground leading-relaxed">
-            {response.response_text}
-          </p>
-
-          {/* Edit/Delete buttons for owner */}
-          {canRespond && (
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-primary/10">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs h-7 px-2"
-                onClick={() => {
-                  setIsEditing(true);
-                  setResponseText(response.response_text);
-                }}
-              >
-                <Edit2 className="h-3 w-3 mr-1" />
-                Edit
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                onClick={handleDelete}
-                disabled={isSubmitting}
-              >
-                <Trash2 className="h-3 w-3 mr-1" />
-                Delete
-              </Button>
-            </div>
-          )}
+  // --- Edit form ---
+  if (isEditing && response) {
+    return (
+      <div className="mt-3 pt-3 border-t border-border/40 space-y-2.5">
+        <Textarea
+          value={responseText}
+          onChange={(e) => setResponseText(e.target.value)}
+          placeholder="Write your response..."
+          rows={3}
+          className="resize-none text-sm border-border/60 focus-visible:ring-1"
+        />
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={handleUpdate}
+            disabled={isSubmitting || !responseText.trim()}
+            className="h-7 text-xs px-3"
+          >
+            {isSubmitting ? "Saving..." : "Save"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setIsEditing(false);
+              setResponseText(response.response_text);
+            }}
+            className="h-7 text-xs px-3 text-muted-foreground"
+          >
+            Cancel
+          </Button>
         </div>
       </div>
     );
   }
 
-  // Editing existing response
-  if (isEditing && response) {
-    return (
-      <div className="mt-4 border-t pt-4">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">Edit your response</span>
+  // --- Add new response (verified vendor only) ---
+  if (canRespond && !response) {
+    if (isAdding) {
+      return (
+        <div className="mt-3 pt-3 border-t border-border/40 space-y-2.5">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="h-3 w-3 text-primary/70" />
+            <span className="text-xs text-muted-foreground">
+              Respond as {vendorName}
+            </span>
           </div>
           <Textarea
             value={responseText}
             onChange={(e) => setResponseText(e.target.value)}
-            placeholder="Write your response..."
+            placeholder="Share your perspective..."
             rows={3}
-            className="resize-none text-sm"
+            className="resize-none text-sm border-border/60 focus-visible:ring-1"
           />
           <div className="flex items-center gap-2">
             <Button
               size="sm"
-              onClick={handleUpdate}
+              onClick={handleSubmitNew}
               disabled={isSubmitting || !responseText.trim()}
-              className="text-xs"
+              className="h-7 text-xs px-3"
             >
-              <Send className="h-3 w-3 mr-1" />
-              {isSubmitting ? "Saving..." : "Save Changes"}
+              {isSubmitting ? "Posting..." : "Post"}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
-                setIsEditing(false);
-                setResponseText(response.response_text);
+                setIsAdding(false);
+                setResponseText("");
               }}
-              className="text-xs"
+              className="h-7 text-xs px-3 text-muted-foreground"
             >
-              <X className="h-3 w-3 mr-1" />
               Cancel
             </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Add new response (for verified vendor)
-  if (canRespond && !response) {
-    if (isAdding) {
-      return (
-        <div className="mt-4 border-t pt-4">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">
-                Respond as {vendorName}
-              </span>
-            </div>
-            <Textarea
-              value={responseText}
-              onChange={(e) => setResponseText(e.target.value)}
-              placeholder="Share your perspective on this feedback..."
-              rows={3}
-              className="resize-none text-sm"
-            />
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                onClick={handleSubmitNew}
-                disabled={isSubmitting || !responseText.trim()}
-                className="text-xs"
-              >
-                <Send className="h-3 w-3 mr-1" />
-                {isSubmitting ? "Posting..." : "Post Response"}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setIsAdding(false);
-                  setResponseText("");
-                }}
-                className="text-xs"
-              >
-                <X className="h-3 w-3 mr-1" />
-                Cancel
-              </Button>
-            </div>
           </div>
         </div>
       );
     }
 
     return (
-      <div className="mt-4 border-t pt-4">
-        <Button
-          variant="outline"
-          size="sm"
+      <div className="mt-3 pt-3">
+        <button
+          type="button"
           onClick={() => setIsAdding(true)}
-          className="text-xs border-primary/30 text-primary hover:bg-primary/5"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          <MessageSquare className="h-3 w-3 mr-1.5" />
+          <MessageSquare className="h-3 w-3 opacity-60" />
           Respond to this review
-        </Button>
+        </button>
       </div>
     );
   }
