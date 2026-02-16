@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { X, Send, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { WAM_URL } from "@/config/wam";
 import { ChatMarkdown } from "./ChatMarkdown";
 
 interface Message {
@@ -11,20 +10,7 @@ interface Message {
   content: string;
 }
 
-interface VendorData {
-  name: string;
-  category: string;
-  positiveCount: number;
-  warningCount: number;
-  mentions: {
-    title: string;
-    type: "positive" | "warning";
-    quote: string;
-  }[];
-}
-
 interface VendorAIChatProps {
-  fetchWithAuth: (url: string) => Promise<Response>;
   className?: string;
 }
 
@@ -38,247 +24,25 @@ const SUGGESTED_PROMPTS = [
   "Best CRM for customer follow-up?",
 ];
 
-export const VendorAIChat: React.FC<VendorAIChatProps> = ({
-  fetchWithAuth,
-  className,
-}) => {
+export const VendorAIChat: React.FC<VendorAIChatProps> = ({ className }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Vendor data loading state
-  const [vendorData, setVendorData] = useState<VendorData[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const [dataLoaded, setDataLoaded] = useState(false);
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Helper to fetch all pages for a category
-  const fetchAllPagesForCategory = useCallback(async (
-    category: string,
-    allVendorData: Map<string, VendorData>
-  ): Promise<number> => {
-    let page = 1;
-    let hasMore = true;
-    let totalFetched = 0;
-    const pageSize = 200;
-
-    while (hasMore) {
-      const params = new URLSearchParams();
-      if (category !== "all") params.append("category", category);
-      params.append("pageSize", pageSize.toString());
-      params.append("page", page.toString());
-      
-      const response = await fetchWithAuth(
-        `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`
-      );
-      
-      if (!response.ok) break;
-      
-      const data = await response.json();
-      const mentions = data.mentions || [];
-      totalFetched += mentions.length;
-      
-      // Group by vendor
-      mentions.forEach((mention: any) => {
-        const vendorName = mention.vendorName || "Unknown";
-        const existing = allVendorData.get(vendorName.toLowerCase());
-        
-        if (existing) {
-          if (mention.type === "positive") existing.positiveCount++;
-          else if (mention.type === "warning") existing.warningCount++;
-          existing.mentions.push({
-            title: mention.title,
-            type: mention.type,
-            quote: mention.quote || mention.explanation || "",
-          });
-        } else {
-          allVendorData.set(vendorName.toLowerCase(), {
-            name: vendorName,
-            category: mention.category || category,
-            positiveCount: mention.type === "positive" ? 1 : 0,
-            warningCount: mention.type === "warning" ? 1 : 0,
-            mentions: [{
-              title: mention.title,
-              type: mention.type,
-              quote: mention.quote || mention.explanation || "",
-            }],
-          });
-        }
-      });
-      
-      hasMore = data.hasMore === true && mentions.length > 0;
-      page++;
-      
-      // Small delay to avoid rate limiting
-      if (hasMore) {
-        await new Promise(r => setTimeout(r, 100));
-      }
-    }
-    
-    return totalFetched;
-  }, [fetchWithAuth]);
-
-  // Load all vendor data when chat opens
-  const loadVendorData = useCallback(async () => {
-    if (dataLoaded || isLoadingData) return;
-    
-    setIsLoadingData(true);
-    setLoadingProgress(0);
-    setError(null);
-
-    try {
-      const allVendorData: Map<string, VendorData> = new Map();
-      
-      // Fetch all pages for the "all" category to get complete data
-      setLoadingProgress(10);
-      
-      let page = 1;
-      let hasMore = true;
-      let totalFetched = 0;
-      const pageSize = 200;
-      
-      // First, get total count from first request
-      const initialParams = new URLSearchParams();
-      initialParams.append("pageSize", pageSize.toString());
-      initialParams.append("page", "1");
-      
-      const initialResponse = await fetchWithAuth(
-        `${WAM_URL}/api/public/vendor-pulse/mentions?${initialParams.toString()}`
-      );
-      
-      let totalCount = 0;
-      if (initialResponse.ok) {
-        const initialData = await initialResponse.json();
-        totalCount = initialData.totalCount || initialData.totalSystemCount || 1000;
-        const mentions = initialData.mentions || [];
-        totalFetched += mentions.length;
-        
-        // Process first page
-        mentions.forEach((mention: any) => {
-          const vendorName = mention.vendorName || "Unknown";
-          const existing = allVendorData.get(vendorName.toLowerCase());
-          
-          if (existing) {
-            if (mention.type === "positive") existing.positiveCount++;
-            else if (mention.type === "warning") existing.warningCount++;
-            existing.mentions.push({
-              title: mention.title,
-              type: mention.type,
-              quote: mention.quote || mention.explanation || "",
-            });
-          } else {
-            allVendorData.set(vendorName.toLowerCase(), {
-              name: vendorName,
-              category: mention.category || "all",
-              positiveCount: mention.type === "positive" ? 1 : 0,
-              warningCount: mention.type === "warning" ? 1 : 0,
-              mentions: [{
-                title: mention.title,
-                type: mention.type,
-                quote: mention.quote || mention.explanation || "",
-              }],
-            });
-          }
-        });
-        
-        hasMore = initialData.hasMore === true && mentions.length > 0;
-        page = 2;
-        setLoadingProgress(Math.round((totalFetched / totalCount) * 100));
-      }
-      
-      // Fetch remaining pages
-      while (hasMore) {
-        const params = new URLSearchParams();
-        params.append("pageSize", pageSize.toString());
-        params.append("page", page.toString());
-        
-        const response = await fetchWithAuth(
-          `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`
-        );
-        
-        if (!response.ok) break;
-        
-        const data = await response.json();
-        const mentions = data.mentions || [];
-        totalFetched += mentions.length;
-        
-        // Group by vendor
-        mentions.forEach((mention: any) => {
-          const vendorName = mention.vendorName || "Unknown";
-          const existing = allVendorData.get(vendorName.toLowerCase());
-          
-          if (existing) {
-            if (mention.type === "positive") existing.positiveCount++;
-            else if (mention.type === "warning") existing.warningCount++;
-            existing.mentions.push({
-              title: mention.title,
-              type: mention.type,
-              quote: mention.quote || mention.explanation || "",
-            });
-          } else {
-            allVendorData.set(vendorName.toLowerCase(), {
-              name: vendorName,
-              category: mention.category || "all",
-              positiveCount: mention.type === "positive" ? 1 : 0,
-              warningCount: mention.type === "warning" ? 1 : 0,
-              mentions: [{
-                title: mention.title,
-                type: mention.type,
-                quote: mention.quote || mention.explanation || "",
-              }],
-            });
-          }
-        });
-        
-        hasMore = data.hasMore === true && mentions.length > 0;
-        page++;
-        
-        // Update progress based on fetched vs total
-        setLoadingProgress(Math.min(95, Math.round((totalFetched / totalCount) * 100)));
-        
-        // Small delay to avoid rate limiting
-        if (hasMore) {
-          await new Promise(r => setTimeout(r, 100));
-        }
-      }
-      
-      setLoadingProgress(100);
-      setVendorData(Array.from(allVendorData.values()));
-      setDataLoaded(true);
-      
-      console.log(`[VendorAIChat] Loaded ${totalFetched} total mentions across ${allVendorData.size} vendors`);
-    } catch (err) {
-      console.error("Failed to load vendor data:", err);
-      setError("Failed to load vendor data");
-    } finally {
-      setIsLoadingData(false);
-    }
-  }, [dataLoaded, isLoadingData, fetchWithAuth, fetchAllPagesForCategory]);
-
-  // Auto-load data when chat opens
-  useEffect(() => {
-    if (isOpen && !dataLoaded) {
-      loadVendorData();
-    }
-  }, [isOpen, dataLoaded, loadVendorData]);
-
-  // Stream chat response
   const sendMessage = async (messageText: string) => {
-    if (!messageText.trim() || isLoading || !dataLoaded) return;
+    if (!messageText.trim() || isLoading) return;
 
     const userMessage: Message = { role: "user", content: messageText.trim() };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
     setError(null);
@@ -287,10 +51,10 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
 
     const updateAssistant = (chunk: string) => {
       assistantContent += chunk;
-      setMessages(prev => {
+      setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last?.role === "assistant") {
-          return prev.map((m, i) => 
+          return prev.map((m, i) =>
             i === prev.length - 1 ? { ...m, content: assistantContent } : m
           );
         }
@@ -303,17 +67,18 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({
           messages: [...messages, userMessage],
-          vendorData,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Request failed: ${response.status}`);
+        throw new Error(
+          errorData.error || `Request failed: ${response.status}`
+        );
       }
 
       if (!response.body) throw new Error("No response body");
@@ -325,7 +90,7 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         textBuffer += decoder.decode(value, { stream: true });
 
         let newlineIndex: number;
@@ -353,8 +118,7 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
     } catch (err) {
       console.error("Chat error:", err);
       setError(err instanceof Error ? err.message : "Failed to send message");
-      // Remove the user message if it failed
-      setMessages(prev => prev.slice(0, -1));
+      setMessages((prev) => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }
@@ -389,20 +153,20 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
   }
 
   return (
-    <div className={cn(
-      "fixed bottom-6 right-6 z-50 w-[400px] max-w-[calc(100vw-48px)] h-[600px] max-h-[calc(100vh-100px)]",
-      "bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden",
-      className
-    )}>
+    <div
+      className={cn(
+        "fixed bottom-6 right-6 z-50 w-[400px] max-w-[calc(100vw-48px)] h-[600px] max-h-[calc(100vh-100px)]",
+        "bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden",
+        className
+      )}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b bg-primary text-primary-foreground">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5" />
           <div>
             <h3 className="font-semibold text-sm">CDG Pulse AI</h3>
-            <p className="text-xs opacity-80">
-              {dataLoaded ? `${vendorData.length} vendors loaded` : "Loading..."}
-            </p>
+            <p className="text-xs opacity-80">Vendor advisor</p>
           </div>
         </div>
         <Button
@@ -415,36 +179,21 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
         </Button>
       </div>
 
-      {/* Loading Progress */}
-      {isLoadingData && (
-        <div className="px-4 py-3 bg-muted/50 border-b">
-          <div className="flex items-center gap-2 mb-2">
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
-            <span className="text-sm text-muted-foreground">
-              Loading vendor data... {loadingProgress}%
-            </span>
-          </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-primary transition-all duration-300"
-              style={{ width: `${loadingProgress}%` }}
-            />
-          </div>
-        </div>
-      )}
-
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && dataLoaded && (
+        {messages.length === 0 && (
           <div className="space-y-4">
             <div className="text-center py-4">
               <Sparkles className="h-8 w-8 text-primary mx-auto mb-2" />
-              <h4 className="font-semibold text-foreground">Ask me about vendors</h4>
+              <h4 className="font-semibold text-foreground">
+                Ask me about vendors
+              </h4>
               <p className="text-sm text-muted-foreground mt-1">
-                I can help you compare vendors, find solutions, and make better decisions.
+                I can help you compare vendors, find solutions, and make better
+                decisions.
               </p>
             </div>
-            
+
             <div className="space-y-2">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Try asking:
@@ -480,10 +229,7 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
             >
               {message.role === "assistant" ? (
                 <div className="prose prose-sm max-w-none dark:prose-invert [&_a]:no-underline">
-                  <ChatMarkdown 
-                    content={message.content} 
-                    knownVendors={vendorData.map(v => v.name)}
-                  />
+                  <ChatMarkdown content={message.content} />
                 </div>
               ) : (
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -513,7 +259,6 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
         </div>
       )}
 
-
       {/* Input */}
       <form onSubmit={handleSubmit} className="p-3 border-t bg-background">
         <div className="flex items-end gap-2">
@@ -522,17 +267,15 @@ export const VendorAIChat: React.FC<VendorAIChatProps> = ({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={dataLoaded ? "Ask about vendors..." : "Loading vendor data..."}
-            disabled={isLoading || !dataLoaded}
+            placeholder="Ask about vendors..."
+            disabled={isLoading}
             className="min-h-[44px] max-h-32 resize-none text-sm"
             rows={1}
           />
-          
-          {/* Send Button */}
           <Button
             type="submit"
             size="sm"
-            disabled={!input.trim() || isLoading || !dataLoaded}
+            disabled={!input.trim() || isLoading}
             className="h-11 w-11 p-0 shrink-0"
           >
             <Send className="h-4 w-4" />

@@ -61,6 +61,11 @@ import { useVendorAuth } from "@/hooks/useVendorAuth";
 
 // Config
 import { WAM_URL } from "@/config/wam";
+import {
+  shadowCompare,
+  buildMentionsQuery,
+  buildVendorsListQuery,
+} from "@/lib/supabaseShadow";
 
 // Utils
 import { getAccessLevel } from "@/utils/tierUtils";
@@ -474,6 +479,19 @@ const VendorsV2 = () => {
             }),
           );
           setWamMentions(transformedMentions);
+          
+          // Shadow compare with Supabase (fire-and-forget)
+          shadowCompare(
+            `/api/public/vendor-pulse/mentions`,
+            data,
+            buildMentionsQuery({
+              category: selectedCategory !== "all" ? selectedCategory : undefined,
+              vendorName: selectedVendor,
+              type: typeFilter !== "all" ? typeFilter : undefined,
+              page: paginationInfo.page || 1,
+              pageSize: paginationInfo.pageSize || 40,
+            }),
+          ).catch(() => {});
           // Store pagination info if provided
           if (data.page !== undefined) {
             setPaginationInfo({
@@ -559,6 +577,13 @@ const VendorsV2 = () => {
             (v: { name: string }) => v.name,
           );
           setAllVendorsList(vendorNames);
+          
+          // Shadow compare with Supabase (fire-and-forget)
+          shadowCompare(
+            `/api/public/vendor-pulse/vendors-list`,
+            data,
+            buildVendorsListQuery(),
+          ).catch(() => {});
         }
       } catch (err) {
         console.error("Failed to fetch vendors list for search:", err);
@@ -1612,7 +1637,7 @@ const VendorsV2 = () => {
       </Dialog>
 
       {/* AI Chat - only shown when ?ai_chat=true */}
-      {showAIChat && <VendorAIChat fetchWithAuth={fetchVendorPulse} />}
+      {showAIChat && <VendorAIChat />}
     </>
   );
 };

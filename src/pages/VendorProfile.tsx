@@ -42,6 +42,10 @@ import { useVendorAuth } from "@/hooks/useVendorAuth";
 import { WAM_URL } from "@/config/wam";
 import { resolveVendorAccess } from "@/utils/accessControl";
 import { cn } from "@/lib/utils";
+import {
+  shadowCompare,
+  buildVendorProfileQuery,
+} from "@/lib/supabaseShadow";
 
 interface VendorProfileData {
   vendorName: string;
@@ -224,6 +228,13 @@ const VendorProfile = () => {
 
         const profileDataRes = await profileRes.json();
         setProfileData(profileDataRes);
+        
+        // Shadow compare with Supabase (fire-and-forget)
+        shadowCompare(
+          `/api/public/vendor-pulse/vendors/${vendorName}/profile`,
+          profileDataRes,
+          buildVendorProfileQuery(vendorName),
+        ).catch(() => {});
 
         // Fetch mentions from same API as VendorsV2 - ensures vendor responses display (same ID scheme)
         const mentionsParams = new URLSearchParams();
