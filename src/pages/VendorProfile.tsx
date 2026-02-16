@@ -234,6 +234,7 @@ const VendorProfile = () => {
           `/api/public/vendor-pulse/vendors/${vendorName}/profile`,
           profileDataRes,
           buildVendorProfileQuery(vendorName),
+          { userTier: tier, requestPayload: { vendorName } },
         ).catch(() => {});
 
         // Fetch mentions from same API as VendorsV2 - ensures vendor responses display (same ID scheme)

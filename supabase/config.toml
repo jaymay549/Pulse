@@ -1,1 +1,7 @@
 project_id = "vgrffrygtplumhxlqhez"
+
+# Clerk Third-Party Auth integration for local development.
+# Production: configure in Supabase Dashboard → Auth → Third-Party.
+[auth.third_party.clerk]
+enabled = true
+domain = "evolved-pigeon-28.clerk.accounts.dev"

@@ -481,16 +481,18 @@ const VendorsV2 = () => {
           setWamMentions(transformedMentions);
           
           // Shadow compare with Supabase (fire-and-forget)
+          const mentionFilters = {
+            category: selectedCategory !== "all" ? selectedCategory : undefined,
+            vendorName: selectedVendor,
+            type: typeFilter !== "all" ? typeFilter : undefined,
+            page: paginationInfo.page || 1,
+            pageSize: paginationInfo.pageSize || 40,
+          };
           shadowCompare(
             `/api/public/vendor-pulse/mentions`,
             data,
-            buildMentionsQuery({
-              category: selectedCategory !== "all" ? selectedCategory : undefined,
-              vendorName: selectedVendor,
-              type: typeFilter !== "all" ? typeFilter : undefined,
-              page: paginationInfo.page || 1,
-              pageSize: paginationInfo.pageSize || 40,
-            }),
+            buildMentionsQuery(mentionFilters),
+            { userTier: tier, requestPayload: mentionFilters },
           ).catch(() => {});
           // Store pagination info if provided
           if (data.page !== undefined) {
@@ -583,6 +585,7 @@ const VendorsV2 = () => {
             `/api/public/vendor-pulse/vendors-list`,
             data,
             buildVendorsListQuery(),
+            { userTier: tier },
           ).catch(() => {});
         }
       } catch (err) {
