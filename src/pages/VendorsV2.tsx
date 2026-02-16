@@ -463,6 +463,7 @@ const VendorsV2 = () => {
         if (selectedVendor) params.append("vendorName", selectedVendor);
         if (typeFilter !== "all" && typeFilter !== undefined)
           params.append("type", typeFilter);
+        params.append("pageSize", "40");
 
         const response = await fetchVendorPulse(
           `${WAM_URL}/api/public/vendor-pulse/mentions?${params.toString()}`,
@@ -479,21 +480,7 @@ const VendorsV2 = () => {
             }),
           );
           setWamMentions(transformedMentions);
-          
-          // Shadow compare with Supabase (fire-and-forget)
-          const mentionFilters = {
-            category: selectedCategory !== "all" ? selectedCategory : undefined,
-            vendorName: selectedVendor,
-            type: typeFilter !== "all" ? typeFilter : undefined,
-            page: paginationInfo.page || 1,
-            pageSize: paginationInfo.pageSize || 40,
-          };
-          shadowCompare(
-            `/api/public/vendor-pulse/mentions`,
-            data,
-            buildMentionsQuery(mentionFilters),
-            { userTier: tier, requestPayload: mentionFilters },
-          ).catch(() => {});
+
           // Store pagination info if provided
           if (data.page !== undefined) {
             setPaginationInfo({
@@ -507,6 +494,21 @@ const VendorsV2 = () => {
               hasMore: data.hasMore,
             });
           }
+          
+          // Shadow compare with Supabase (fire-and-forget)
+          const mentionFilters = {
+            category: selectedCategory !== "all" ? selectedCategory : undefined,
+            vendorName: selectedVendor,
+            type: typeFilter !== "all" ? typeFilter : undefined,
+            page: data.page ?? 1,
+            pageSize: data.pageSize ?? 40,
+          };
+          shadowCompare(
+            `/api/public/vendor-pulse/mentions`,
+            data,
+            buildMentionsQuery(mentionFilters),
+            { userTier: tier, requestPayload: mentionFilters },
+          ).catch(() => {});
         }
       } catch (err) {
         console.error("Failed to fetch mentions:", err);
