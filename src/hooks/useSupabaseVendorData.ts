@@ -24,6 +24,32 @@ export interface VendorPulseFeedResult {
   hasMore: boolean;
 }
 
+export interface VendorTheme {
+  theme: string;
+  mention_count: number;
+  percentage: number;
+  sample_quote: string;
+}
+
+export interface VendorThemesResult {
+  positiveThemes: VendorTheme[];
+  warningThemes: VendorTheme[];
+}
+
+export interface ComparedVendor {
+  vendor_name: string;
+  mention_count: number;
+  positive_percent: number;
+  co_occurrence_count: number | null;
+}
+
+export interface VendorTrendResult {
+  currentPositivePct: number;
+  previousPositivePct: number;
+  direction: "up" | "down" | "stable";
+  mentionVolumeChangePct: number;
+}
+
 export interface VendorProfileResult {
   vendorName: string;
   stats: {
@@ -192,7 +218,7 @@ export async function fetchVendorInsight(params: {
 
   // Keys may or may not have a _v2 suffix — try both, prefer the newest
   const { data, error } = await supabase
-    .from("vendor_pulse_insights")
+    .from("vendor_insights")
     .select("insight_json, expires_at")
     .or(`insight_key.eq.${prefix}${slug}_v2,insight_key.eq.${prefix}${slug}`)
     .order("expires_at", { ascending: false })
@@ -202,4 +228,62 @@ export async function fetchVendorInsight(params: {
   if (error || !data) return null;
 
   return data.insight_json;
+}
+
+/**
+ * Fetch vendor theme clusters (positive and warning)
+ */
+export async function fetchVendorThemes(
+  vendorName: string
+): Promise<VendorThemesResult> {
+  const { data, error } = await supabase.rpc("get_vendor_themes", {
+    p_vendor_name: vendorName,
+  });
+
+  if (error) {
+    console.error("[Supabase] get_vendor_themes error:", error);
+    throw error;
+  }
+
+  const result = data as any;
+  return {
+    positiveThemes: result?.positiveThemes || [],
+    warningThemes: result?.warningThemes || [],
+  };
+}
+
+/**
+ * Fetch vendors frequently compared alongside this vendor
+ */
+export async function fetchComparedVendors(
+  vendorName: string
+): Promise<ComparedVendor[]> {
+  const { data, error } = await supabase.rpc("get_compared_vendors", {
+    p_vendor_name: vendorName,
+  });
+
+  if (error) {
+    console.error("[Supabase] get_compared_vendors error:", error);
+    throw error;
+  }
+
+  return (data as any)?.vendors || [];
+}
+
+/**
+ * Fetch vendor sentiment trend (last 30 days vs previous 30 days)
+ */
+export async function fetchVendorTrend(
+  vendorName: string
+): Promise<VendorTrendResult | null> {
+  const { data, error } = await supabase.rpc("get_vendor_trend", {
+    p_vendor_name: vendorName,
+  });
+
+  if (error) {
+    console.error("[Supabase] get_vendor_trend error:", error);
+    throw error;
+  }
+
+  return data as any;
 }
