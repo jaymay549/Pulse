@@ -197,75 +197,6 @@ const VendorProfile = () => {
     return getLogoUrl(profileData.vendorName, profileData.metadata?.website_url);
   }, [profileData, getLogoUrl]);
 
-  // Pulse Score: weighted sentiment + volume bonus (0–100)
-  const pulseScore = useMemo(() => {
-    if (!profileData) return 0;
-    const raw =
-      profileData.stats.positivePercent * 0.85 +
-      Math.min(profileData.stats.totalMentions / 10, 15);
-    return Math.min(100, Math.max(0, Math.round(raw)));
-  }, [profileData]);
-
-  const scoreTheme = useMemo(() => {
-    if (pulseScore >= 70)
-      return {
-        color: "text-emerald-600",
-        bg: "bg-emerald-50/80",
-        border: "border-emerald-200/60",
-        ring: "#22c55e",
-        ringEnd: "#15803d",
-        glow: "rgba(34,197,94,0.15)",
-        label: "Excellent",
-      };
-    if (pulseScore >= 40)
-      return {
-        color: "text-amber-600",
-        bg: "bg-amber-50/80",
-        border: "border-amber-200/60",
-        ring: "#f59e0b",
-        ringEnd: "#d97706",
-        glow: "rgba(245,158,11,0.15)",
-        label: "Average",
-      };
-    return {
-      color: "text-red-600",
-      bg: "bg-red-50/80",
-      border: "border-red-200/60",
-      ring: "#ef4444",
-      ringEnd: "#dc2626",
-      glow: "rgba(239,68,68,0.15)",
-      label: "Low",
-    };
-  }, [pulseScore]);
-
-  // Ring + score number animation
-  const circumference = 2 * Math.PI * 42;
-  const [ringOffset, setRingOffset] = useState(circumference);
-  const [displayScore, setDisplayScore] = useState(0);
-
-  useEffect(() => {
-    if (!pulseScore) return;
-    const target = circumference - (pulseScore / 100) * circumference;
-    const ringTimer = setTimeout(() => setRingOffset(target), 100);
-    const duration = 1200;
-    const steps = 60;
-    const increment = pulseScore / steps;
-    let current = 0;
-    const countTimer = setInterval(() => {
-      current += increment;
-      if (current >= pulseScore) {
-        setDisplayScore(pulseScore);
-        clearInterval(countTimer);
-      } else {
-        setDisplayScore(Math.round(current));
-      }
-    }, duration / steps);
-    return () => {
-      clearTimeout(ringTimer);
-      clearInterval(countTimer);
-    };
-  }, [pulseScore, circumference]);
-
   // CDG Intelligence — fetch pre-computed insight, fall back to local summary
   const [aiInsight, setAiInsight] = useState<{ headline: string; sentiment: string } | null>(null);
 
@@ -543,51 +474,6 @@ const VendorProfile = () => {
               {profileData.metadata?.banner_url && (
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
               )}
-            </div>
-
-            {/* Pulse Score — overlapping banner, top-right */}
-            <div className={cn(
-              "absolute right-4 sm:right-6 lg:right-8 top-4 sm:top-6 z-10 flex flex-col items-center gap-1.5 rounded-2xl border p-3 sm:p-4 shadow-lg backdrop-blur-sm bg-white/90",
-              scoreTheme.border
-            )}>
-              <div className="relative h-16 w-16 sm:h-20 sm:w-20">
-                <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
-                  <defs>
-                    <linearGradient id="pulseScoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor={scoreTheme.ring} />
-                      <stop offset="100%" stopColor={scoreTheme.ringEnd} />
-                    </linearGradient>
-                  </defs>
-                  <circle cx="50" cy="50" r="42" fill="none" strokeWidth="6" className="stroke-black/[0.04]" />
-                  <circle
-                    cx="50" cy="50" r="42" fill="none" strokeWidth="7"
-                    strokeLinecap="round"
-                    stroke="url(#pulseScoreGrad)"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={ringOffset}
-                    style={{
-                      transition: "stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                      filter: `drop-shadow(0 0 8px ${scoreTheme.glow})`,
-                    }}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span
-                    className={cn("text-xl sm:text-2xl font-extrabold tabular-nums", scoreTheme.color)}
-                    style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
-                  >
-                    {displayScore}
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-slate-400">
-                  Pulse Score
-                </span>
-                <span className={cn("text-[10px] font-semibold mt-0.5", scoreTheme.color)}>
-                  {scoreTheme.label}
-                </span>
-              </div>
             </div>
 
             {/* Profile info area */}
