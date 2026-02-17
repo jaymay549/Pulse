@@ -881,27 +881,98 @@ const VendorProfile = () => {
           </section>
 
           {/* ══════════════════════════════════════════
-              PROS & CONS — Coming Soon
+              FREQUENTLY COMPARED WITH
+              ══════════════════════════════════════════ */}
+          {comparedVendors.length >= 2 && (
+            <section className="mb-6">
+              <h2
+                className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 mb-1"
+                style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+              >
+                Frequently Compared With
+              </h2>
+              <p className="text-[11px] text-slate-400 mb-4">
+                Vendors dealers often evaluate alongside {profileData.vendorName}
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {comparedVendors.map((v) => {
+                  const logoDevToken = import.meta.env.VITE_LOGO_DEV_TOKEN;
+                  const domain = v.vendor_name.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9.-]/g, "") + ".com";
+                  const peerLogo = logoDevToken
+                    ? `https://img.logo.dev/${domain}?token=${logoDevToken}&size=64&format=png&fallback=monogram`
+                    : null;
+                  return (
+                    <button
+                      key={v.vendor_name}
+                      onClick={() => navigate(`/vendors/${encodeURIComponent(v.vendor_name)}`)}
+                      className="bg-white rounded-xl border border-border/50 p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-md hover:border-border transition-all text-left group"
+                    >
+                      <div className="flex items-center gap-2.5 mb-3">
+                        <Avatar className="h-8 w-8 bg-white border border-border/30">
+                          <AvatarImage src={peerLogo || undefined} alt={v.vendor_name} />
+                          <AvatarFallback className="text-[10px] font-bold bg-slate-50 text-slate-500">
+                            {v.vendor_name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm font-semibold text-slate-800 group-hover:text-primary transition-colors truncate">
+                          {v.vendor_name}
+                        </span>
+                      </div>
+                      <div className="flex h-1.5 rounded-full overflow-hidden bg-slate-100 mb-2">
+                        <div
+                          className="bg-emerald-400 transition-all"
+                          style={{ width: `${v.positive_percent}%` }}
+                        />
+                        <div
+                          className="bg-red-300 transition-all"
+                          style={{ width: `${100 - v.positive_percent}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-slate-400">{v.mention_count} mentions</span>
+                        <span className="text-[10px] font-medium text-emerald-600">{v.positive_percent}% positive</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* ══════════════════════════════════════════
+              WHAT DEALERS APPRECIATE & COMMON CONCERNS
               ══════════════════════════════════════════ */}
           <section className="mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* What people like */}
+              {/* What dealers appreciate */}
               <div className="bg-white rounded-2xl border border-border/50 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
                 <div className="flex items-center gap-2.5 mb-5">
                   <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center">
                     <ThumbsUp className="h-4 w-4 text-emerald-600" />
                   </div>
-                  <h3 className="text-sm font-bold text-slate-800">What people like</h3>
+                  <h3 className="text-sm font-bold text-slate-800">What Dealers Appreciate</h3>
                 </div>
-                <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-slate-200/60 rounded-xl bg-slate-50/30">
-                  <div className="h-10 w-10 rounded-full bg-white shadow-sm flex items-center justify-center mb-3">
-                    <Sparkles className="h-5 w-5 text-slate-300" />
-                  </div>
-                  <p className="text-sm font-semibold text-slate-400">AI-powered insights coming soon</p>
-                  <p className="text-[11px] text-slate-400/60 mt-1 max-w-[220px] text-center leading-relaxed">
-                    Analyzing community discussions to surface what people love
-                  </p>
-                </div>
+                {themes?.positiveThemes && themes.positiveThemes.length > 0 ? (
+                  <ul className="space-y-3">
+                    {themes.positiveThemes.map((t, i) => (
+                      <li key={i}>
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-[13px] font-semibold text-slate-700 leading-snug">{t.theme}</span>
+                              <span className="flex-shrink-0 text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                                {t.mention_count}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{t.sample_quote}</p>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-slate-400 py-4 text-center">No positive themes recorded yet</p>
+                )}
               </div>
 
               {/* Common concerns */}
@@ -910,17 +981,29 @@ const VendorProfile = () => {
                   <div className="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center">
                     <AlertTriangle className="h-4 w-4 text-red-500" />
                   </div>
-                  <h3 className="text-sm font-bold text-slate-800">Common concerns</h3>
+                  <h3 className="text-sm font-bold text-slate-800">Common Concerns</h3>
                 </div>
-                <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-slate-200/60 rounded-xl bg-slate-50/30">
-                  <div className="h-10 w-10 rounded-full bg-white shadow-sm flex items-center justify-center mb-3">
-                    <Sparkles className="h-5 w-5 text-slate-300" />
-                  </div>
-                  <p className="text-sm font-semibold text-slate-400">AI-powered insights coming soon</p>
-                  <p className="text-[11px] text-slate-400/60 mt-1 max-w-[220px] text-center leading-relaxed">
-                    Analyzing community discussions to surface common pain points
-                  </p>
-                </div>
+                {themes?.warningThemes && themes.warningThemes.length > 0 ? (
+                  <ul className="space-y-3">
+                    {themes.warningThemes.map((t, i) => (
+                      <li key={i}>
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-[13px] font-semibold text-slate-700 leading-snug">{t.theme}</span>
+                              <span className="flex-shrink-0 text-[10px] font-medium text-red-600 bg-red-50 px-1.5 py-0.5 rounded-full">
+                                {t.mention_count}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{t.sample_quote}</p>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-slate-400 py-4 text-center">No concerns recorded yet</p>
+                )}
               </div>
             </div>
           </section>
@@ -940,17 +1023,47 @@ const VendorProfile = () => {
                 <p className="text-[11px] text-slate-400 mt-1">Real discussions from the community</p>
               </div>
               <span className="text-[11px] font-medium text-slate-400 hidden sm:block tabular-nums">
-                {allMentions.length} shown
+                {filteredMentions.length} shown
               </span>
             </div>
 
-            {allMentions.length === 0 ? (
+            {/* Filter tabs */}
+            <div className="flex items-center gap-2 mb-4">
+              {(["all", "positive", "warning"] as const).map((filter) => {
+                const count = filter === "all"
+                  ? allMentions.length
+                  : allMentions.filter((m) => m.type === filter).length;
+                const label = filter === "all" ? "All" : filter === "positive" ? "Positive" : "Concerns";
+                return (
+                  <button
+                    key={filter}
+                    onClick={() => setMentionFilter(filter)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                      mentionFilter === filter
+                        ? "bg-slate-900 text-white"
+                        : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                    )}
+                  >
+                    {label}
+                    <span className={cn(
+                      "ml-1.5 tabular-nums",
+                      mentionFilter === filter ? "text-white/70" : "text-slate-400"
+                    )}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {filteredMentions.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-sm border border-border/50 p-6 sm:p-8 text-center">
                 <p className="text-sm text-slate-500">No mentions found for this vendor.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                {allMentions.map((mention) => (
+                {filteredMentions.map((mention) => (
                   <VendorCard
                     key={mention.id}
                     entry={mention}
