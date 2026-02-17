@@ -15,7 +15,7 @@ import { ChatMarkdown } from "@/components/vendors/ChatMarkdown";
 import { VendorCard, VendorCardDetail } from "@/components/vendors";
 import { VendorEntry } from "@/hooks/useVendorReviews";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
-import { fetchVendorProfile, fetchVendorPulseFeed, fetchVendorInsight } from "@/hooks/useSupabaseVendorData";
+import { fetchVendorProfile, fetchVendorPulseFeed, fetchVendorInsight, fetchVendorTrend, fetchVendorThemes, fetchComparedVendors, type VendorTrendResult, type VendorThemesResult, type ComparedVendor } from "@/hooks/useSupabaseVendorData";
 import { isProUser } from "@/utils/tierUtils";
 import { cn } from "@/lib/utils";
 import { categories as vendorCategories } from "@/hooks/useVendorFilters";
@@ -67,6 +67,10 @@ const VendorProfile = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
+  const [trend, setTrend] = useState<VendorTrendResult | null>(null);
+  const [themes, setThemes] = useState<VendorThemesResult | null>(null);
+  const [comparedVendors, setComparedVendors] = useState<ComparedVendor[]>([]);
+  const [mentionFilter, setMentionFilter] = useState<"all" | "positive" | "warning">("all");
 
   // Inline vendor chat state
   const [ctaChatOpen, setCtaChatOpen] = useState(false);
@@ -205,7 +209,15 @@ const VendorProfile = () => {
     fetchVendorInsight({ vendorName }).then((data) => {
       if (data?.headline) setAiInsight({ headline: data.headline, sentiment: data.sentiment });
     });
+    fetchVendorTrend(vendorName).then(setTrend).catch(() => {});
+    fetchVendorThemes(vendorName).then(setThemes).catch(() => {});
+    fetchComparedVendors(vendorName).then(setComparedVendors).catch(() => {});
   }, [vendorName]);
+
+  const filteredMentions = useMemo(() => {
+    if (mentionFilter === "all") return allMentions;
+    return allMentions.filter((m) => m.type === mentionFilter);
+  }, [allMentions, mentionFilter]);
 
   const intelligenceHeadline = useMemo(() => {
     if (aiInsight) return { text: aiInsight.headline, sentiment: aiInsight.sentiment, isAI: true };
@@ -839,22 +851,31 @@ const VendorProfile = () => {
                 {profileData.stats.totalMentions}
               </span>
               <div className="mt-3 flex items-center gap-1.5">
-                <TrendingUp className={cn(
-                  "h-3.5 w-3.5",
-                  profileData.stats.positivePercent >= 70 ? "text-emerald-500" :
-                  profileData.stats.warningPercent >= 50 ? "text-red-400" : "text-amber-400"
-                )} />
-                <span className="text-xs text-slate-500">
-                  Overall:{" "}
-                  <span className={cn(
-                    "font-bold",
-                    profileData.stats.positivePercent >= 70 ? "text-emerald-600" :
-                    profileData.stats.warningPercent >= 50 ? "text-red-500" : "text-amber-500"
-                  )}>
-                    {profileData.stats.positivePercent >= 70 ? "Positive" :
-                     profileData.stats.warningPercent >= 50 ? "Mixed" : "Neutral"}
-                  </span>
-                </span>
+                {trend ? (
+                  <>
+                    {trend.direction === "up" && <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />}
+                    {trend.direction === "down" && <TrendingDown className="h-3.5 w-3.5 text-red-400" />}
+                    {trend.direction === "stable" && <TrendingUp className="h-3.5 w-3.5 text-slate-400" />}
+                    <span className="text-xs text-slate-500">
+                      Sentiment{" "}
+                      <span className={cn(
+                        "font-bold",
+                        trend.direction === "up" ? "text-emerald-600" :
+                        trend.direction === "down" ? "text-red-500" : "text-slate-500"
+                      )}>
+                        {trend.direction === "up" ? "trending up" :
+                         trend.direction === "down" ? "declining" : "stable"}
+                      </span>
+                      {trend.direction !== "stable" && (
+                        <span className="text-slate-400 ml-1">
+                          ({trend.direction === "up" ? "+" : ""}{trend.currentPositivePct - trend.previousPositivePct}pp)
+                        </span>
+                      )}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[11px] text-slate-400">Not enough historical data for trend</span>
+                )}
               </div>
             </div>
           </section>
