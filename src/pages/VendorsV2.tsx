@@ -1329,9 +1329,7 @@ const VendorsV2 = () => {
       </Dialog>
 
       {/* AI Chat - only shown when ?ai_chat=true */}
-      {showAIChat && (
-        <VendorAIChat />
-      )}
+      {showAIChat && <VendorAIChat />}
     </>
   );
 };

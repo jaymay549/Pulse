@@ -128,11 +128,6 @@ const VendorProfile = () => {
 
       try {
         const data = await fetchVendorProfile(vendorName);
-        console.log(`[VendorProfile] Received data:`, {
-          vendorName: data.vendorName,
-          totalMentions: data.stats?.totalMentions,
-          mentionsCount: data.mentions?.length
-        });
 
         setProfileData(data);
         setAllMentions(data.mentions || []);
@@ -385,7 +380,7 @@ const VendorProfile = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({ messages: allMessages, vendorData: vendorContext }),
       });
