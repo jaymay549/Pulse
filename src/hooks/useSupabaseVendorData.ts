@@ -25,10 +25,9 @@ export interface VendorPulseFeedResult {
 }
 
 export interface VendorTheme {
-  theme: string;
+  label: string;
+  summary: string;
   mention_count: number;
-  percentage: number;
-  sample_quote: string;
 }
 
 export interface VendorThemesResult {

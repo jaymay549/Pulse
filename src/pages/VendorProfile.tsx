@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Globe, TrendingUp, TrendingDown, ThumbsUp, AlertTriangle, Loader2, Crown, Share2, CreditCard, MessageCircle, Sparkles, Linkedin, MapPin, CalendarCheck, MessagesSquare, ExternalLink, BotMessageSquare, Send, ArrowLeftIcon } from "lucide-react";
+import { ArrowLeft, Globe, TrendingUp, TrendingDown, ThumbsUp, AlertTriangle, Loader2, Crown, Share2, CreditCard, MessageCircle, Sparkles, Linkedin, MapPin, CalendarCheck, MessagesSquare, ExternalLink, BotMessageSquare, Send, ArrowLeftIcon, Lock } from "lucide-react";
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
@@ -952,27 +952,46 @@ const VendorProfile = () => {
                   </div>
                   <h3 className="text-sm font-bold text-slate-800">What Dealers Appreciate</h3>
                 </div>
-                {themes?.positiveThemes && themes.positiveThemes.length > 0 ? (
-                  <ul className="space-y-3">
-                    {themes.positiveThemes.map((t, i) => (
-                      <li key={i}>
-                        <div className="flex items-start gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className="text-[13px] font-semibold text-slate-700 leading-snug">{t.theme}</span>
-                              <span className="flex-shrink-0 text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                                {t.mention_count}
-                              </span>
+                <div className="relative">
+                  {!isProUserValue && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded-xl">
+                      <Lock className="h-5 w-5 text-slate-400 mb-2" />
+                      <p className="text-xs font-semibold text-slate-600 mb-1">Member-only insights</p>
+                      <button
+                        onClick={() => {
+                          if (isAuthenticated) setShowUpgradeModal(true);
+                          else setShowSignIn(true);
+                        }}
+                        className="text-[11px] font-medium text-primary hover:underline"
+                      >
+                        {isAuthenticated ? "Upgrade to unlock" : "Sign in to unlock"}
+                      </button>
+                    </div>
+                  )}
+                  <div className={!isProUserValue ? "blur-[6px] select-none pointer-events-none" : ""}>
+                    {themes?.positiveThemes && themes.positiveThemes.length > 0 ? (
+                      <ul className="space-y-3">
+                        {themes.positiveThemes.map((t, i) => (
+                          <li key={i}>
+                            <div className="flex items-start gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <span className="text-[13px] font-semibold text-slate-700 leading-snug">{t.label}</span>
+                                  <span className="flex-shrink-0 text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                                    {t.mention_count}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-3">{t.summary}</p>
+                              </div>
                             </div>
-                            <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{t.sample_quote}</p>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-slate-400 py-4 text-center">No positive themes recorded yet</p>
-                )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-slate-400 py-4 text-center">No positive themes recorded yet</p>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Common concerns */}
@@ -983,27 +1002,46 @@ const VendorProfile = () => {
                   </div>
                   <h3 className="text-sm font-bold text-slate-800">Common Concerns</h3>
                 </div>
-                {themes?.warningThemes && themes.warningThemes.length > 0 ? (
-                  <ul className="space-y-3">
-                    {themes.warningThemes.map((t, i) => (
-                      <li key={i}>
-                        <div className="flex items-start gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className="text-[13px] font-semibold text-slate-700 leading-snug">{t.theme}</span>
-                              <span className="flex-shrink-0 text-[10px] font-medium text-red-600 bg-red-50 px-1.5 py-0.5 rounded-full">
-                                {t.mention_count}
-                              </span>
+                <div className="relative">
+                  {!isProUserValue && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded-xl">
+                      <Lock className="h-5 w-5 text-slate-400 mb-2" />
+                      <p className="text-xs font-semibold text-slate-600 mb-1">Member-only insights</p>
+                      <button
+                        onClick={() => {
+                          if (isAuthenticated) setShowUpgradeModal(true);
+                          else setShowSignIn(true);
+                        }}
+                        className="text-[11px] font-medium text-primary hover:underline"
+                      >
+                        {isAuthenticated ? "Upgrade to unlock" : "Sign in to unlock"}
+                      </button>
+                    </div>
+                  )}
+                  <div className={!isProUserValue ? "blur-[6px] select-none pointer-events-none" : ""}>
+                    {themes?.warningThemes && themes.warningThemes.length > 0 ? (
+                      <ul className="space-y-3">
+                        {themes.warningThemes.map((t, i) => (
+                          <li key={i}>
+                            <div className="flex items-start gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <span className="text-[13px] font-semibold text-slate-700 leading-snug">{t.label}</span>
+                                  <span className="flex-shrink-0 text-[10px] font-medium text-red-600 bg-red-50 px-1.5 py-0.5 rounded-full">
+                                    {t.mention_count}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-3">{t.summary}</p>
+                              </div>
                             </div>
-                            <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{t.sample_quote}</p>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-slate-400 py-4 text-center">No concerns recorded yet</p>
-                )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-slate-400 py-4 text-center">No concerns recorded yet</p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </section>
