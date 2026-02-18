@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2, Trash2, Plus, Key, Sparkles, RefreshCw, AlertCircle, CheckCircle2, Clock, Search, Linkedin, ImageIcon, MapPin } from "lucide-react";
+import { Loader2, Trash2, Plus, Key, Sparkles, RefreshCw, AlertCircle, CheckCircle2, Clock, Search, Linkedin, ImageIcon, MapPin, BotMessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,8 @@ const AdminSettingsPage = () => {
       <VendorIgnoresSection />
       <Separator className="bg-zinc-800" />
       <VendorMetadataSection />
+      <Separator className="bg-zinc-800" />
+      <AIThemesSection />
     </div>
   );
 };
@@ -472,6 +474,102 @@ function VendorMetadataSection() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// AI Theme Summaries
+const THEMES_FUNCTION_URL = "https://nsfrxtpxzdmqlezvvjgg.supabase.co/functions/v1/generate-vendor-themes";
+
+function AIThemesSection() {
+  const [generating, setGenerating] = useState(false);
+  const [progress, setProgress] = useState("");
+  const [summaryCount, setSummaryCount] = useState<number | null>(null);
+  const stopRef = useRef(false);
+
+  const loadCount = async () => {
+    const { count } = await supabase
+      .from("vendor_theme_summaries")
+      .select("vendor_name", { count: "exact", head: true });
+    setSummaryCount(count || 0);
+  };
+
+  useEffect(() => { loadCount(); }, []);
+
+  const callThemesFunction = async (body: Record<string, unknown>) => {
+    const res = await fetch(THEMES_FUNCTION_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    return res.json();
+  };
+
+  const handleGenerateAll = useCallback(async () => {
+    setGenerating(true);
+    stopRef.current = false;
+    setProgress("Starting AI theme generation...");
+
+    try {
+      const result = await callThemesFunction({ all: true });
+      setProgress("");
+      toast.success(
+        `Done: ${result.generated} generated, ${result.skipped} skipped, ${result.failed} failed`
+      );
+      loadCount();
+    } catch {
+      toast.error("Failed to call theme generation function");
+      setProgress("");
+    }
+
+    setGenerating(false);
+  }, []);
+
+  const handleStop = () => {
+    stopRef.current = true;
+    setProgress("Stopping...");
+  };
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-300">AI Theme Summaries</h2>
+          <p className="text-xs text-zinc-600">
+            {summaryCount !== null
+              ? `${summaryCount} vendors have AI-generated theme summaries`
+              : "Loading..."}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {generating ? (
+            <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={handleStop}>
+              Stop
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              className="h-7 text-xs bg-violet-600 hover:bg-violet-700"
+              onClick={handleGenerateAll}
+            >
+              <BotMessageSquare className="h-3 w-3 mr-1" /> Generate All Themes
+            </Button>
+          )}
+          <Button size="sm" variant="ghost" className="h-7 text-xs text-zinc-500" onClick={loadCount}>
+            <RefreshCw className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+
+      {progress && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-900/20 border border-violet-800/30">
+          <Loader2 className="h-3 w-3 animate-spin text-violet-400" />
+          <span className="text-xs text-violet-300">{progress}</span>
         </div>
       )}
     </section>
