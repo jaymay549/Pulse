@@ -1,5 +1,6 @@
 import { VendorEntry } from "@/hooks/useVendorReviews";
 import { VendorResponse } from "@/hooks/useVendorResponses";
+import { getVendorNamesFromEntries } from "@/lib/utils";
 import VendorCard from "./VendorCard";
 
 interface VendorReviewGridProps {
@@ -10,7 +11,10 @@ interface VendorReviewGridProps {
   isLocked: (entry: VendorEntry) => boolean;
   showVendorNames: (entry: VendorEntry) => boolean;
   getVendorWebsite: (vendorName?: string) => string | null;
-  getVendorLogo: (vendorName?: string, vendorWebsite?: string | null) => string | null;
+  getVendorLogo: (
+    vendorName?: string,
+    vendorWebsite?: string | null,
+  ) => string | null;
   canRespondToVendor: (vendorName?: string) => boolean;
   onAddResponse: (reviewId: string, text: string) => Promise<boolean>;
   onUpdateResponse: (responseId: string, text: string) => Promise<boolean>;
@@ -18,6 +22,8 @@ interface VendorReviewGridProps {
   onCardClick: (entry: VendorEntry) => void;
   onVendorClick: (vendorName: string) => void;
   onUpgradeClick: () => void;
+  /** Override the set of known vendors used for inline chips. Defaults to names derived from entries. */
+  knownVendors?: string[];
 }
 
 export default function VendorReviewGrid({
@@ -36,7 +42,10 @@ export default function VendorReviewGrid({
   onCardClick,
   onVendorClick,
   onUpgradeClick,
+  knownVendors: knownVendorsProp,
 }: VendorReviewGridProps) {
+  const knownVendors = knownVendorsProp ?? getVendorNamesFromEntries(entries);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
       {entries.map((entry) => {
@@ -77,10 +86,10 @@ export default function VendorReviewGrid({
             onCardClick={onCardClick}
             onVendorClick={onVendorClick}
             onUpgradeClick={onUpgradeClick}
+            knownVendors={knownVendors}
           />
         );
       })}
     </div>
   );
 }
-

@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { VendorEntry } from "@/hooks/useVendorReviews";
 import { VendorResponse } from "@/hooks/useVendorResponses";
-import { parseMarkdown } from "@/utils/markdown";
+import { parseMarkdown, REVIEW_LINKIFY_OPTIONS } from "@/utils/markdown";
 import { useIsMobile } from "@/hooks/use-mobile";
 import VendorResponseSection from "./VendorResponseSection";
 
@@ -30,6 +30,8 @@ interface VendorCardDetailProps {
   onCategorySelect?: (categoryId: string) => void;
   vendorLogo?: string | null;
   vendorWebsite?: string | null;
+  /** Vendor names derived from currently loaded server review entries */
+  knownVendors?: string[];
   // Vendor response props
   vendorResponse?: VendorResponse | null;
   canRespondAsVendor?: boolean;
@@ -62,6 +64,7 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
   onCategorySelect,
   vendorLogo,
   vendorWebsite,
+  knownVendors,
   vendorResponse,
   canRespondAsVendor,
   onAddResponse,
@@ -300,7 +303,13 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
         </div>
         {entry.title && !isContentLocked(entry.title) && (
           <p className="text-muted-foreground text-sm mt-1">
-            {parseMarkdown(entry.title)}
+            {parseMarkdown(entry.title, {
+              ...REVIEW_LINKIFY_OPTIONS,
+              knownVendors: [
+                ...(knownVendors ?? []),
+                ...(entry.vendorName ? [entry.vendorName] : []),
+              ],
+            })}
           </p>
         )}
       </div>
@@ -314,7 +323,13 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
           />
           <blockquote className="relative z-10 pl-16">
             <p className="text-foreground text-base leading-relaxed italic">
-              "{parseMarkdown(entry.quote)}"
+              "{parseMarkdown(entry.quote, {
+                ...REVIEW_LINKIFY_OPTIONS,
+                knownVendors: [
+                  ...(knownVendors ?? []),
+                  ...(entry.vendorName ? [entry.vendorName] : []),
+                ],
+              })}"
             </p>
           </blockquote>
         </div>
@@ -327,7 +342,13 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
               Explanation
             </h4>
             <p className="text-sm text-foreground/80 leading-relaxed">
-              {parseMarkdown(entry.explanation)}
+              {parseMarkdown(entry.explanation, {
+                ...REVIEW_LINKIFY_OPTIONS,
+                knownVendors: [
+                  ...(knownVendors ?? []),
+                  ...(entry.vendorName ? [entry.vendorName] : []),
+                ],
+              })}
             </p>
           </div>
         )}

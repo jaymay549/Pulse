@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { VendorEntry } from "@/hooks/useVendorReviews";
 import { VendorResponse } from "@/hooks/useVendorResponses";
-import { parseMarkdown } from "@/utils/markdown";
+import { parseMarkdown, REVIEW_LINKIFY_OPTIONS } from "@/utils/markdown";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import VendorResponseSection from "./VendorResponseSection";
 
@@ -39,21 +39,30 @@ const blurRedactedContent = (text: string): React.ReactNode => {
 };
 
 /**
- * Parses markdown and applies blur to redacted content
+ * Parses markdown and applies blur to redacted content.
+ * When not redacted, vendor names become clickable chips linking to vendor pages.
  */
 const parseMarkdownWithBlur = (
   text: string,
   isRedacted: boolean,
+  knownVendors?: string[],
 ): React.ReactNode => {
   if (!isRedacted) {
-    return parseMarkdown(text);
+    return parseMarkdown(text, {
+      ...REVIEW_LINKIFY_OPTIONS,
+      knownVendors: knownVendors ?? [],
+    });
   }
   // For redacted content, apply blur effect to **** patterns
   return blurRedactedContent(text);
 };
 
-const renderQuote = (text: string, isRedacted: boolean): React.ReactNode => {
-  return parseMarkdownWithBlur(text, isRedacted);
+const renderQuote = (
+  text: string,
+  isRedacted: boolean,
+  knownVendors?: string[],
+): React.ReactNode => {
+  return parseMarkdownWithBlur(text, isRedacted, knownVendors);
 };
 
 const formatMemberDate = (dateString?: string): string => {
@@ -84,6 +93,8 @@ interface VendorCardProps {
   onCardClick?: (entry: VendorEntry) => void;
   onVendorClick?: (vendorName: string) => void;
   onUpgradeClick?: () => void;
+  /** Vendor names derived from currently loaded server review entries */
+  knownVendors?: string[];
 }
 
 export const VendorCard: React.FC<VendorCardProps> = ({
@@ -102,6 +113,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
   onCardClick,
   onVendorClick,
   onUpgradeClick,
+  knownVendors,
 }) => {
   const getTypeStyles = () => {
     switch (entry.type) {
@@ -353,8 +365,15 @@ export const VendorCard: React.FC<VendorCardProps> = ({
 
           {/* Title/Headline */}
           {entry.title && (
-            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-              {parseMarkdownWithBlur(entry.title, !showVendorNames)}
+            <p className="text-[15px] text-foreground/88 mb-3 line-clamp-2 leading-relaxed">
+              {parseMarkdownWithBlur(
+                entry.title,
+                !showVendorNames,
+                [
+                  ...(knownVendors ?? []),
+                  ...(entry.vendorName ? [entry.vendorName] : []),
+                ],
+              )}
             </p>
           )}
 
@@ -373,8 +392,15 @@ export const VendorCard: React.FC<VendorCardProps> = ({
             ) : (
               <>
                 <Quote className="absolute left-0 top-0 h-4 w-4 text-muted-foreground/30 mr-2" />
-                <p className="text-sm text-foreground/80 leading-relaxed line-clamp-4 pl-6">
-                  "{renderQuote(entry.quote, !showVendorNames)}"
+                <p className="text-[15px] text-foreground/90 leading-relaxed line-clamp-4 pl-6">
+                  "{renderQuote(
+                    entry.quote,
+                    !showVendorNames,
+                    [
+                      ...(knownVendors ?? []),
+                      ...(entry.vendorName ? [entry.vendorName] : []),
+                    ],
+                  )}"
                 </p>
               </>
             )}
