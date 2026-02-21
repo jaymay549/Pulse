@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { categories as vendorCategories } from "@/hooks/useVendorFilters";
 import { useVendorOwnership } from "@/hooks/useVendorOwnership";
 import { VendorDashboard } from "@/components/vendors/VendorDashboard";
+import { ClaimProfileModal } from "@/components/vendors/ClaimProfileModal";
 
 interface VendorProfileData {
   vendorName: string;
@@ -73,6 +74,7 @@ const VendorProfile = () => {
   const [themes, setThemes] = useState<VendorThemesResult | null>(null);
   const [comparedVendors, setComparedVendors] = useState<ComparedVendor[]>([]);
   const [mentionFilter, setMentionFilter] = useState<"all" | "positive" | "warning">("all");
+  const [claimModalOpen, setClaimModalOpen] = useState(false);
 
   // Inline vendor chat state
   const [ctaChatOpen, setCtaChatOpen] = useState(false);
@@ -516,6 +518,17 @@ const VendorProfile = () => {
                   >
                     {profileData.vendorName}
                   </h1>
+
+                  {isAuthenticated && !isVendorOwner && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setClaimModalOpen(true)}
+                      className="mt-2"
+                    >
+                      Claim this profile
+                    </Button>
+                  )}
 
                   {profileData.metadata?.tagline && (
                     <p className="text-[15px] text-slate-500 mt-1.5 max-w-2xl leading-relaxed">
@@ -1165,6 +1178,13 @@ const VendorProfile = () => {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         targetTier="pro"
+      />
+
+      {/* Claim Profile Modal */}
+      <ClaimProfileModal
+        open={claimModalOpen}
+        onOpenChange={setClaimModalOpen}
+        vendorName={vendorName}
       />
 
       {/* Sign In Modal */}
