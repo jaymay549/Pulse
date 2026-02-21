@@ -891,10 +891,10 @@ const VendorProfile = () => {
                 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 mb-1"
                 style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
               >
-                Frequently Compared With
+                Alternatives & Competitors
               </h2>
               <p className="text-[11px] text-slate-400 mb-4">
-                Vendors dealers often evaluate alongside {profileData.vendorName}
+                Vendors dealers evaluate alongside {profileData.vendorName}
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {comparedVendors.map((v) => {
@@ -938,6 +938,16 @@ const VendorProfile = () => {
                   );
                 })}
               </div>
+              {profileData.categories && profileData.categories.length > 0 && (
+                <div className="mt-4 text-center">
+                  <Link
+                    to={`/vendors?category=${encodeURIComponent(profileData.categories[0])}`}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    See all {profileData.categories[0]} vendors →
+                  </Link>
+                </div>
+              )}
             </section>
           )}
 
