@@ -50,7 +50,7 @@ export default function ClaimsPage() {
       toast.success("Claim approved — vendor profile created.");
       queryClient.invalidateQueries({ queryKey: ["admin-vendor-claims"] });
     },
-    onError: () => toast.error("Failed to approve claim."),
+    onError: (err: Error) => toast.error(`Failed to approve claim: ${err.message}`),
   });
 
   const rejectMutation = useMutation({
@@ -64,7 +64,7 @@ export default function ClaimsPage() {
       toast.success("Claim rejected.");
       queryClient.invalidateQueries({ queryKey: ["admin-vendor-claims"] });
     },
-    onError: () => toast.error("Failed to reject claim."),
+    onError: (err: Error) => toast.error(`Failed to reject claim: ${err.message}`),
   });
 
   const pending = claims.filter(c => c.status === "pending");
@@ -120,7 +120,7 @@ export default function ClaimsPage() {
                       variant="outline"
                       className="text-red-400 border-red-900 hover:bg-red-950"
                       onClick={() => rejectMutation.mutate(claim.id)}
-                      disabled={rejectMutation.isPending}
+                      disabled={rejectMutation.isPending && rejectMutation.variables === claim.id}
                     >
                       <XCircle className="h-4 w-4 mr-1" />
                       Reject
@@ -134,7 +134,7 @@ export default function ClaimsPage() {
                           claimantUserId: claim.claimant_user_id,
                         })
                       }
-                      disabled={approveMutation.isPending}
+                      disabled={approveMutation.isPending && approveMutation.variables?.claimId === claim.id}
                     >
                       <CheckCircle className="h-4 w-4 mr-1" />
                       Approve
