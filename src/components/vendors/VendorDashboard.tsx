@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { BarChart2, MessageSquare, TrendingUp } from "lucide-react";
+import { VendorIntelPanel } from "./VendorIntelPanel";
 
 interface VendorDashboardProps {
   vendorName: string;
@@ -181,7 +182,7 @@ export function VendorDashboard({ vendorName }: VendorDashboardProps) {
           <VendorRespondTab vendorName={vendorName} />
         </TabsContent>
         <TabsContent value="intel">
-          <p className="text-sm text-muted-foreground">Intel loading…</p>
+          <VendorIntelPanel vendorName={vendorName} />
         </TabsContent>
       </Tabs>
     </div>
