@@ -19,6 +19,8 @@ import { fetchVendorProfile, fetchVendorPulseFeed, fetchVendorTrend, fetchVendor
 import { isProUser } from "@/utils/tierUtils";
 import { cn } from "@/lib/utils";
 import { categories as vendorCategories } from "@/hooks/useVendorFilters";
+import { useVendorOwnership } from "@/hooks/useVendorOwnership";
+import { VendorDashboard } from "@/components/vendors/VendorDashboard";
 
 interface VendorProfileData {
   vendorName: string;
@@ -83,6 +85,9 @@ const VendorProfile = () => {
   const vendorName = vendorSlug ? decodeURIComponent(vendorSlug) : "";
 
   const isProUserValue = useMemo(() => isProUser(tier), [tier]);
+
+  const { data: ownershipData } = useVendorOwnership(vendorName || undefined);
+  const isVendorOwner = !!ownershipData;
 
   // Get logo URL from logo.dev or metadata
   const getLogoUrl = useCallback((name: string, websiteUrl?: string) => {
@@ -456,6 +461,9 @@ const VendorProfile = () => {
 
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
+
+          {/* Vendor dashboard — only renders when verified owner is logged in */}
+          {isVendorOwner && <VendorDashboard vendorName={vendorName} />}
 
           {/* ══════════════════════════════════════════
               HERO SECTION — LinkedIn-style layout
