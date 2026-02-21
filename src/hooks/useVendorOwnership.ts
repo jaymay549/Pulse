@@ -25,12 +25,13 @@ export function useVendorOwnership(vendorName: string | undefined) {
         .from("vendor_profiles")
         .select("id, vendor_name, is_approved")
         .eq("vendor_name", vendorName)
+        .eq("user_id", user!.id)
         .eq("is_approved", true)
         .maybeSingle();
       if (error) throw error;
       return data as VendorOwnership | null;
     },
     enabled: isAuthenticated && !!vendorName,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0, // Always refetch on focus/mount after auth state changes
   });
 }

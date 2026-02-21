@@ -30,19 +30,9 @@ export default function ClaimsPage() {
   });
 
   const approveMutation = useMutation({
-    mutationFn: async ({
-      claimId,
-      vendorName,
-      claimantUserId,
-    }: {
-      claimId: string;
-      vendorName: string;
-      claimantUserId: string;
-    }) => {
+    mutationFn: async (claimId: string) => {
       const { error } = await supabase.rpc("approve_vendor_claim" as never, {
         p_claim_id: claimId,
-        p_vendor_name: vendorName,
-        p_claimant_user_id: claimantUserId,
       } as never);
       if (error) throw error;
     },
@@ -127,14 +117,8 @@ export default function ClaimsPage() {
                     </Button>
                     <Button
                       size="sm"
-                      onClick={() =>
-                        approveMutation.mutate({
-                          claimId: claim.id,
-                          vendorName: claim.vendor_name,
-                          claimantUserId: claim.claimant_user_id,
-                        })
-                      }
-                      disabled={approveMutation.isPending && approveMutation.variables?.claimId === claim.id}
+                      onClick={() => approveMutation.mutate(claim.id)}
+                      disabled={approveMutation.isPending && approveMutation.variables === claim.id}
                     >
                       <CheckCircle className="h-4 w-4 mr-1" />
                       Approve
