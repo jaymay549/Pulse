@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import {
@@ -33,6 +33,14 @@ export function ClaimProfileModal({
   const [email, setEmail] = useState(user?.email ?? "");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Reset fields each time modal opens so we use latest user data
+  useEffect(() => {
+    if (open) {
+      setName(user?.name ?? "");
+      setEmail(user?.email ?? "");
+    }
+  }, [open, user?.name, user?.email]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
