@@ -152,6 +152,58 @@ function VendorRespondTab({ vendorName }: { vendorName: string }) {
   );
 }
 
+function VendorOverviewTab({ vendorName }: { vendorName: string }) {
+  const supabase = useClerkSupabase();
+
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ["vendor-overview", vendorName],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc(
+        "get_vendor_profile" as never,
+        { p_vendor_name: vendorName } as never
+      );
+      if (error) throw error;
+      return data as {
+        vendorName: string;
+        stats: {
+          totalMentions: number;
+          positiveCount: number;
+          warningCount: number;
+          positivePercent: number;
+          warningPercent: number;
+        };
+      } | null;
+    },
+  });
+
+  if (isLoading || !profile) {
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
+  }
+
+  return (
+    <div className="grid grid-cols-3 gap-4">
+      <div className="rounded-lg border p-4 text-center">
+        <p className="text-2xl font-bold tabular-nums">
+          {profile.stats.totalMentions}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">Total mentions</p>
+      </div>
+      <div className="rounded-lg border p-4 text-center">
+        <p className="text-2xl font-bold tabular-nums text-emerald-600">
+          {profile.stats.positivePercent}%
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">Positive sentiment</p>
+      </div>
+      <div className="rounded-lg border p-4 text-center">
+        <p className="text-2xl font-bold tabular-nums text-red-500">
+          {profile.stats.warningCount}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">Concerns flagged</p>
+      </div>
+    </div>
+  );
+}
+
 export function VendorDashboard({ vendorName }: VendorDashboardProps) {
   return (
     <div className="mb-8 border rounded-xl bg-card p-6 shadow-sm">
@@ -176,7 +228,7 @@ export function VendorDashboard({ vendorName }: VendorDashboardProps) {
         </TabsList>
 
         <TabsContent value="overview">
-          <p className="text-sm text-muted-foreground">Overview loading…</p>
+          <VendorOverviewTab vendorName={vendorName} />
         </TabsContent>
         <TabsContent value="respond">
           <VendorRespondTab vendorName={vendorName} />
