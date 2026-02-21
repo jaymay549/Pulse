@@ -51,7 +51,7 @@ export const UpgradeTeaser: React.FC<UpgradeTeaserProps> = ({
 
       {/* Description */}
       <p className="text-sm text-muted-foreground mb-4">
-        reviews available to members
+        conversation excerpts available to members
       </p>
 
       {/* CTA Button */}
@@ -115,7 +115,7 @@ export const SearchLockedPaywall: React.FC<SearchLockedPaywallProps> = ({
             <Lock className="h-8 w-8 text-yellow-600" />
           </div>
           <h3 className="text-2xl font-bold text-foreground mb-2">
-            {resultCount} reviews found for "{searchQuery}"
+            {resultCount} excerpts found for "{searchQuery}"
           </h3>
           <div className="flex items-center justify-center gap-4 text-sm mb-4">
             {positiveCount > 0 && (
@@ -130,7 +130,7 @@ export const SearchLockedPaywall: React.FC<SearchLockedPaywallProps> = ({
             )}
           </div>
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            Search results are a member feature. Join to unlock full access to all vendor reviews, warnings, and dealer insights.
+            Search results are a member feature. Join to unlock full access to all vendor conversation excerpts, warnings, and dealer insights.
           </p>
           <button
             onClick={handleClick}

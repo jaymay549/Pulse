@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Globe, TrendingUp, TrendingDown, ThumbsUp, AlertTriangle, Loader2, Crown, Share2, CreditCard, MessageCircle, Sparkles, Linkedin, MapPin, CalendarCheck, MessagesSquare, ExternalLink, BotMessageSquare, Send, ArrowLeftIcon, Lock } from "lucide-react";
+import { ArrowLeft, Globe, TrendingUp, TrendingDown, ThumbsUp, AlertTriangle, Loader2, Crown, Share2, CreditCard, MessageCircle, Linkedin, MapPin, CalendarCheck, MessagesSquare, ExternalLink, BotMessageSquare, Send, ArrowLeftIcon, Lock } from "lucide-react";
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
@@ -12,10 +12,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatMarkdown } from "@/components/vendors/ChatMarkdown";
-import { VendorCard, VendorCardDetail } from "@/components/vendors";
+import { VendorCard, VendorCardDetail, AIInsightBanner } from "@/components/vendors";
 import { VendorEntry } from "@/hooks/useVendorReviews";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
-import { fetchVendorProfile, fetchVendorPulseFeed, fetchVendorInsight, fetchVendorTrend, fetchVendorThemes, fetchComparedVendors, type VendorTrendResult, type VendorThemesResult, type ComparedVendor } from "@/hooks/useSupabaseVendorData";
+import { fetchVendorProfile, fetchVendorPulseFeed, fetchVendorTrend, fetchVendorThemes, fetchComparedVendors, type VendorTrendResult, type VendorThemesResult, type ComparedVendor } from "@/hooks/useSupabaseVendorData";
 import { isProUser } from "@/utils/tierUtils";
 import { cn } from "@/lib/utils";
 import { categories as vendorCategories } from "@/hooks/useVendorFilters";
@@ -201,14 +201,8 @@ const VendorProfile = () => {
     return getLogoUrl(profileData.vendorName, profileData.metadata?.website_url);
   }, [profileData, getLogoUrl]);
 
-  // CDG Intelligence — fetch pre-computed insight, fall back to local summary
-  const [aiInsight, setAiInsight] = useState<{ headline: string; sentiment: string } | null>(null);
-
   useEffect(() => {
     if (!vendorName) return;
-    fetchVendorInsight({ vendorName }).then((data) => {
-      if (data?.headline) setAiInsight({ headline: data.headline, sentiment: data.sentiment });
-    });
     fetchVendorTrend(vendorName).then(setTrend).catch(() => {});
     fetchVendorThemes(vendorName).then(setThemes).catch(() => {});
     fetchComparedVendors(vendorName).then(setComparedVendors).catch(() => {});
@@ -219,19 +213,25 @@ const VendorProfile = () => {
     return allMentions.filter((m) => m.type === mentionFilter);
   }, [allMentions, mentionFilter]);
 
-  const intelligenceHeadline = useMemo(() => {
-    if (aiInsight) return { text: aiInsight.headline, sentiment: aiInsight.sentiment, isAI: true };
+  // Fallback insight built from stats for vendors with no vendor_insights DB row
+  const fallbackInsight = useMemo(() => {
     if (!profileData) return null;
-    const { positivePercent, warningPercent, totalMentions } = profileData.stats;
+    const { positivePercent, warningPercent, totalMentions, positiveCount, warningCount } = profileData.stats;
     const name = profileData.vendorName;
+    let headline: string;
+    let sentiment: "positive" | "negative" | "neutral";
     if (positivePercent >= 75) {
-      return { text: `${name} enjoys strong positive sentiment — ${positivePercent}% favorable across ${totalMentions} community discussions.`, sentiment: "positive", isAI: false };
+      headline = `${name} enjoys strong positive sentiment — ${positivePercent}% favorable across ${totalMentions} community discussions.`;
+      sentiment = "positive";
+    } else if (warningPercent >= 40) {
+      headline = `${name} receives mixed reception — ${warningPercent}% of ${totalMentions} discussions flag concerns worth noting.`;
+      sentiment = "negative";
+    } else {
+      headline = `${name} has a balanced community profile with ${totalMentions} discussions and ${positivePercent}% positive sentiment.`;
+      sentiment = "neutral";
     }
-    if (warningPercent >= 40) {
-      return { text: `${name} receives mixed reception — ${warningPercent}% of ${totalMentions} discussions flag concerns worth noting.`, sentiment: "negative", isAI: false };
-    }
-    return { text: `${name} has a balanced community profile with ${totalMentions} discussions and ${positivePercent}% positive sentiment.`, sentiment: "neutral", isAI: false };
-  }, [aiInsight, profileData]);
+    return { headline, sentiment, stats: { total: totalMentions, positive: positiveCount, warnings: warningCount } };
+  }, [profileData]);
 
   // Auto-scroll chat messages (must be before early returns)
   useEffect(() => {
@@ -367,7 +367,7 @@ const VendorProfile = () => {
     <>
       <Helmet>
         <title>{profileData.vendorName} - CDG Pulse</title>
-        <meta name="description" content={`Reviews and insights about ${profileData.vendorName} from CDG Pulse`} />
+        <meta name="description" content={`Dealer conversation excerpts and insights about ${profileData.vendorName} from CDG Pulse`} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" rel="stylesheet" />
@@ -499,7 +499,7 @@ const VendorProfile = () => {
               </Avatar>
 
               {/* Company info + CTA card */}
-              <div className="relative mt-2">
+              <div className="relative mt-2 lg:min-h-[320px]">
                 {/* Left — company details */}
                 <div className="lg:pr-[300px]">
                   <h1
@@ -748,39 +748,20 @@ const VendorProfile = () => {
                 </div>
               </div>
 
-              {/* ── CDG Intelligence Strip ── */}
-              {intelligenceHeadline && (
-                <div className="relative mt-6 pt-5 border-t border-black/[0.04]">
-                  <div className="flex items-start gap-3.5">
-                    <div className="flex-shrink-0 mt-0.5 h-7 w-7 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center">
-                      <Sparkles className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">
-                          CDG Intelligence
-                        </span>
-                        <div className="h-0.5 w-0.5 rounded-full bg-slate-300" />
-                        <span className="text-[9px] text-slate-400 font-medium uppercase tracking-wider">
-                          {intelligenceHeadline.isAI ? "AI Analysis" : "Real-time Insight"}
-                        </span>
-                      </div>
-                      <p className="text-[13px] sm:text-sm text-slate-600 leading-relaxed font-medium">
-                        {intelligenceHeadline.sentiment === "negative" && (
-                          <TrendingDown className="inline h-3.5 w-3.5 text-red-500 mr-1.5 -mt-0.5" />
-                        )}
-                        {intelligenceHeadline.sentiment === "positive" && (
-                          <TrendingUp className="inline h-3.5 w-3.5 text-emerald-500 mr-1.5 -mt-0.5" />
-                        )}
-                        {intelligenceHeadline.text}
-                      </p>
-                      <p className="text-[8px] text-slate-400/50 mt-2 tracking-wide">
-                        AI-generated summary — may not be fully accurate
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* ── CDG Intelligence ── */}
+              <AIInsightBanner
+                data={allMentions}
+                selectedVendor={vendorName}
+                fallbackInsight={fallbackInsight}
+                onUpgradeClick={() => {
+                  if (isAuthenticated) {
+                    setShowUpgradeModal(true);
+                  } else {
+                    window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
+                  }
+                }}
+                className="mt-6"
+              />
             </div>
           </section>
 

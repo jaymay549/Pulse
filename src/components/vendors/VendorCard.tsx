@@ -243,7 +243,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
               <div className="h-4 w-5/6 bg-foreground/5 rounded blur-[2px]" />
               <div className="h-4 w-2/3 bg-foreground/5 rounded blur-[2px]" />
               <p className="text-xs text-muted-foreground italic pt-2">
-                Upgrade to read the full review
+                Upgrade to read the full excerpt
               </p>
             </div>
           )}
@@ -364,7 +364,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
               <div className="py-4 px-4 rounded-lg bg-muted/40 border border-border/50 text-center">
                 <Lock className="h-5 w-5 text-muted-foreground/50 mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground font-medium">
-                  Full review available to members
+                  Full excerpt available to members
                 </p>
                 <p className="text-xs text-muted-foreground/70 mt-1">
                   Join to read what dealers are saying
@@ -379,6 +379,13 @@ export const VendorCard: React.FC<VendorCardProps> = ({
               </>
             )}
           </div>
+
+          {/* Explanation context */}
+          {entry.explanation && !hasLockedPlaceholder && (
+            <p className="text-xs text-muted-foreground/70 leading-relaxed line-clamp-2 mt-2 pl-6">
+              {entry.explanation}
+            </p>
+          )}
 
           {/* Vendor response: display when exists, or show "Respond" when vendor can add */}
           {(vendorResponse || (canRespondAsVendor && entry.vendorName)) &&

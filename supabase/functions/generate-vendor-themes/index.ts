@@ -221,27 +221,18 @@ serve(async (req) => {
       );
       results.push(result);
     } else if (body.all) {
-      // All vendors with 5+ mentions
-      const { data: vendorRows } = await supabase
-        .from("vendor_mentions")
-        .select("vendor_name")
-        .then(({ data }) => {
-          // Count mentions per vendor in JS since we can't do HAVING in .select()
-          const counts = new Map<string, number>();
-          for (const row of data || []) {
-            counts.set(
-              row.vendor_name,
-              (counts.get(row.vendor_name) || 0) + 1
-            );
-          }
-          const eligible = Array.from(counts.entries())
-            .filter(([, count]) => count >= MIN_MENTIONS)
-            .sort((a, b) => b[1] - a[1])
-            .map(([name]) => name);
-          return { data: eligible, error: null };
-        });
+      // All vendors with 5+ mentions — use raw SQL to avoid Supabase JS 1,000-row default limit
+      const { data: vendorRows, error: vendorError } = await supabase.rpc(
+        "get_vendor_pulse_vendors_list"
+      );
 
-      for (const name of vendorRows || []) {
+      if (vendorError) throw vendorError;
+
+      const eligible = ((vendorRows as any)?.vendors || [])
+        .filter((v: { name: string; count: number }) => v.count >= MIN_MENTIONS)
+        .map((v: { name: string }) => v.name);
+
+      for (const name of eligible) {
         const result = await generateForVendor(
           supabase,
           GEMINI_API_KEY,

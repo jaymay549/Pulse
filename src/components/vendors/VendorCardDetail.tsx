@@ -109,7 +109,7 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
     } else if (navigator.share) {
       try {
         await navigator.share({
-          title: `${entry.vendorName} Review - CDG Circles`,
+          title: `${entry.vendorName} - CDG Circles`,
           text: `${entry.quote.slice(0, 100)}...`,
           url: window.location.href,
         });
@@ -205,10 +205,10 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
             <Lock className="h-8 w-8 text-yellow-600" />
           </div>
           <h3 className="text-xl font-bold text-foreground mb-2">
-            Full Review Locked
+            Full Excerpt Locked
           </h3>
           <p className="text-muted-foreground mb-6 max-w-sm">
-            Get access to the complete review, detailed explanations, and all
+            Get access to the complete conversation excerpt and all
             dealer feedback on {entry.vendorName}.
           </p>
           <Button
@@ -225,7 +225,7 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
         {/* Footer */}
         <div className="pt-4 border-t">
           <p className="text-xs text-center text-muted-foreground">
-            Join Pro to access 1,300+ verified dealer reviews
+            Join Pro to access 1,300+ real dealer conversation excerpts
           </p>
         </div>
       </div>

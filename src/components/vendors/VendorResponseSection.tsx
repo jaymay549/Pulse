@@ -229,7 +229,7 @@ export const VendorResponseSection: React.FC<VendorResponseSectionProps> = ({
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           <MessageSquare className="h-3 w-3 opacity-60" />
-          Respond to this review
+          Respond to this excerpt
         </button>
       </div>
     );

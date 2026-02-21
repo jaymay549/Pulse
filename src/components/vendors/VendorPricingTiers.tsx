@@ -70,7 +70,7 @@ export const VendorPricingTiers: React.FC<VendorPricingTiersProps> = ({
             Choose Your Access Level
           </h3>
           <p className="text-muted-foreground">
-            Unlock {totalReviews}+ vendor reviews and {totalWarnings}+ warnings
+            Unlock {totalReviews}+ dealer excerpts and {totalWarnings}+ warnings
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export const VendorPricingTiers: React.FC<VendorPricingTiersProps> = ({
               <span className="font-bold text-foreground">Viewer</span>
             </div>
             <p className="text-xs text-muted-foreground mb-3">
-              View all vendor reviews & warnings
+              View all vendor excerpts & warnings
             </p>
 
             {/* Price + Toggle on same line */}
@@ -150,7 +150,7 @@ export const VendorPricingTiers: React.FC<VendorPricingTiersProps> = ({
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-green-500 shrink-0" />
-                <span>Search all reviews</span>
+                <span>Search all excerpts</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-green-500 shrink-0" />
@@ -257,7 +257,7 @@ export const VendorPricingTiers: React.FC<VendorPricingTiersProps> = ({
                 <MessageSquare className="h-4 w-4 text-primary shrink-0" />
                 <span>
                   <strong className="text-foreground">Respond</strong> to
-                  reviews
+                  excerpts
                 </span>
               </li>
               <li className="flex items-center gap-2">

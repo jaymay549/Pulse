@@ -1064,9 +1064,9 @@ const VendorsV2 = () => {
               {visibleEntries.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   {visibleEntries.map((entry) => {
-                    // Backend handles all redaction - but force redaction for non-pro users when searching
+                    // Backend handles all redaction - but force lock for non-authenticated users and non-pro users searching
                     const isSearchingAsNonPro = !isProUserValue && searchQuery.trim().length > 0;
-                    const isLocked = entry.isLocked === true || isSearchingAsNonPro;
+                    const isLocked = entry.isLocked === true || isSearchingAsNonPro || !isAuthenticated;
                     // Hide vendor names when searching as non-pro user
                     const showVendorNames = isSearchingAsNonPro ? false : !!entry.vendorName;
 

@@ -217,7 +217,7 @@ export async function fetchVendorInsight(params: {
 
   // Keys may or may not have a _v2 suffix — try both, prefer the newest
   const { data, error } = await supabase
-    .from("vendor_insights")
+    .from("vendor_pulse_insights")
     .select("insight_json, expires_at")
     .or(`insight_key.eq.${prefix}${slug}_v2,insight_key.eq.${prefix}${slug}`)
     .order("expires_at", { ascending: false })

@@ -18,6 +18,7 @@ interface AIInsightBannerProps {
   searchQuery?: string;
   selectedVendor?: string | null;
   fetchWithAuth?: (url: string, options?: RequestInit) => Promise<Response>;
+  fallbackInsight?: InsightData | null;
   className?: string;
   onUpgradeClick?: () => void;
 }
@@ -41,7 +42,7 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
   selectedCategory,
   searchQuery,
   selectedVendor,
-  fetchWithAuth,
+  fallbackInsight,
   className,
   onUpgradeClick,
 }) => {
@@ -80,6 +81,8 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
 
         if (insightData) {
           setInsight(insightData);
+        } else if (fallbackInsight) {
+          setInsight(fallbackInsight);
         } else {
           setInsight(null);
         }
@@ -151,7 +154,7 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
               </span>
               <div className="h-1 w-1 rounded-full bg-border" />
               <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                {isLoading ? "Analyzing reviews" : "Real-time Insight"}
+                {isLoading ? "Analyzing conversations" : "Real-time Insight"}
               </span>
             </div>
 
@@ -222,7 +225,7 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
                         <span className="text-foreground">
                           {insight.stats.total}
                         </span>{" "}
-                        Total Reviews
+                        Total Excerpts
                       </span>
                       <div className="flex items-center gap-3">
                         <span className="text-green-600/90 flex items-center gap-1">

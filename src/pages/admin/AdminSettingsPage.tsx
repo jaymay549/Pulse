@@ -501,10 +501,7 @@ function AIThemesSection() {
   const callThemesFunction = async (body: Record<string, unknown>) => {
     const res = await fetch(THEMES_FUNCTION_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     return res.json();
