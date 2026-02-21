@@ -117,7 +117,7 @@ export function VendorIntelPanel({ vendorName }: VendorIntelPanelProps) {
           <tbody className="divide-y divide-border">
             {rows.map(row => (
               <tr
-                key={row.name}
+                key={`${row.isOwn ? "own" : "comp"}-${row.name}`}
                 className={row.isOwn ? "bg-primary/5 font-medium" : ""}
               >
                 <td className="px-4 py-3">
