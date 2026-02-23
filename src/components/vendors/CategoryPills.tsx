@@ -23,7 +23,7 @@ export function CategoryPills({
     <div className={cn("relative", className)}>
       <div
         ref={scrollRef}
-        className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
+        className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-hide"
       >
         {categories.map((cat) => {
           const isSelected = selectedCategory === cat.id;
@@ -34,7 +34,7 @@ export function CategoryPills({
               key={cat.id}
               onClick={() => onCategorySelect(cat.id)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors border shrink-0",
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors border shrink-0 snap-start",
                 isSelected
                   ? "bg-primary text-primary-foreground border-primary"
                   : "bg-white text-foreground/70 border-border hover:border-primary/40 hover:text-foreground"

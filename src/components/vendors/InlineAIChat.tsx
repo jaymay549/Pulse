@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { X, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,7 @@ export function InlineAIChat({ initialQuery, queryId, onClose, className }: Inli
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastProcessedQueryIdRef = useRef<number>(0);
   const messagesRef = useRef<Message[]>([]);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Keep messagesRef in sync with messages state
   useEffect(() => {
@@ -38,6 +39,13 @@ export function InlineAIChat({ initialQuery, queryId, onClose, className }: Inli
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Abort in-flight request on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   // When queryId advances, send the new initial query
   useEffect(() => {
@@ -50,8 +58,14 @@ export function InlineAIChat({ initialQuery, queryId, onClose, className }: Inli
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
 
+    // Abort any in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     const userMessage: Message = { role: "user", content: messageText.trim() };
     const updatedMessages = [...messagesRef.current, userMessage];
+    const messageCountBeforeSend = messagesRef.current.length;
     setMessages(updatedMessages);
     setIsLoading(true);
     setError(null);
@@ -79,6 +93,7 @@ export function InlineAIChat({ initialQuery, queryId, onClose, className }: Inli
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({ messages: updatedMessages }),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -91,10 +106,11 @@ export function InlineAIChat({ initialQuery, queryId, onClose, className }: Inli
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let textBuffer = "";
+      let streamDone = false;
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done || streamDone) break;
 
         textBuffer += decoder.decode(value, { stream: true });
 
@@ -108,7 +124,10 @@ export function InlineAIChat({ initialQuery, queryId, onClose, className }: Inli
           if (!line.startsWith("data: ")) continue;
 
           const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
+          if (jsonStr === "[DONE]") {
+            streamDone = true;
+            break;
+          }
 
           try {
             const parsed = JSON.parse(jsonStr);
@@ -121,10 +140,12 @@ export function InlineAIChat({ initialQuery, queryId, onClose, className }: Inli
         }
       }
     } catch (err) {
+      // Ignore abort errors (user closed chat)
+      if (err instanceof DOMException && err.name === "AbortError") return;
       console.error("Chat error:", err);
       setError(err instanceof Error ? err.message : "Failed to send message");
-      // Remove the user message that failed
-      setMessages((prev) => prev.slice(0, -1));
+      // Remove user message and any partial assistant content
+      setMessages((prev) => prev.slice(0, messageCountBeforeSend));
     } finally {
       setIsLoading(false);
     }
