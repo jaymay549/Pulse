@@ -728,13 +728,13 @@ const VendorsV2 = () => {
 
       <div className="min-h-screen bg-[hsl(var(--vendor-bg))] overflow-x-hidden">
         {/* Navigation */}
-        <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border">
+        <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-black/[0.06]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
+            <div className="flex items-center justify-between h-14">
               {/* Left: Logo */}
               <div className="flex items-center gap-2">
                 <Link to="/" className="flex items-center">
-                  <img src={cdgPulseLogo} alt="CDG Pulse" className="h-7" />
+                  <img src={cdgPulseLogo} alt="CDG Pulse" className="h-6" />
                 </Link>
               </div>
 
@@ -742,14 +742,14 @@ const VendorsV2 = () => {
               <div className="hidden md:flex flex-1" />
 
               {/* Right: Actions */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleShare}
-                  className="hidden lg:flex"
+                  className="hidden lg:flex text-foreground/60 hover:text-foreground h-8 px-3 text-xs"
                 >
-                  <Share2 className="h-4 w-4 mr-2" />
+                  <Share2 className="h-3.5 w-3.5 mr-1.5" />
                   Share
                 </Button>
 
@@ -758,6 +758,7 @@ const VendorsV2 = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowSignIn(true)}
+                    className="h-8 px-3 text-xs border-black/10 hover:bg-black/[0.03]"
                   >
                     Sign In
                   </Button>
@@ -775,16 +776,16 @@ const VendorsV2 = () => {
                         : import.meta.env.VITE_STRIPE_PORTAL_URL;
                       window.open(portalUrl, "_blank");
                     }}
-                    className="hidden lg:flex font-bold"
+                    className="hidden lg:flex font-semibold h-8 px-3 text-xs"
                   >
-                    <Crown className="h-4 w-4 mr-2" />
+                    <Crown className="h-3.5 w-3.5 mr-1.5" />
                     Upgrade
                   </Button>
                 )}
 
                 {isAuthenticated && isAdmin && (
                   <Link to="/admin">
-                    <Button variant="outline" size="sm" className="hidden sm:flex text-xs">
+                    <Button variant="outline" size="sm" className="hidden sm:flex text-xs h-8 px-3 border-black/10">
                       <Shield className="h-3.5 w-3.5 mr-1.5" />
                       Admin
                     </Button>
@@ -795,7 +796,7 @@ const VendorsV2 = () => {
                   <UserButton
                     appearance={{
                       elements: {
-                        avatarBox: "h-8 w-8",
+                        avatarBox: "h-7 w-7",
                       },
                     }}
                     afterSignOutUrl="/vendors"
@@ -826,38 +827,42 @@ const VendorsV2 = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
           {/* Hero -- only on default "all" view with no vendor selected */}
           {selectedCategory === "all" && selectedVendor === null && !aiQuery && !showUpgradePrompt && (
-            <div className="max-w-2xl mx-auto text-center pt-8 sm:pt-12 pb-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/20 border border-secondary/30 text-xs font-semibold text-yellow-800 mb-4">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-500 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+            <div className="max-w-3xl mx-auto text-center pt-10 sm:pt-16 pb-8">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/60 text-[11px] font-semibold tracking-wide uppercase text-amber-700 mb-6">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
                 </span>
-                Updated Daily
+                Live Intelligence
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground mb-6 leading-[1.1] tracking-tight">
-                What do you want to know about{" "}
-                <span className="text-yellow-600">auto vendors</span>?
+              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl italic text-foreground mb-4 leading-[1.05] tracking-[-0.01em]">
+                What are dealers saying about{" "}
+                <span className="not-italic text-amber-600 decoration-amber-300 underline decoration-2 underline-offset-4">your vendors</span>?
               </h1>
+
+              <p className="text-base sm:text-lg text-muted-foreground/80 max-w-xl mx-auto leading-relaxed">
+                Real insights from verified automotive dealers. Search, compare, and get AI-powered analysis.
+              </p>
             </div>
           )}
 
           {/* Smart Search Bar -- always visible, centered */}
           <div className={cn(
-            "mx-auto w-full transition-all",
+            "mx-auto w-full transition-all duration-300",
             selectedCategory === "all" && selectedVendor === null && !aiQuery && !showUpgradePrompt
               ? "max-w-2xl"
               : "max-w-full"
           )}>
             {/* Category context header when filtering */}
             {selectedCategory !== "all" && selectedCategoryData && (
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-3xl">{selectedCategoryData.icon}</span>
-                <span className="text-lg font-bold text-foreground">
+              <div className="flex items-center gap-2.5 mb-4">
+                <span className="text-2xl">{selectedCategoryData.icon}</span>
+                <span className="text-lg font-bold text-foreground tracking-tight">
                   {selectedCategoryData.label}
                 </span>
-                <span className="text-sm text-muted-foreground">
-                  ({categoryCounts[selectedCategory] || 0} reviews)
+                <span className="text-xs font-medium text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
+                  {categoryCounts[selectedCategory] || 0} reviews
                 </span>
               </div>
             )}
@@ -875,12 +880,12 @@ const VendorsV2 = () => {
 
             {/* Suggested prompt chips -- only on landing state */}
             {selectedCategory === "all" && selectedVendor === null && !aiQuery && !showUpgradePrompt && (
-              <div className="flex flex-wrap justify-center gap-2 mt-4">
+              <div className="flex flex-wrap justify-center gap-2 mt-5">
                 {SUGGESTED_PROMPTS.map((prompt) => (
                   <button
                     key={prompt}
                     onClick={() => handleAISubmit(prompt)}
-                    className="text-sm px-3 py-1.5 rounded-full border border-border bg-white text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                    className="text-[13px] px-3.5 py-1.5 rounded-full border border-black/[0.08] bg-white text-foreground/50 hover:text-foreground hover:border-amber-300 hover:bg-amber-50/50 transition-all duration-200 hover:shadow-sm"
                   >
                     {prompt}
                   </button>
@@ -890,12 +895,12 @@ const VendorsV2 = () => {
 
             {/* Stats line -- only on landing state */}
             {selectedCategory === "all" && selectedVendor === null && !aiQuery && !showUpgradePrompt && (
-              <div className="flex justify-center gap-4 mt-4 text-sm text-muted-foreground">
-                <span><strong className="text-foreground">{totalVerifiedCount}+</strong> recommendations</span>
-                <span className="text-border">&#8226;</span>
-                <span><strong className="text-foreground">{totalWarningCountValue}+</strong> warnings</span>
-                <span className="text-border">&#8226;</span>
-                <span><strong className="text-foreground">{categories.length - 1}</strong> categories</span>
+              <div className="flex justify-center items-center gap-5 mt-5 text-[13px] text-muted-foreground/70">
+                <span><strong className="text-foreground font-semibold tabular-nums">{totalVerifiedCount}+</strong> recommendations</span>
+                <span className="text-black/10">|</span>
+                <span><strong className="text-foreground font-semibold tabular-nums">{totalWarningCountValue}+</strong> warnings</span>
+                <span className="text-black/10">|</span>
+                <span><strong className="text-foreground font-semibold tabular-nums">{categories.length - 1}</strong> categories</span>
               </div>
             )}
 
@@ -905,7 +910,7 @@ const VendorsV2 = () => {
                 initialQuery={aiQuery.text}
                 queryId={aiQuery.id}
                 onClose={handleAIChatClose}
-                className="mt-4"
+                className="mt-5"
               />
             )}
 
@@ -914,7 +919,7 @@ const VendorsV2 = () => {
               <UpgradePromptCard
                 onUpgrade={() => setShowUpgradeModal(true)}
                 onDismiss={() => setShowUpgradePrompt(false)}
-                className="mt-4"
+                className="mt-5"
               />
             )}
           </div>
@@ -925,11 +930,11 @@ const VendorsV2 = () => {
             selectedCategory={selectedCategory}
             categoryCounts={categoryCounts}
             onCategorySelect={handleCategoryChange}
-            className="mt-6"
+            className="mt-8"
           />
 
           {/* Rest of content */}
-          <div className="mt-6">
+          <div className="mt-8">
             {/* AI Insight Banner */}
             {(selectedVendor !== null || selectedCategory !== "all") && (
               <AIInsightBanner
@@ -964,20 +969,21 @@ const VendorsV2 = () => {
               <TrendingVendorChips
                 onVendorSelect={handleVendorSelect}
                 getLogoUrl={(vendorName) => getVendorLogoUrl(vendorName)}
-                className="mt-0 mb-3"
+                className="mt-0 mb-4"
               />
             )}
 
             {/* Category Vendors Section - Show when category is selected */}
             {selectedCategory !== "all" && categoryVendors.length > 0 && (
-              <div className="mb-6 sm:mb-8">
-                <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                  <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
-                  <h2 className="text-lg sm:text-xl font-bold text-foreground">
-                    Vendors ({categoryVendors.length})
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-3">
+                  <Building2 className="h-4 w-4 text-foreground/30 shrink-0" />
+                  <h2 className="text-sm font-semibold text-foreground/50 uppercase tracking-wider">
+                    Vendors
                   </h2>
+                  <span className="text-[11px] text-foreground/30 font-medium">{categoryVendors.length}</span>
                 </div>
-                <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
                   {categoryVendors.map((vendor) => {
                     const vendorWebsiteUrl = getWebsiteForVendor(vendor.name);
                     const vendorLogoUrl = getVendorLogoUrl(vendor.name, vendorWebsiteUrl);
@@ -986,34 +992,32 @@ const VendorsV2 = () => {
                       <button
                         key={vendor.name}
                         onClick={() => handleVendorSelect(vendor.name)}
-                        className="text-left p-3 sm:p-4 bg-white rounded-lg border border-border/50 hover:border-primary/50 hover:shadow-md transition-all group shrink-0 w-[280px] sm:w-[300px]"
+                        className="text-left p-3.5 bg-white rounded-xl shadow-[0_0_0_1px_rgba(0,0,0,0.04)] hover:shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_4px_16px_-4px_rgba(0,0,0,0.08)] transition-all duration-200 group shrink-0 w-[260px]"
                       >
-                        <div className="flex items-start gap-2.5 sm:gap-3">
-                          {/* Vendor Logo */}
-                          <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border border-border/50 shrink-0">
+                        <div className="flex items-start gap-3">
+                          <Avatar className="h-10 w-10 border border-black/[0.06] shrink-0">
                             <AvatarImage src={vendorLogoUrl || undefined} alt={vendor.name} />
-                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs sm:text-sm">
+                            <AvatarFallback className="bg-amber-50 text-amber-700 font-bold text-xs">
                               {vendor.name.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
 
-                          {/* Vendor Info */}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 sm:gap-2">
-                              <h3 className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                            <div className="flex items-center gap-1.5">
+                              <h3 className="text-sm font-semibold text-foreground group-hover:text-amber-700 transition-colors line-clamp-1">
                                 {vendor.name}
                               </h3>
-                              <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 opacity-0 group-hover:opacity-100" />
+                              <ArrowRight className="h-3 w-3 text-foreground/20 group-hover:text-amber-600 transition-all shrink-0 -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100" />
                             </div>
-                            <div className="mt-1 sm:mt-1.5 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground">
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-foreground/40">
                               <span className="font-medium">{vendor.reviewCount} review{vendor.reviewCount !== 1 ? "s" : ""}</span>
                               {vendor.positiveCount > 0 && (
-                                <span className="px-1.5 py-0.5 rounded bg-green-50 text-green-700 font-medium text-xs">
+                                <span className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-600 font-medium">
                                   {vendor.positiveCount} positive
                                 </span>
                               )}
                               {vendor.warningCount > 0 && (
-                                <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-700 font-medium text-xs">
+                                <span className="px-1.5 py-0.5 rounded-md bg-red-50 text-red-500 font-medium">
                                   {vendor.warningCount} warning{vendor.warningCount !== 1 ? "s" : ""}
                                 </span>
                               )}
@@ -1029,15 +1033,12 @@ const VendorsV2 = () => {
 
             {/* Results Grid */}
             {visibleEntries.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {visibleEntries.map((entry) => {
-                  // Backend handles all redaction - but force lock for non-authenticated users and non-pro users searching
                   const isSearchingAsNonPro = !isProUserValue && searchQuery.trim().length > 0;
                   const isLocked = entry.isLocked === true || isSearchingAsNonPro || !isAuthenticated;
-                  // Hide vendor names when searching as non-pro user
                   const showVendorNames = isSearchingAsNonPro ? false : !!entry.vendorName;
 
-                  // Get website and logo for this vendor
                   const vendorWebsiteUrl = entry.vendorName
                     ? getWebsiteForVendor(entry.vendorName)
                     : null;
@@ -1070,7 +1071,6 @@ const VendorsV2 = () => {
                   );
                 })}
 
-                {/* Teaser Card */}
                 {showTeaserCard && (
                   <UpgradeTeaser
                     remainingCount={remainingCount}
@@ -1087,26 +1087,26 @@ const VendorsV2 = () => {
               </div>
             )}
 
-            {/* Infinite scroll sentinel - loads more when scrolled into view */}
+            {/* Infinite scroll sentinel */}
             {isProUserValue && paginationInfo?.hasMore && visibleEntries.length > 0 && (
               <div ref={loadMoreRef} className="mt-8 flex justify-center py-4">
                 {isLoadingMore && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <span className="text-sm">Loading more reviews...</span>
+                  <div className="flex items-center gap-2.5 text-foreground/40">
+                    <div className="h-4 w-4 animate-spin rounded-full border-[1.5px] border-amber-400 border-t-transparent" />
+                    <span className="text-[13px]">Loading more...</span>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Empty State - no reviews found */}
+            {/* Empty State */}
             {!isWamLoading && filteredData.length === 0 && (
-              <div className="text-center py-16">
-                <Search className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-foreground mb-2">
+              <div className="text-center py-20">
+                <Search className="h-10 w-10 text-foreground/15 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground/70 mb-1.5">
                   No reviews found
                 </h3>
-                <p className="text-muted-foreground">
+                <p className="text-sm text-foreground/40">
                   Try selecting a different category
                 </p>
               </div>
@@ -1114,11 +1114,11 @@ const VendorsV2 = () => {
 
             {/* Loading State */}
             {isWamLoading && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div
                     key={i}
-                    className="h-48 bg-muted/50 rounded-lg animate-pulse"
+                    className="h-48 bg-white rounded-xl animate-pulse shadow-[0_0_0_1px_rgba(0,0,0,0.03)]"
                   />
                 ))}
               </div>
@@ -1135,18 +1135,18 @@ const VendorsV2 = () => {
 
             {/* Authenticated Non-Pro Upgrade Banner */}
             {!accessLevel.unlimitedAccess && isAuthenticated && (
-              <div className="mt-8">
-                <div className="p-6 rounded-xl bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 border-2 border-yellow-400/30 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="mt-10">
+                <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-50/80 via-amber-50/40 to-transparent border border-amber-200/40 flex flex-col md:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-full bg-yellow-500/20">
-                      <Crown className="h-7 w-7 text-yellow-600" />
+                    <div className="p-2.5 rounded-xl bg-amber-100/80">
+                      <Crown className="h-6 w-6 text-amber-600" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-foreground">
-                        Upgrade to See All Reviews
+                      <h3 className="text-base font-bold text-foreground tracking-tight">
+                        Unlock All Reviews
                       </h3>
-                      <p className="text-muted-foreground text-sm">
-                        Unlock all {paginationInfo?.totalSystemCount ?? wamMentions.length} reviews including{" "}
+                      <p className="text-foreground/50 text-sm">
+                        Access all {paginationInfo?.totalSystemCount ?? wamMentions.length} reviews including{" "}
                         {totalWarningCountValue} warnings.
                       </p>
                     </div>
@@ -1154,11 +1154,11 @@ const VendorsV2 = () => {
                   <Button
                     variant="yellow"
                     size="lg"
-                    className="font-bold whitespace-nowrap"
+                    className="font-semibold whitespace-nowrap rounded-xl"
                     onClick={() => setShowUpgradeModal(true)}
                   >
                     <Crown className="h-4 w-4 mr-2" />
-                    Upgrade to Unlock
+                    Upgrade
                   </Button>
                 </div>
               </div>
@@ -1167,29 +1167,29 @@ const VendorsV2 = () => {
         </div>
 
         {/* Footer */}
-        <footer className="py-8 mt-12 border-t border-border bg-white">
+        <footer className="py-10 mt-16 border-t border-black/[0.04]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col items-center gap-6">
+            <div className="flex flex-col items-center gap-5">
               <Link to="/">
                 <img
                   src={cdgPulseLogo}
                   alt="CDG Pulse"
-                  className="h-6 opacity-70"
+                  className="h-5 opacity-40 hover:opacity-60 transition-opacity"
                 />
               </Link>
 
-              <p className="max-w-2xl text-center text-xs text-muted-foreground/70">
-                <span className="font-medium">Disclaimer:</span> CDG Pulse does
+              <p className="max-w-xl text-center text-[11px] text-foreground/30 leading-relaxed">
+                <span className="font-medium text-foreground/40">Disclaimer:</span> CDG Pulse does
                 not endorse or recommend any vendor. All reviews are
                 community-generated and reflect individual experiences.
               </p>
 
-              <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-6 text-[12px] text-foreground/30">
                 <a
                   href="https://www.dealershipguy.com/terms-of-use/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-foreground"
+                  className="hover:text-foreground/60 transition-colors"
                 >
                   Terms
                 </a>
@@ -1197,7 +1197,7 @@ const VendorsV2 = () => {
                   href="https://www.dealershipguy.com/privacy-policy/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-foreground"
+                  className="hover:text-foreground/60 transition-colors"
                 >
                   Privacy
                 </a>

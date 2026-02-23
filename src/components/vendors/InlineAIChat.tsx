@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { X, Loader2, Sparkles, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { X, Sparkles, AlertCircle, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChatMarkdown } from "./ChatMarkdown";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,7 +25,10 @@ export function InlineAIChat({ initialQuery, queryId, onClose, className }: Inli
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [followUpInput, setFollowUpInput] = useState("");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const userScrolledRef = useRef(false);
+  const followUpInputRef = useRef<HTMLInputElement>(null);
   const lastProcessedQueryIdRef = useRef<number>(0);
   const messagesRef = useRef<Message[]>([]);
   const abortRef = useRef<AbortController | null>(null);
@@ -36,8 +38,12 @@ export function InlineAIChat({ initialQuery, queryId, onClose, className }: Inli
     messagesRef.current = messages;
   }, [messages]);
 
+  // Auto-scroll only within the chat container (not the whole page),
+  // and only if the user hasn't manually scrolled up.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = scrollContainerRef.current;
+    if (!el || userScrolledRef.current) return;
+    el.scrollTop = el.scrollHeight;
   }, [messages]);
 
   // Abort in-flight request on unmount
@@ -68,6 +74,7 @@ export function InlineAIChat({ initialQuery, queryId, onClose, className }: Inli
     const messageCountBeforeSend = messagesRef.current.length;
     setMessages(updatedMessages);
     setIsLoading(true);
+    userScrolledRef.current = false;
     setError(null);
 
     let assistantContent = "";
@@ -151,79 +158,134 @@ export function InlineAIChat({ initialQuery, queryId, onClose, className }: Inli
     }
   };
 
+  const handleFollowUpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (followUpInput.trim() && !isLoading) {
+      sendMessage(followUpInput.trim());
+      setFollowUpInput("");
+    }
+  };
+
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, height: 0 }}
-        animate={{ opacity: 1, height: "auto" }}
-        exit={{ opacity: 0, height: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 8 }}
+        transition={{ type: "spring", stiffness: 400, damping: 30 }}
         className={cn(
-          "bg-white border border-border rounded-xl shadow-lg overflow-hidden",
+          "bg-white rounded-2xl overflow-hidden",
+          "shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_4px_24px_-4px_rgba(0,0,0,0.08),0_12px_48px_-8px_rgba(0,0,0,0.06)]",
           className
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-b bg-slate-50">
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-            <Sparkles className="h-4 w-4 text-primary" />
-            AI Vendor Advisor
+        <div className="flex items-center justify-between px-5 py-3 border-b border-black/[0.04] bg-gradient-to-r from-amber-50/80 to-transparent">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center h-6 w-6 rounded-lg bg-amber-100">
+              <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+            </div>
+            <span className="text-[13px] font-semibold text-foreground/80 tracking-tight">AI Vendor Advisor</span>
+            {isLoading && (
+              <span className="text-[11px] text-amber-600/70 font-medium">Thinking...</span>
+            )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
             onClick={onClose}
-            className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600"
+            className="h-7 w-7 flex items-center justify-center rounded-lg text-foreground/25 hover:text-foreground/60 hover:bg-black/[0.04] transition-all"
           >
             <X className="h-3.5 w-3.5" />
-          </Button>
+          </button>
         </div>
 
         {/* Messages */}
-        <div className="max-h-[60vh] sm:max-h-[400px] overflow-y-auto p-4 space-y-3">
+        <div
+          ref={scrollContainerRef}
+          onScroll={() => {
+            const el = scrollContainerRef.current;
+            if (!el) return;
+            const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+            userScrolledRef.current = !atBottom;
+          }}
+          className="max-h-[60vh] sm:max-h-[420px] overflow-y-auto px-5 py-4 space-y-4"
+        >
           {messages.map((message, i) => (
-            <div
+            <motion.div
               key={i}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, delay: message.role === "assistant" ? 0 : 0.05 }}
               className={cn(
                 "flex",
                 message.role === "user" ? "justify-end" : "justify-start"
               )}
             >
-              <div
-                className={cn(
-                  "max-w-[85%] rounded-2xl px-4 py-2.5",
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground rounded-br-sm"
-                    : "bg-slate-100 text-foreground rounded-bl-sm"
-                )}
-              >
-                {message.role === "assistant" ? (
-                  <div className="prose prose-sm max-w-none dark:prose-invert [&_a]:no-underline">
+              {message.role === "user" ? (
+                <div className="max-w-[85%] bg-foreground text-white rounded-2xl rounded-br-md px-4 py-2.5">
+                  <p className="text-[14px] leading-relaxed">{message.content}</p>
+                </div>
+              ) : (
+                <div className="max-w-[90%] w-full">
+                  <div className="prose prose-sm max-w-none text-foreground/85 [&_p]:leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_a]:text-amber-600 [&_a]:no-underline [&_a]:hover:underline [&_li]:text-foreground/75 [&_strong]:text-foreground [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm">
                     <ChatMarkdown content={message.content} />
                   </div>
-                ) : (
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                )}
-              </div>
-            </div>
+                </div>
+              )}
+            </motion.div>
           ))}
 
           {isLoading && messages[messages.length - 1]?.role === "user" && (
-            <div className="flex justify-start">
-              <div className="bg-slate-100 rounded-2xl rounded-bl-sm px-4 py-3">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex justify-start"
+            >
+              <div className="flex items-center gap-1.5 px-3 py-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" style={{ animationDelay: "0ms" }} />
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" style={{ animationDelay: "150ms" }} />
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" style={{ animationDelay: "300ms" }} />
               </div>
-            </div>
+            </motion.div>
           )}
-
-          <div ref={messagesEndRef} />
         </div>
+
+        {/* Follow-up input */}
+        {messages.length > 0 && (
+          <form
+            onSubmit={handleFollowUpSubmit}
+            className="px-4 py-3 border-t border-black/[0.04] bg-[hsl(40,20%,98%)]"
+          >
+            <div className="flex items-center gap-2">
+              <input
+                ref={followUpInputRef}
+                type="text"
+                value={followUpInput}
+                onChange={(e) => setFollowUpInput(e.target.value)}
+                placeholder="Ask a follow-up..."
+                disabled={isLoading}
+                className="flex-1 bg-white rounded-xl px-3.5 py-2 text-sm outline-none border border-black/[0.06] focus:border-amber-300 transition-colors placeholder:text-foreground/25"
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !followUpInput.trim()}
+                className={cn(
+                  "h-8 w-8 flex items-center justify-center rounded-xl transition-all",
+                  followUpInput.trim() && !isLoading
+                    ? "bg-foreground text-white hover:bg-foreground/80"
+                    : "bg-black/[0.04] text-foreground/20"
+                )}
+              >
+                <Send className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </form>
+        )}
 
         {/* Error */}
         {error && (
-          <div className="px-4 py-2 bg-destructive/10 border-t border-destructive/20">
-            <div className="flex items-center gap-2 text-destructive text-sm">
-              <AlertCircle className="h-4 w-4 shrink-0" />
+          <div className="px-5 py-2.5 bg-red-50 border-t border-red-100">
+            <div className="flex items-center gap-2 text-red-600 text-[13px]">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
               {error}
             </div>
           </div>

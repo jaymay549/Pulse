@@ -18,7 +18,6 @@ import VendorResponseSection from "./VendorResponseSection";
  * Replaces **** patterns (redacted vendor names from backend) with a blur effect
  */
 const blurRedactedContent = (text: string): React.ReactNode => {
-  // Backend sends **** for redacted vendor names - show as blurred placeholder
   const parts = text.split(/(\*{4})/g);
   if (parts.length === 1) return text;
 
@@ -38,10 +37,6 @@ const blurRedactedContent = (text: string): React.ReactNode => {
   });
 };
 
-/**
- * Parses markdown and applies blur to redacted content.
- * When not redacted, vendor names become clickable chips linking to vendor pages.
- */
 const parseMarkdownWithBlur = (
   text: string,
   isRedacted: boolean,
@@ -53,7 +48,6 @@ const parseMarkdownWithBlur = (
       knownVendors: knownVendors ?? [],
     });
   }
-  // For redacted content, apply blur effect to **** patterns
   return blurRedactedContent(text);
 };
 
@@ -93,7 +87,6 @@ interface VendorCardProps {
   onCardClick?: (entry: VendorEntry) => void;
   onVendorClick?: (vendorName: string) => void;
   onUpgradeClick?: () => void;
-  /** Vendor names derived from currently loaded server review entries */
   knownVendors?: string[];
 }
 
@@ -119,26 +112,26 @@ export const VendorCard: React.FC<VendorCardProps> = ({
     switch (entry.type) {
       case "warning":
         return {
-          border: "border-l-2 border-l-red-500 border-border/40",
-          bg: "bg-transparent hover:bg-red-500/5",
-          badge: "text-red-700",
-          icon: <AlertTriangle className="h-3.5 w-3.5" />,
+          border: "border-l-[2px] border-l-red-400",
+          bg: "bg-white hover:bg-red-50/30",
+          badge: "text-red-500",
+          icon: <AlertTriangle className="h-3 w-3" />,
           label: "WARNING",
         };
       case "positive":
         return {
-          border: "border-l-2 border-l-green-500 border-border/40",
-          bg: "bg-transparent hover:bg-green-500/5",
-          badge: "text-green-700",
-          icon: <ThumbsUp className="h-3.5 w-3.5" />,
+          border: "border-l-[2px] border-l-emerald-400",
+          bg: "bg-white hover:bg-emerald-50/30",
+          badge: "text-emerald-600",
+          icon: <ThumbsUp className="h-3 w-3" />,
           label: "RECOMMENDED",
         };
       default:
         return {
-          border: "border-l-2 border-l-primary border-border/40",
-          bg: "bg-transparent hover:bg-primary/5",
-          badge: "text-primary",
-          icon: <Lightbulb className="h-3.5 w-3.5" />,
+          border: "border-l-[2px] border-l-amber-400",
+          bg: "bg-white hover:bg-amber-50/20",
+          badge: "text-amber-600",
+          icon: <Lightbulb className="h-3 w-3" />,
           label: "STRATEGY",
         };
     }
@@ -152,22 +145,17 @@ export const VendorCard: React.FC<VendorCardProps> = ({
     }
   };
 
-  // Locked card logic:
-  // - If showVendorNames is true (vendor-specific view): full blur, no content preview
-  // - If showVendorNames is false (main page browsing): show blurred content preview (safe since vendor is hidden)
+  // Locked card
   if (isLocked) {
-    // Check if vendor name is valid (not redacted) for navigation
     const hasValidVendorName =
       entry.vendorName && !entry.vendorName.includes("****");
 
-    // Determine if we should show content preview (only on main page where vendor is hidden)
     const showContentPreview =
       !showVendorNames &&
       entry.quote &&
       !entry.quote.includes("[Content locked");
 
     const handleLockedCardClick = () => {
-      // Navigate to vendor profile page if vendor name is valid and shown
       if (onVendorClick && hasValidVendorName && showVendorNames) {
         onVendorClick(entry.vendorName!);
       }
@@ -177,30 +165,30 @@ export const VendorCard: React.FC<VendorCardProps> = ({
       <article
         onClick={handleLockedCardClick}
         className={`
-          relative overflow-hidden border border-border/40
-          transition-colors duration-200 group
+          relative overflow-hidden rounded-xl transition-all duration-200 group
+          shadow-[0_0_0_1px_rgba(0,0,0,0.04)]
+          hover:shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_4px_16px_-4px_rgba(0,0,0,0.06)]
           ${hasValidVendorName && showVendorNames ? "cursor-pointer" : ""}
           ${styles.border} ${styles.bg}
         `}
       >
         <div className="px-5 py-4 flex flex-col h-full min-h-[190px]">
-          {/* Vendor Name - Only show in vendor-specific view with valid name */}
           {showVendorNames && hasValidVendorName && (
             <div className="mb-3 flex items-center gap-3">
-              <Avatar className="h-10 w-10 border border-border shrink-0">
+              <Avatar className="h-9 w-9 border border-black/[0.06] shrink-0">
                 <AvatarImage
                   src={vendorLogo || undefined}
                   alt={entry.vendorName}
                 />
-                <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                <AvatarFallback className="bg-amber-50 text-amber-700 text-xs font-bold">
                   {entry.vendorName!.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <h3
                   className={`
-                    text-lg font-bold text-foreground leading-tight inline
-                    ${onVendorClick ? "hover:text-primary transition-colors hover:underline cursor-pointer" : ""}
+                    text-base font-bold text-foreground leading-tight inline tracking-tight
+                    ${onVendorClick ? "hover:text-amber-700 transition-colors cursor-pointer" : ""}
                   `}
                   onClick={(e) => {
                     if (onVendorClick && hasValidVendorName) {
@@ -215,52 +203,47 @@ export const VendorCard: React.FC<VendorCardProps> = ({
             </div>
           )}
 
-          {/* Header: Type badge + Lock indicator */}
           <div className="flex items-center justify-between mb-3">
-            <div className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
+            <div className="inline-flex items-center gap-2 text-[10px] font-semibold tracking-[0.1em] uppercase">
               <span className={styles.badge}>{styles.label}</span>
-              <span className="text-muted-foreground">•</span>
-              <span className="text-muted-foreground">Member insight</span>
+              <span className="text-foreground/15">·</span>
+              <span className="text-foreground/30">Member insight</span>
             </div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1 text-[11px] text-foreground/25">
               <Lock className="h-3 w-3" />
               <span className="font-medium">Locked</span>
             </div>
           </div>
 
-          {/* Content area - show preview on main page, full blur on vendor-specific view */}
           {showContentPreview ? (
             <div className="flex-1 mb-4 space-y-3">
-              {/* Title preview - blur any redacted vendor names */}
               {entry.title && (
-                <p className="text-sm font-medium text-foreground/80 line-clamp-2">
+                <p className="text-sm font-medium text-foreground/70 line-clamp-2">
                   {blurRedactedContent(entry.title)}
                 </p>
               )}
-              {/* Quote preview - blur any redacted vendor names */}
               <div className="relative">
-                <Quote className="absolute left-0 top-0 h-4 w-4 text-muted-foreground/30" />
-                <p className="text-sm text-foreground/70 leading-relaxed line-clamp-3 pl-6">
+                <Quote className="absolute left-0 top-0.5 h-3.5 w-3.5 text-foreground/10" />
+                <p className="text-sm text-foreground/50 leading-relaxed line-clamp-3 pl-5">
                   "{blurRedactedContent(entry.quote)}"
                 </p>
               </div>
-              <p className="text-xs text-muted-foreground italic">
+              <p className="text-[11px] text-foreground/30 italic">
                 Upgrade to see which vendor this is about
               </p>
             </div>
           ) : (
             <div className="flex-1 space-y-2 mb-4">
-              <div className="h-5 w-3/4 bg-foreground/10 rounded blur-[3px]" />
-              <div className="h-4 w-full bg-foreground/5 rounded blur-[2px]" />
-              <div className="h-4 w-5/6 bg-foreground/5 rounded blur-[2px]" />
-              <div className="h-4 w-2/3 bg-foreground/5 rounded blur-[2px]" />
-              <p className="text-xs text-muted-foreground italic pt-2">
+              <div className="h-4 w-3/4 bg-foreground/[0.05] rounded-md blur-[2px]" />
+              <div className="h-3.5 w-full bg-foreground/[0.03] rounded-md blur-[2px]" />
+              <div className="h-3.5 w-5/6 bg-foreground/[0.03] rounded-md blur-[2px]" />
+              <div className="h-3.5 w-2/3 bg-foreground/[0.03] rounded-md blur-[2px]" />
+              <p className="text-[11px] text-foreground/30 italic pt-2">
                 Upgrade to read the full excerpt
               </p>
             </div>
           )}
 
-          {/* Centered CTA */}
           <div className="flex justify-center">
             <button
               onClick={(e) => {
@@ -268,7 +251,6 @@ export const VendorCard: React.FC<VendorCardProps> = ({
                 if (onUpgradeClick) {
                   onUpgradeClick();
                 } else {
-                  // Fallback: scroll to tiers section if no handler provided
                   const tiersSection = document.getElementById("tiers-section");
                   if (tiersSection) {
                     const offset = 100;
@@ -282,9 +264,9 @@ export const VendorCard: React.FC<VendorCardProps> = ({
                   }
                 }
               }}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-yellow-500 hover:bg-yellow-400 text-yellow-950 font-semibold text-sm transition-colors"
+              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-semibold text-[13px] transition-all duration-200 shadow-sm hover:shadow-md"
             >
-              <Crown className="h-4 w-4" />
+              <Crown className="h-3.5 w-3.5" />
               <span>
                 {isAuthenticated ? "Unlock Vendor" : "Join to Unlock"}
               </span>
@@ -295,45 +277,43 @@ export const VendorCard: React.FC<VendorCardProps> = ({
     );
   }
 
-  // Check if quote contains locked placeholder text from API
   const hasLockedPlaceholder =
     entry.quote.includes("[Content locked") ||
     entry.quote.includes("[content locked") ||
     entry.quote.includes("Join Pro to view") ||
     entry.quote.includes("Upgrade to Pro");
 
-  // Unlocked card layout
+  // Unlocked card
   return (
     <article
       onClick={handleClick}
       className={`
-        relative overflow-hidden border border-border/40
-        transition-colors duration-200 cursor-pointer group flex flex-col h-full
+        relative overflow-hidden rounded-xl transition-all duration-200 cursor-pointer group flex flex-col h-full
+        shadow-[0_0_0_1px_rgba(0,0,0,0.04)]
+        hover:shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_4px_16px_-4px_rgba(0,0,0,0.06)]
         ${styles.border} ${styles.bg}
       `}
     >
       <div className="px-5 py-4 flex flex-col flex-1 min-h-0">
         <div className="flex-1 min-h-0 flex flex-col">
-          {/* Vendor Name - Editorial style with logo */}
           {entry.vendorName && showVendorNames && (
             <div className="mb-2 flex items-center gap-3">
-              {/* Vendor Logo - Always show Avatar with logo or initials fallback */}
-              <Avatar className="h-10 w-10 border border-border shrink-0">
+              <Avatar className="h-9 w-9 border border-black/[0.06] shrink-0">
                 <AvatarImage
                   src={vendorLogo || undefined}
                   alt={entry.vendorName}
                 />
-                <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                <AvatarFallback className="bg-amber-50 text-amber-700 text-xs font-bold">
                   {entry.vendorName.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <h3
                   className={`
-                  text-lg font-bold text-foreground leading-tight inline
+                  text-base font-bold text-foreground leading-tight inline tracking-tight
                   ${
                     onVendorClick
-                      ? "hover:text-primary transition-colors hover:underline cursor-pointer"
+                      ? "hover:text-amber-700 transition-colors cursor-pointer"
                       : ""
                   }
                 `}
@@ -346,16 +326,15 @@ export const VendorCard: React.FC<VendorCardProps> = ({
                 >
                   {entry.vendorName}
                 </h3>
-                {/* Verified vendor website link */}
                 {vendorWebsite && (
                   <a
                     href={vendorWebsite}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 ml-2 text-xs text-primary hover:underline"
+                    className="inline-flex items-center gap-1 ml-2 text-[11px] text-foreground/30 hover:text-amber-600 transition-colors"
                   >
-                    <Globe className="h-3 w-3" />
+                    <Globe className="h-2.5 w-2.5" />
                     <span className="hidden sm:inline">Website</span>
                   </a>
                 )}
@@ -363,9 +342,8 @@ export const VendorCard: React.FC<VendorCardProps> = ({
             </div>
           )}
 
-          {/* Title/Headline */}
           {entry.title && (
-            <p className="text-[15px] text-foreground/88 mb-3 line-clamp-2 leading-relaxed">
+            <p className="text-[14px] text-foreground/75 mb-3 line-clamp-2 leading-relaxed">
               {parseMarkdownWithBlur(
                 entry.title,
                 !showVendorNames,
@@ -377,22 +355,21 @@ export const VendorCard: React.FC<VendorCardProps> = ({
             </p>
           )}
 
-          {/* Quote - Handle locked placeholder gracefully */}
           <div className="relative">
             {hasLockedPlaceholder ? (
-              <div className="py-4 px-4 rounded-lg bg-muted/40 border border-border/50 text-center">
-                <Lock className="h-5 w-5 text-muted-foreground/50 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground font-medium">
+              <div className="py-4 px-4 rounded-xl bg-foreground/[0.02] border border-black/[0.04] text-center">
+                <Lock className="h-4 w-4 text-foreground/20 mx-auto mb-2" />
+                <p className="text-sm text-foreground/50 font-medium">
                   Full excerpt available to members
                 </p>
-                <p className="text-xs text-muted-foreground/70 mt-1">
+                <p className="text-[11px] text-foreground/30 mt-1">
                   Join to read what dealers are saying
                 </p>
               </div>
             ) : (
               <>
-                <Quote className="absolute left-0 top-0 h-4 w-4 text-muted-foreground/30 mr-2" />
-                <p className="text-[15px] text-foreground/90 leading-relaxed line-clamp-4 pl-6">
+                <Quote className="absolute left-0 top-0.5 h-3.5 w-3.5 text-foreground/10" />
+                <p className="text-[14px] text-foreground/70 leading-relaxed line-clamp-4 pl-5">
                   "{renderQuote(
                     entry.quote,
                     !showVendorNames,
@@ -406,14 +383,12 @@ export const VendorCard: React.FC<VendorCardProps> = ({
             )}
           </div>
 
-          {/* Explanation context */}
           {entry.explanation && !hasLockedPlaceholder && (
-            <p className="text-xs text-muted-foreground/70 leading-relaxed line-clamp-2 mt-2 pl-6">
+            <p className="text-[11px] text-foreground/35 leading-relaxed line-clamp-2 mt-2 pl-5">
               {entry.explanation}
             </p>
           )}
 
-          {/* Vendor response: display when exists, or show "Respond" when vendor can add */}
           {(vendorResponse || (canRespondAsVendor && entry.vendorName)) &&
             onAddResponse &&
             onUpdateResponse &&
@@ -430,10 +405,10 @@ export const VendorCard: React.FC<VendorCardProps> = ({
               </div>
             )}
         </div>
-        {/* Footer: Type badge + Member attribution - pinned to bottom */}
-        <div className="mt-auto pt-3 border-t border-border/50">
+        {/* Footer */}
+        <div className="mt-auto pt-3 border-t border-black/[0.04]">
           <div className="flex flex-row flex-wrap items-center justify-between gap-2">
-            <p className="text-[11px] text-muted-foreground leading-snug">
+            <p className="text-[11px] text-foreground/30 leading-snug">
               Circles Member
               {formatMemberDate(entry.conversationTime)
                 ? ` · ${formatMemberDate(entry.conversationTime)}`
