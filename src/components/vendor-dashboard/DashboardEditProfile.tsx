@@ -57,7 +57,7 @@ export function DashboardEditProfile(): JSX.Element {
     queryKey: ["vendor-edit-profile", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("vendor_profiles")
+        .from("vendor_profiles" as never)
         .select("*")
         .eq("user_id", user!.id)
         .eq("is_approved", true)
@@ -126,11 +126,10 @@ export function DashboardEditProfile(): JSX.Element {
   // ---------- Banner upload mutation ----------
   const bannerMutation = useMutation({
     mutationFn: async (file: File) => {
-      const ext = file.name.split(".").pop() ?? "png";
-      const path = `${profile!.id}/banner.${ext}`;
+      const path = `${profile!.id}/banner`;
       const publicUrl = await handleUpload(file, "vendor-logos", path);
       const { error } = await supabase
-        .from("vendor_profiles")
+        .from("vendor_profiles" as never)
         .update({ banner_url: publicUrl } as never)
         .eq("id", profile!.id);
       if (error) throw error;
@@ -146,11 +145,10 @@ export function DashboardEditProfile(): JSX.Element {
   // ---------- Logo upload mutation ----------
   const logoMutation = useMutation({
     mutationFn: async (file: File) => {
-      const ext = file.name.split(".").pop() ?? "png";
-      const path = `${profile!.id}/logo.${ext}`;
+      const path = `${profile!.id}/logo`;
       const publicUrl = await handleUpload(file, "vendor-logos", path);
       const { error } = await supabase
-        .from("vendor_profiles")
+        .from("vendor_profiles" as never)
         .update({ company_logo_url: publicUrl } as never)
         .eq("id", profile!.id);
       if (error) throw error;
@@ -196,7 +194,7 @@ export function DashboardEditProfile(): JSX.Element {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
-        .from("vendor_profiles")
+        .from("vendor_profiles" as never)
         .update({
           tagline,
           company_description: description,
