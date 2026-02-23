@@ -7,6 +7,7 @@ import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { DashboardOverview } from "@/components/vendor-dashboard/DashboardOverview";
 import { DashboardMentions } from "@/components/vendor-dashboard/DashboardMentions";
 import { DashboardEditProfile } from "@/components/vendor-dashboard/DashboardEditProfile";
+import { DashboardIntel } from "@/components/vendor-dashboard/DashboardIntel";
 import { VendorDashboardLayout, type DashboardSection } from "@/components/vendor-dashboard/VendorDashboardLayout";
 
 export default function VendorDashboardPage() {
@@ -49,7 +50,7 @@ export default function VendorDashboardPage() {
         {activeSection === "overview" && <DashboardOverview vendorName={vendorName} onNavigate={setActiveSection} />}
         {activeSection === "mentions" && <DashboardMentions vendorName={vendorName} />}
         {activeSection === "profile" && <DashboardEditProfile />}
-        {activeSection === "intel" && <p className="text-slate-500">Market intel coming next...</p>}
+        {activeSection === "intel" && <DashboardIntel vendorName={vendorName} />}
       </div>
     </VendorDashboardLayout>
   );
