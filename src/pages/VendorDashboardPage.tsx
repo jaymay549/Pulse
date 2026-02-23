@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
+import { DashboardOverview } from "@/components/vendor-dashboard/DashboardOverview";
 import { VendorDashboardLayout, type DashboardSection } from "@/components/vendor-dashboard/VendorDashboardLayout";
 
 export default function VendorDashboardPage() {
@@ -43,7 +44,7 @@ export default function VendorDashboardPage() {
   return (
     <VendorDashboardLayout vendorName={vendorName} activeSection={activeSection} onNavigate={setActiveSection}>
       <div className="max-w-5xl">
-        {activeSection === "overview" && <p className="text-slate-500">Overview coming next...</p>}
+        {activeSection === "overview" && <DashboardOverview vendorName={vendorName} onNavigate={setActiveSection} />}
         {activeSection === "mentions" && <p className="text-slate-500">Mentions coming next...</p>}
         {activeSection === "profile" && <p className="text-slate-500">Profile editor coming next...</p>}
         {activeSection === "intel" && <p className="text-slate-500">Market intel coming next...</p>}
