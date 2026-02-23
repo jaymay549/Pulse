@@ -64,7 +64,8 @@ const VendorsV2 = () => {
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
 
   // AI Chat state
-  const [aiQuery, setAiQuery] = useState<string | null>(null);
+  const [aiQuery, setAiQuery] = useState<{ text: string; id: number } | null>(null);
+  const aiQueryIdRef = useRef(0);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
   // Clerk Auth
@@ -594,7 +595,8 @@ const VendorsV2 = () => {
   // Handle AI query from smart search bar
   const handleAISubmit = (query: string) => {
     if (isProUserValue) {
-      setAiQuery(query);
+      aiQueryIdRef.current += 1;
+      setAiQuery({ text: query, id: aiQueryIdRef.current });
       setShowUpgradePrompt(false);
     } else {
       setShowUpgradePrompt(true);
@@ -901,7 +903,8 @@ const VendorsV2 = () => {
             {/* Inline AI Chat -- shown when pro user submits a query */}
             {aiQuery && (
               <InlineAIChat
-                initialQuery={aiQuery}
+                initialQuery={aiQuery.text}
+                queryId={aiQuery.id}
                 onClose={handleAIChatClose}
                 className="mt-4"
               />

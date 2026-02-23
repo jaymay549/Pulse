@@ -13,6 +13,8 @@ interface Message {
 interface InlineAIChatProps {
   /** The initial query that triggered the chat (set externally). */
   initialQuery: string | null;
+  /** Monotonically increasing ID to distinguish repeated queries. */
+  queryId: number;
   /** Called when the user dismisses the chat. */
   onClose: () => void;
   className?: string;
@@ -20,30 +22,36 @@ interface InlineAIChatProps {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vendor-ai-chat`;
 
-export function InlineAIChat({ initialQuery, onClose, className }: InlineAIChatProps) {
+export function InlineAIChat({ initialQuery, queryId, onClose, className }: InlineAIChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const processedInitialRef = useRef<string | null>(null);
+  const lastProcessedQueryIdRef = useRef<number>(0);
+  const messagesRef = useRef<Message[]>([]);
+
+  // Keep messagesRef in sync with messages state
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // When initialQuery changes and is new, send it
+  // When queryId advances, send the new initial query
   useEffect(() => {
-    if (initialQuery && initialQuery !== processedInitialRef.current) {
-      processedInitialRef.current = initialQuery;
+    if (initialQuery && queryId > lastProcessedQueryIdRef.current) {
+      lastProcessedQueryIdRef.current = queryId;
       sendMessage(initialQuery);
     }
-  }, [initialQuery]);
+  }, [queryId, initialQuery]);
 
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
 
     const userMessage: Message = { role: "user", content: messageText.trim() };
-    const updatedMessages = [...messages, userMessage];
+    const updatedMessages = [...messagesRef.current, userMessage];
     setMessages(updatedMessages);
     setIsLoading(true);
     setError(null);
