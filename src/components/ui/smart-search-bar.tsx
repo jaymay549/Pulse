@@ -59,6 +59,7 @@ export function SmartSearchBar({
   const handleClear = () => {
     setSearchQuery("")
     setShowDropdown(false)
+    onSearchChange?.("")
     inputRef.current?.focus()
   }
 
@@ -75,6 +76,7 @@ export function SmartSearchBar({
         setShowDropdown(false)
         onAISubmit(searchQuery.trim())
         setSearchQuery("")
+        onSearchChange?.("")
       }
     } else if (e.key === "Escape") {
       setShowDropdown(false)
