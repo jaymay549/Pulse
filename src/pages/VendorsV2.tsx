@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import { Search, X, Crown, Share2, CreditCard, ArrowRight, Building2, Shield } from "lucide-react";
+import { Search, Crown, Share2, CreditCard, ArrowRight, Building2, Shield } from "lucide-react";
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,6 @@ import {
 import UpgradeModal from "@/components/UpgradeModal";
 import QuoteCardModal from "@/components/wins/QuoteCardModal";
 import VendorPricingTiers from "@/components/vendors/VendorPricingTiers";
-import ReviewMarquee from "@/components/vendors/ReviewMarquee";
 
 // Hooks
 import { useVendorFilters, categories } from "@/hooks/useVendorFilters";

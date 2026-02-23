@@ -159,7 +159,7 @@ export function InlineAIChat({ initialQuery, queryId, onClose, className }: Inli
         </div>
 
         {/* Messages */}
-        <div className="max-h-[400px] overflow-y-auto p-4 space-y-3">
+        <div className="max-h-[60vh] sm:max-h-[400px] overflow-y-auto p-4 space-y-3">
           {messages.map((message, i) => (
             <div
               key={i}
