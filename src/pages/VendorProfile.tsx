@@ -20,7 +20,6 @@ import { isProUser } from "@/utils/tierUtils";
 import { cn } from "@/lib/utils";
 import { categories as vendorCategories } from "@/hooks/useVendorFilters";
 import { useVendorOwnership } from "@/hooks/useVendorOwnership";
-import { VendorDashboard } from "@/components/vendors/VendorDashboard";
 import { ClaimProfileModal } from "@/components/vendors/ClaimProfileModal";
 
 interface VendorProfileData {
@@ -464,9 +463,6 @@ const VendorProfile = () => {
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
 
-          {/* Vendor dashboard — only renders when verified owner is logged in */}
-          {isVendorOwner && <VendorDashboard vendorName={vendorName} />}
-
           {/* ══════════════════════════════════════════
               HERO SECTION — LinkedIn-style layout
               ══════════════════════════════════════════ */}
@@ -519,6 +515,13 @@ const VendorProfile = () => {
                     {profileData.vendorName}
                   </h1>
 
+                  {isAuthenticated && isVendorOwner && (
+                    <Link to="/vendor-dashboard">
+                      <Button variant="outline" size="sm" className="mt-2">
+                        Manage Profile
+                      </Button>
+                    </Link>
+                  )}
                   {isAuthenticated && !isVendorOwner && (
                     <Button
                       variant="outline"
