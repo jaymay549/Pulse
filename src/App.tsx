@@ -29,6 +29,7 @@ const MembersPage = lazy(() => import("./pages/admin/MembersPage"));
 const TrendsPage = lazy(() => import("./pages/admin/TrendsPage"));
 const DebugPage = lazy(() => import("./pages/admin/DebugPage"));
 const ClaimsPage = lazy(() => import("./pages/admin/ClaimsPage"));
+const VendorDashboardPage = lazy(() => import("./pages/VendorDashboardPage"));
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/vendor-beta" element={<VendorBeta />} />
             <Route path="/vendor-portal/*" element={<Navigate to="/vendors" replace />} />
+            <Route path="/vendor-dashboard" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}><VendorDashboardPage /></Suspense>} />
 
             {/* Admin routes */}
             <Route

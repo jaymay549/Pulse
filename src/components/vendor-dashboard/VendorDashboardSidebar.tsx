@@ -1,0 +1,65 @@
+import { BarChart3, MessageSquare, Pencil, TrendingUp, ExternalLink, ArrowLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+type Section = "overview" | "mentions" | "profile" | "intel";
+
+interface VendorDashboardSidebarProps {
+  vendorName: string;
+  activeSection: Section;
+  onNavigate: (section: Section) => void;
+}
+
+const navItems: { id: Section; icon: typeof BarChart3; label: string }[] = [
+  { id: "overview", icon: BarChart3, label: "Overview" },
+  { id: "mentions", icon: MessageSquare, label: "Mentions" },
+  { id: "profile", icon: Pencil, label: "Edit Profile" },
+  { id: "intel", icon: TrendingUp, label: "Market Intel" },
+];
+
+export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate }: VendorDashboardSidebarProps) {
+  return (
+    <aside className="w-56 border-r bg-white flex flex-col h-full">
+      <div className="p-4 border-b">
+        <p className="text-sm font-semibold text-slate-900 truncate">{vendorName}</p>
+        <p className="text-xs text-slate-500 mt-0.5">Vendor Dashboard</p>
+      </div>
+
+      <nav className="flex-1 p-2 space-y-0.5">
+        {navItems.map(({ id, icon: Icon, label }) => (
+          <button
+            key={id}
+            onClick={() => onNavigate(id)}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left",
+              activeSection === id
+                ? "bg-slate-100 text-slate-900"
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+            )}
+          >
+            <Icon className="h-4 w-4 flex-shrink-0" />
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      <div className="p-2 border-t space-y-0.5">
+        <a
+          href={`/vendors/${encodeURIComponent(vendorName)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors"
+        >
+          <ExternalLink className="h-4 w-4" />
+          View as Member
+        </a>
+        <a
+          href="/vendors"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to CDG Pulse
+        </a>
+      </div>
+    </aside>
+  );
+}
