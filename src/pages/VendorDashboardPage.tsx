@@ -6,6 +6,7 @@ import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { DashboardOverview } from "@/components/vendor-dashboard/DashboardOverview";
 import { DashboardMentions } from "@/components/vendor-dashboard/DashboardMentions";
+import { DashboardEditProfile } from "@/components/vendor-dashboard/DashboardEditProfile";
 import { VendorDashboardLayout, type DashboardSection } from "@/components/vendor-dashboard/VendorDashboardLayout";
 
 export default function VendorDashboardPage() {
@@ -47,7 +48,7 @@ export default function VendorDashboardPage() {
       <div className="max-w-5xl">
         {activeSection === "overview" && <DashboardOverview vendorName={vendorName} onNavigate={setActiveSection} />}
         {activeSection === "mentions" && <DashboardMentions vendorName={vendorName} />}
-        {activeSection === "profile" && <p className="text-slate-500">Profile editor coming next...</p>}
+        {activeSection === "profile" && <DashboardEditProfile />}
         {activeSection === "intel" && <p className="text-slate-500">Market intel coming next...</p>}
       </div>
     </VendorDashboardLayout>
