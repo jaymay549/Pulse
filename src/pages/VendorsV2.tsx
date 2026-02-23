@@ -1,20 +1,12 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import { LayoutGrid, Menu } from "lucide-react";
 import { Search, X, Crown, Share2, CreditCard, ArrowRight, Building2, Shield } from "lucide-react";
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { VendorSearchBar } from "@/components/ui/vendor-search-bar";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { SmartSearchBar } from "@/components/ui/smart-search-bar";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
 
@@ -22,17 +14,18 @@ import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
 import {
   VendorCard,
   VendorCardDetail,
-  VendorSidebar,
   AIInsightBanner,
   FilterBar,
   UpgradeTeaser,
   TrendingVendorChips,
+  CategoryPills,
+  InlineAIChat,
+  UpgradePromptCard,
 } from "@/components/vendors";
 import UpgradeModal from "@/components/UpgradeModal";
 import QuoteCardModal from "@/components/wins/QuoteCardModal";
 import VendorPricingTiers from "@/components/vendors/VendorPricingTiers";
 import ReviewMarquee from "@/components/vendors/ReviewMarquee";
-import VendorAIChat from "@/components/vendors/VendorAIChat";
 
 // Hooks
 import { useVendorFilters, categories } from "@/hooks/useVendorFilters";
@@ -47,6 +40,14 @@ import { fetchVendorPulseFeed, fetchVendorsList } from "@/hooks/useSupabaseVendo
 
 // Utils
 import { getAccessLevel, isProUser } from "@/utils/tierUtils";
+import { cn } from "@/lib/utils";
+
+const SUGGESTED_PROMPTS = [
+  "What DMS should I use for a mid-size dealership?",
+  "Compare Cox Automotive vs CDK",
+  "Which vendors have the most warnings?",
+  "Best CRM for customer follow-up?",
+];
 
 const VendorsV2 = () => {
   // URL params
@@ -60,11 +61,11 @@ const VendorsV2 = () => {
   const [selectedCard, setSelectedCard] = useState<VendorEntry | null>(null);
   const [selectedCardForShare, setSelectedCardForShare] =
     useState<VendorEntry | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
 
-  // AI Chat feature flag
-  const showAIChat = searchParams.get("ai_chat") === "true";
+  // AI Chat state
+  const [aiQuery, setAiQuery] = useState<string | null>(null);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
   // Clerk Auth
   const {
@@ -584,13 +585,29 @@ const VendorsV2 = () => {
     clearSearch();
     setSelectedVendor(null);
     setTypeFilter("all");
-    setSidebarOpen(false);
   };
 
   // Handle vendor chip click - navigate to vendor profile page
   const handleVendorSelect = (vendorName: string) => {
     // Navigate to vendor profile page
     navigate(`/vendors/${encodeURIComponent(vendorName)}`);
+  };
+
+  // Handle AI query from smart search bar
+  const handleAISubmit = (query: string) => {
+    if (isProUserValue) {
+      setAiQuery(query);
+      setShowUpgradePrompt(false);
+    } else {
+      setShowUpgradePrompt(true);
+      setAiQuery(null);
+    }
+  };
+
+  // Handle clearing the AI chat
+  const handleAIChatClose = () => {
+    setAiQuery(null);
+    setShowUpgradePrompt(false);
   };
 
   // Get all unique vendor names for autocomplete
@@ -715,17 +732,8 @@ const VendorsV2 = () => {
         <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              {/* Left: Menu + Logo */}
+              {/* Left: Logo */}
               <div className="flex items-center gap-2">
-                {/* Mobile menu hamburger */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSidebarOpen(true)}
-                  className="lg:hidden h-9 w-9"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
                 <Link to="/" className="flex items-center">
                   <img src={cdgPulseLogo} alt="CDG Pulse" className="h-7" />
                 </Link>
@@ -815,299 +823,242 @@ const VendorsV2 = () => {
           </div>
         </header>
 
-        {/* Main Content */}
+        {/* Main Content -- single column */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
-          <div className="flex gap-8">
-            {/* Desktop Sidebar */}
-            <VendorSidebar
-              selectedCategory={selectedCategory}
-              onCategorySelect={handleCategoryChange}
-              categoryCounts={categoryCounts}
-              vendorsInCategory={vendorsInCategoryAccurate}
-              showMoreCategories={showMoreCategories}
-              onToggleMoreCategories={() =>
-                setShowMoreCategories(!showMoreCategories)
-              }
-              onVendorSelect={handleVendorSelect}
-              selectedVendor={selectedVendor || undefined}
-              className="hidden lg:block"
-            />
-
-            {/* Main Content Area */}
-            <main className="flex-1 min-w-0">
-              {/* Hero Banner - Clean, prominent heading */}
-              <div className="mb-4">
-                {/* Show category context when filtering */}
-                {selectedCategory !== "all" && selectedCategoryData && (
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-3xl">
-                      {selectedCategoryData.icon}
-                    </span>
-                    <span className="text-lg font-bold text-foreground">
-                      {selectedCategoryData.label}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      ({categoryCounts[selectedCategory] || 0} reviews)
-                    </span>
-                  </div>
-                )}
-
-                {/* Main Hero - Only on default "all" view */}
-                {selectedCategory === "all" &&
-                  selectedVendor === null && (
-                    <div className="py-4 sm:py-6">
-                      {/* Content */}
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/20 border border-secondary/30 text-xs font-semibold text-yellow-800 mb-4">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-500 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
-                        </span>
-                        Updated Daily
-                      </div>
-
-                      <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground mb-4 leading-[1.1] tracking-tight">
-                        Unfiltered Vendor Intel{" "}
-                        <span className="text-yellow-600">
-                          From Real Dealers
-                        </span>
-                      </h1>
-
-                      <p className="text-lg sm:text-xl text-muted-foreground mb-6 max-w-xl leading-relaxed">
-                        Real feedback from verified dealers. No paid placements,
-                        just honest experiences.
-                      </p>
-
-                      {/* Value Props */}
-                      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-2 sm:gap-y-2 text-sm sm:text-base text-foreground/80">
-                        <div className="flex items-center gap-2">
-                          <span className="text-green-500 font-bold">✓</span>
-                          <span>
-                            <strong className="text-foreground">
-                              {totalVerifiedCount}+
-                            </strong>{" "}
-                            recommendations
-                          </span>
-                        </div>
-                        <span className="text-border hidden sm:inline">•</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-red-500 font-bold">⚠️</span>
-                          <span>
-                            <strong className="text-foreground">
-                              {totalWarningCountValue}+
-                            </strong>{" "}
-                            warnings to avoid
-                          </span>
-                        </div>
-                        <span className="text-border hidden sm:inline">•</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-yellow-500 font-bold">💰</span>
-                          <span>
-                            Save{" "}
-                            <strong className="text-foreground">
-                              thousands
-                            </strong>{" "}
-                            in bad contracts
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                {/* Search Bar - Below hero */}
-                <div className="pt-1 pb-0 sm:pb-0">
-                  <div className="flex items-center gap-2">
-                    {/* Categories button - opens sidebar on mobile, visible always on mobile */}
-                    <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-                      <SheetTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="lg:hidden h-12 w-12 shrink-0 border-2 border-border/60 bg-white shadow-sm"
-                        >
-                          <LayoutGrid className="h-5 w-5 text-muted-foreground" />
-                        </Button>
-                      </SheetTrigger>
-                      <SheetContent side="left" className="w-72 p-0 bg-white z-[60]">
-                        <SheetHeader className="p-4 border-b bg-white">
-                          <SheetTitle>Categories</SheetTitle>
-                        </SheetHeader>
-                        <div className="p-4 bg-white overflow-y-auto max-h-[calc(100vh-80px)]">
-                          <VendorSidebar
-                            selectedCategory={selectedCategory}
-                            onCategorySelect={handleCategoryChange}
-                            categoryCounts={categoryCounts}
-                            vendorsInCategory={vendorsInCategoryAccurate}
-                            showMoreCategories={showMoreCategories}
-                            onToggleMoreCategories={() =>
-                              setShowMoreCategories(!showMoreCategories)
-                            }
-                            onVendorSelect={handleVendorSelect}
-                            selectedVendor={selectedVendor || undefined}
-                            className="w-full"
-                          />
-                        </div>
-                      </SheetContent>
-                    </Sheet>
-
-                    {/* Search Input with Animated Dropdown */}
-                    <VendorSearchBar
-                      placeholder="Search vendors..."
-                      suggestions={vendorSuggestionsWithLogos}
-                      onSelect={handleVendorSelect}
-                      onSearchChange={setSearchQuery}
-                      className="flex-1"
-                    />
-                  </div>
-                </div>
-
-                {/* Search Results Summary - removed: now using Matching Vendors section instead */}
+          {/* Hero -- only on default "all" view with no vendor selected */}
+          {selectedCategory === "all" && selectedVendor === null && !aiQuery && !showUpgradePrompt && (
+            <div className="max-w-2xl mx-auto text-center pt-8 sm:pt-12 pb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/20 border border-secondary/30 text-xs font-semibold text-yellow-800 mb-4">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+                </span>
+                Updated Daily
               </div>
 
-              {/* AI Insight Banner - Only show when vendor selected or category filtered */}
-              {(selectedVendor !== null || selectedCategory !== "all") && (
-                  <AIInsightBanner
-                    data={wamMentions}
-                    selectedCategory={selectedCategory}
-                    searchQuery={searchQuery}
-                    selectedVendor={selectedVendor}
-                    isProUser={isProUserValue}
-                    getToken={getToken}
-                    onUpgradeClick={() => setShowUpgradeModal(true)}
-                    className="mb-6"
-                  />
-                )}
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground mb-6 leading-[1.1] tracking-tight">
+                What do you want to know about{" "}
+                <span className="text-yellow-600">auto vendors</span>?
+              </h1>
+            </div>
+          )}
 
-              {/* Filter Bar - Only show when vendor is selected */}
-              {selectedVendor !== null && (
-                <div className="mb-6">
-                  <FilterBar
-                    typeFilter={typeFilter}
-                    onTypeFilterChange={handleTypeFilterChange}
-                    positiveCount={positiveCount}
-                    warningCount={warningCount}
-                    totalCount={totalCount}
-                    canAccessWarnings={accessLevel.unlimitedAccess}
-                    onWarningsLocked={() => setShowUpgradeModal(true)}
-                  />
-                </div>
-              )}
+          {/* Smart Search Bar -- always visible, centered */}
+          <div className={cn(
+            "mx-auto w-full transition-all",
+            selectedCategory === "all" && selectedVendor === null && !aiQuery && !showUpgradePrompt
+              ? "max-w-2xl"
+              : "max-w-full"
+          )}>
+            {/* Category context header when filtering */}
+            {selectedCategory !== "all" && selectedCategoryData && (
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-3xl">{selectedCategoryData.icon}</span>
+                <span className="text-lg font-bold text-foreground">
+                  {selectedCategoryData.label}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  ({categoryCounts[selectedCategory] || 0} reviews)
+                </span>
+              </div>
+            )}
 
-              {/* Trending Vendor Chips - Show on main page (no vendor selected, no category filter) */}
-              {selectedVendor === null && selectedCategory === "all" && (
-                <TrendingVendorChips
-                  onVendorSelect={handleVendorSelect}
-                  getLogoUrl={(vendorName) => getVendorLogoUrl(vendorName)}
-                  className="mt-0 mb-3"
+            <SmartSearchBar
+              placeholder="Search vendors or ask a question..."
+              suggestions={vendorSuggestionsWithLogos}
+              onVendorSelect={handleVendorSelect}
+              onAISubmit={handleAISubmit}
+              onSearchChange={setSearchQuery}
+              isPro={isProUserValue}
+              isLoading={!!aiQuery}
+              className=""
+            />
+
+            {/* Suggested prompt chips -- only on landing state */}
+            {selectedCategory === "all" && selectedVendor === null && !aiQuery && !showUpgradePrompt && (
+              <div className="flex flex-wrap justify-center gap-2 mt-4">
+                {SUGGESTED_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    onClick={() => handleAISubmit(prompt)}
+                    className="text-sm px-3 py-1.5 rounded-full border border-border bg-white text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Stats line -- only on landing state */}
+            {selectedCategory === "all" && selectedVendor === null && !aiQuery && !showUpgradePrompt && (
+              <div className="flex justify-center gap-4 mt-4 text-sm text-muted-foreground">
+                <span><strong className="text-foreground">{totalVerifiedCount}+</strong> recommendations</span>
+                <span className="text-border">&#8226;</span>
+                <span><strong className="text-foreground">{totalWarningCountValue}+</strong> warnings</span>
+                <span className="text-border">&#8226;</span>
+                <span><strong className="text-foreground">{categories.length - 1}</strong> categories</span>
+              </div>
+            )}
+
+            {/* Inline AI Chat -- shown when pro user submits a query */}
+            {aiQuery && (
+              <InlineAIChat
+                initialQuery={aiQuery}
+                onClose={handleAIChatClose}
+                className="mt-4"
+              />
+            )}
+
+            {/* Upgrade prompt -- shown when free user tries AI */}
+            {showUpgradePrompt && (
+              <UpgradePromptCard
+                onUpgrade={() => setShowUpgradeModal(true)}
+                onDismiss={() => setShowUpgradePrompt(false)}
+                className="mt-4"
+              />
+            )}
+          </div>
+
+          {/* Category Pills */}
+          <CategoryPills
+            categories={sortedCategories}
+            selectedCategory={selectedCategory}
+            categoryCounts={categoryCounts}
+            onCategorySelect={handleCategoryChange}
+            className="mt-6"
+          />
+
+          {/* Rest of content */}
+          <div className="mt-6">
+            {/* AI Insight Banner */}
+            {(selectedVendor !== null || selectedCategory !== "all") && (
+              <AIInsightBanner
+                data={wamMentions}
+                selectedCategory={selectedCategory}
+                searchQuery={searchQuery}
+                selectedVendor={selectedVendor}
+                isProUser={isProUserValue}
+                getToken={getToken}
+                onUpgradeClick={() => setShowUpgradeModal(true)}
+                className="mb-6"
+              />
+            )}
+
+            {/* Filter Bar -- only when vendor selected */}
+            {selectedVendor !== null && (
+              <div className="mb-6">
+                <FilterBar
+                  typeFilter={typeFilter}
+                  onTypeFilterChange={handleTypeFilterChange}
+                  positiveCount={positiveCount}
+                  warningCount={warningCount}
+                  totalCount={totalCount}
+                  canAccessWarnings={accessLevel.unlimitedAccess}
+                  onWarningsLocked={() => setShowUpgradeModal(true)}
                 />
-              )}
+              </div>
+            )}
 
-              {/* Category Vendors Section - Show when category is selected */}
-              {selectedCategory !== "all" && categoryVendors.length > 0 && (
-                <div className="mb-6 sm:mb-8">
-                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                    <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
-                    <h2 className="text-lg sm:text-xl font-bold text-foreground">
-                      Vendors ({categoryVendors.length})
-                    </h2>
-                  </div>
-                  <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-                    {categoryVendors.map((vendor) => {
-                      const vendorWebsiteUrl = getWebsiteForVendor(vendor.name);
-                      const vendorLogoUrl = getVendorLogoUrl(vendor.name, vendorWebsiteUrl);
-                      
-                      return (
-                        <button
-                          key={vendor.name}
-                          onClick={() => handleVendorSelect(vendor.name)}
-                          className="text-left p-3 sm:p-4 bg-white rounded-lg border border-border/50 hover:border-primary/50 hover:shadow-md transition-all group shrink-0 w-[280px] sm:w-[300px]"
-                        >
-                          <div className="flex items-start gap-2.5 sm:gap-3">
-                            {/* Vendor Logo */}
-                            <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border border-border/50 shrink-0">
-                              <AvatarImage src={vendorLogoUrl || undefined} alt={vendor.name} />
-                              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs sm:text-sm">
-                                {vendor.name.slice(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            
-                            {/* Vendor Info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 sm:gap-2">
-                                <h3 className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                                  {vendor.name}
-                                </h3>
-                                <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 opacity-0 group-hover:opacity-100" />
-                              </div>
-                              <div className="mt-1 sm:mt-1.5 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground">
-                                <span className="font-medium">{vendor.reviewCount} review{vendor.reviewCount !== 1 ? "s" : ""}</span>
-                                {vendor.positiveCount > 0 && (
-                                  <span className="px-1.5 py-0.5 rounded bg-green-50 text-green-700 font-medium text-xs">
-                                    {vendor.positiveCount} positive
-                                  </span>
-                                )}
-                                {vendor.warningCount > 0 && (
-                                  <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-700 font-medium text-xs">
-                                    {vendor.warningCount} warning{vendor.warningCount !== 1 ? "s" : ""}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
+            {/* Trending Vendor Chips */}
+            {selectedVendor === null && selectedCategory === "all" && (
+              <TrendingVendorChips
+                onVendorSelect={handleVendorSelect}
+                getLogoUrl={(vendorName) => getVendorLogoUrl(vendorName)}
+                className="mt-0 mb-3"
+              />
+            )}
+
+            {/* Category Vendors Section - Show when category is selected */}
+            {selectedCategory !== "all" && categoryVendors.length > 0 && (
+              <div className="mb-6 sm:mb-8">
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
+                  <h2 className="text-lg sm:text-xl font-bold text-foreground">
+                    Vendors ({categoryVendors.length})
+                  </h2>
                 </div>
-              )}
-
-              {/* Results Grid */}
-              {visibleEntries.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                  {visibleEntries.map((entry) => {
-                    // Backend handles all redaction - but force lock for non-authenticated users and non-pro users searching
-                    const isSearchingAsNonPro = !isProUserValue && searchQuery.trim().length > 0;
-                    const isLocked = entry.isLocked === true || isSearchingAsNonPro || !isAuthenticated;
-                    // Hide vendor names when searching as non-pro user
-                    const showVendorNames = isSearchingAsNonPro ? false : !!entry.vendorName;
-
-                    // Get website and logo for this vendor
-                    const vendorWebsiteUrl = entry.vendorName
-                      ? getWebsiteForVendor(entry.vendorName)
-                      : null;
-                    const vendorLogoUrl = entry.vendorName
-                      ? getVendorLogoUrl(entry.vendorName, vendorWebsiteUrl)
-                      : null;
-                    const vendorResponse = responses[Number(entry.id)] || null;
+                <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                  {categoryVendors.map((vendor) => {
+                    const vendorWebsiteUrl = getWebsiteForVendor(vendor.name);
+                    const vendorLogoUrl = getVendorLogoUrl(vendor.name, vendorWebsiteUrl);
 
                     return (
-                      <VendorCard
-                        key={entry.id}
-                        entry={entry}
-                        isLocked={isLocked}
-                        showVendorNames={showVendorNames}
-                        isFullAccess={accessLevel.unlimitedAccess}
-                        isAuthenticated={isAuthenticated}
-                        vendorResponse={vendorResponse}
-                        vendorWebsite={vendorWebsiteUrl}
-                        vendorLogo={vendorLogoUrl}
-                        onCardClick={(e) => setSelectedCard(e)}
-                        onVendorClick={handleVendorSelect}
-                        onUpgradeClick={() => {
-                          if (isAuthenticated) {
-                            setShowUpgradeModal(true);
-                          } else {
-                            window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
-                          }
-                        }}
-                      />
+                      <button
+                        key={vendor.name}
+                        onClick={() => handleVendorSelect(vendor.name)}
+                        className="text-left p-3 sm:p-4 bg-white rounded-lg border border-border/50 hover:border-primary/50 hover:shadow-md transition-all group shrink-0 w-[280px] sm:w-[300px]"
+                      >
+                        <div className="flex items-start gap-2.5 sm:gap-3">
+                          {/* Vendor Logo */}
+                          <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border border-border/50 shrink-0">
+                            <AvatarImage src={vendorLogoUrl || undefined} alt={vendor.name} />
+                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs sm:text-sm">
+                              {vendor.name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+
+                          {/* Vendor Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                              <h3 className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                                {vendor.name}
+                              </h3>
+                              <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 opacity-0 group-hover:opacity-100" />
+                            </div>
+                            <div className="mt-1 sm:mt-1.5 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground">
+                              <span className="font-medium">{vendor.reviewCount} review{vendor.reviewCount !== 1 ? "s" : ""}</span>
+                              {vendor.positiveCount > 0 && (
+                                <span className="px-1.5 py-0.5 rounded bg-green-50 text-green-700 font-medium text-xs">
+                                  {vendor.positiveCount} positive
+                                </span>
+                              )}
+                              {vendor.warningCount > 0 && (
+                                <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-700 font-medium text-xs">
+                                  {vendor.warningCount} warning{vendor.warningCount !== 1 ? "s" : ""}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
                     );
                   })}
+                </div>
+              </div>
+            )}
 
-                  {/* Teaser Card */}
-                  {showTeaserCard && (
-                    <UpgradeTeaser
-                      remainingCount={remainingCount}
+            {/* Results Grid */}
+            {visibleEntries.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                {visibleEntries.map((entry) => {
+                  // Backend handles all redaction - but force lock for non-authenticated users and non-pro users searching
+                  const isSearchingAsNonPro = !isProUserValue && searchQuery.trim().length > 0;
+                  const isLocked = entry.isLocked === true || isSearchingAsNonPro || !isAuthenticated;
+                  // Hide vendor names when searching as non-pro user
+                  const showVendorNames = isSearchingAsNonPro ? false : !!entry.vendorName;
+
+                  // Get website and logo for this vendor
+                  const vendorWebsiteUrl = entry.vendorName
+                    ? getWebsiteForVendor(entry.vendorName)
+                    : null;
+                  const vendorLogoUrl = entry.vendorName
+                    ? getVendorLogoUrl(entry.vendorName, vendorWebsiteUrl)
+                    : null;
+                  const vendorResponse = responses[Number(entry.id)] || null;
+
+                  return (
+                    <VendorCard
+                      key={entry.id}
+                      entry={entry}
+                      isLocked={isLocked}
+                      showVendorNames={showVendorNames}
+                      isFullAccess={accessLevel.unlimitedAccess}
                       isAuthenticated={isAuthenticated}
+                      vendorResponse={vendorResponse}
+                      vendorWebsite={vendorWebsiteUrl}
+                      vendorLogo={vendorLogoUrl}
+                      onCardClick={(e) => setSelectedCard(e)}
+                      onVendorClick={handleVendorSelect}
                       onUpgradeClick={() => {
                         if (isAuthenticated) {
                           setShowUpgradeModal(true);
@@ -1116,87 +1067,102 @@ const VendorsV2 = () => {
                         }
                       }}
                     />
-                  )}
-                </div>
-              )}
+                  );
+                })}
 
-              {/* Infinite scroll sentinel - loads more when scrolled into view */}
-              {isProUserValue && paginationInfo?.hasMore && visibleEntries.length > 0 && (
-                <div ref={loadMoreRef} className="mt-8 flex justify-center py-4">
-                  {isLoadingMore && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      <span className="text-sm">Loading more reviews...</span>
-                    </div>
-                  )}
-                </div>
-              )}
+                {/* Teaser Card */}
+                {showTeaserCard && (
+                  <UpgradeTeaser
+                    remainingCount={remainingCount}
+                    isAuthenticated={isAuthenticated}
+                    onUpgradeClick={() => {
+                      if (isAuthenticated) {
+                        setShowUpgradeModal(true);
+                      } else {
+                        window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
+                      }
+                    }}
+                  />
+                )}
+              </div>
+            )}
 
-              {/* Empty State - no reviews found */}
-              {!isWamLoading && filteredData.length === 0 && (
-                <div className="text-center py-16">
-                  <Search className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                  <h3 className="text-lg font-bold text-foreground mb-2">
-                    No reviews found
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Try selecting a different category
-                  </p>
-                </div>
-              )}
-
-              {/* Loading State */}
-              {isWamLoading && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div
-                      key={i}
-                      className="h-48 bg-muted/50 rounded-lg animate-pulse"
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Upgrade Section for Non-Pro Users */}
-              {!accessLevel.unlimitedAccess && !isAuthenticated && (
-                <VendorPricingTiers
-                  totalReviews={paginationInfo?.totalSystemCount ?? wamMentions.length}
-                  totalWarnings={totalWarningCountValue}
-                  onSignInClick={() => setShowSignIn(true)}
-                />
-              )}
-
-              {/* Authenticated Non-Pro Upgrade Banner */}
-              {!accessLevel.unlimitedAccess && isAuthenticated && (
-                <div className="mt-8">
-                  <div className="p-6 rounded-xl bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 border-2 border-yellow-400/30 flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-full bg-yellow-500/20">
-                        <Crown className="h-7 w-7 text-yellow-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-foreground">
-                          Upgrade to See All Reviews
-                        </h3>
-                        <p className="text-muted-foreground text-sm">
-                          Unlock all {paginationInfo?.totalSystemCount ?? wamMentions.length} reviews including{" "}
-                          {totalWarningCountValue} warnings.
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="yellow"
-                      size="lg"
-                      className="font-bold whitespace-nowrap"
-                      onClick={() => setShowUpgradeModal(true)}
-                    >
-                      <Crown className="h-4 w-4 mr-2" />
-                      Upgrade to Unlock
-                    </Button>
+            {/* Infinite scroll sentinel - loads more when scrolled into view */}
+            {isProUserValue && paginationInfo?.hasMore && visibleEntries.length > 0 && (
+              <div ref={loadMoreRef} className="mt-8 flex justify-center py-4">
+                {isLoadingMore && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <span className="text-sm">Loading more reviews...</span>
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* Empty State - no reviews found */}
+            {!isWamLoading && filteredData.length === 0 && (
+              <div className="text-center py-16">
+                <Search className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                <h3 className="text-lg font-bold text-foreground mb-2">
+                  No reviews found
+                </h3>
+                <p className="text-muted-foreground">
+                  Try selecting a different category
+                </p>
+              </div>
+            )}
+
+            {/* Loading State */}
+            {isWamLoading && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div
+                    key={i}
+                    className="h-48 bg-muted/50 rounded-lg animate-pulse"
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Upgrade Section for Non-Pro Users */}
+            {!accessLevel.unlimitedAccess && !isAuthenticated && (
+              <VendorPricingTiers
+                totalReviews={paginationInfo?.totalSystemCount ?? wamMentions.length}
+                totalWarnings={totalWarningCountValue}
+                onSignInClick={() => setShowSignIn(true)}
+              />
+            )}
+
+            {/* Authenticated Non-Pro Upgrade Banner */}
+            {!accessLevel.unlimitedAccess && isAuthenticated && (
+              <div className="mt-8">
+                <div className="p-6 rounded-xl bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 border-2 border-yellow-400/30 flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-full bg-yellow-500/20">
+                      <Crown className="h-7 w-7 text-yellow-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-foreground">
+                        Upgrade to See All Reviews
+                      </h3>
+                      <p className="text-muted-foreground text-sm">
+                        Unlock all {paginationInfo?.totalSystemCount ?? wamMentions.length} reviews including{" "}
+                        {totalWarningCountValue} warnings.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="yellow"
+                    size="lg"
+                    className="font-bold whitespace-nowrap"
+                    onClick={() => setShowUpgradeModal(true)}
+                  >
+                    <Crown className="h-4 w-4 mr-2" />
+                    Upgrade to Unlock
+                  </Button>
                 </div>
-              )}
-            </main>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1328,8 +1294,6 @@ const VendorsV2 = () => {
         </DialogContent>
       </Dialog>
 
-      {/* AI Chat - only shown when ?ai_chat=true */}
-      {showAIChat && <VendorAIChat />}
     </>
   );
 };
