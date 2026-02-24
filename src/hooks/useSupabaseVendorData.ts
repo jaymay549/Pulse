@@ -314,3 +314,22 @@ export async function fetchVendorDimensions(
 
   return (data || []) as VendorDimension[];
 }
+
+/**
+ * Fetch AI-generated pulse summary for a vendor
+ */
+export async function fetchVendorPulseSummary(
+  vendorName: string
+): Promise<{ summary_text: string; category_context: string | null } | null> {
+  const { data, error } = await supabase
+    .from("vendor_pulse_summaries")
+    .select("summary_text, category_context")
+    .eq("vendor_name", vendorName)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[Supabase] fetchVendorPulseSummary error:", error);
+    return null;
+  }
+  return data;
+}
