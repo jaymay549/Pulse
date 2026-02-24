@@ -200,8 +200,8 @@ const VendorsV2 = () => {
 
   // Derive top vendors per category from loaded mentions (for CategoryGrid)
   const topVendorsByCategory = useMemo(() => {
-    const result: Record<string, { name: string; logoUrl: string | null }[]> = {};
-    const categoryVendorMap: Record<string, Record<string, number>> = {};
+    const result: Record<string, { name: string; logoUrl: string | null; reviewCount: number; positiveCount: number; warningCount: number }[]> = {};
+    const categoryVendorMap: Record<string, Record<string, { total: number; positive: number; warning: number }>> = {};
     const vendorOriginalName: Record<string, string> = {};
 
     for (const mention of mentions) {
@@ -210,8 +210,12 @@ const VendorsV2 = () => {
         categoryVendorMap[mention.category] = {};
       }
       const vendorKey = mention.vendorName.toLowerCase();
-      categoryVendorMap[mention.category][vendorKey] =
-        (categoryVendorMap[mention.category][vendorKey] || 0) + 1;
+      if (!categoryVendorMap[mention.category][vendorKey]) {
+        categoryVendorMap[mention.category][vendorKey] = { total: 0, positive: 0, warning: 0 };
+      }
+      categoryVendorMap[mention.category][vendorKey].total += 1;
+      if (mention.type === "positive") categoryVendorMap[mention.category][vendorKey].positive += 1;
+      else if (mention.type === "warning") categoryVendorMap[mention.category][vendorKey].warning += 1;
       if (!vendorOriginalName[vendorKey]) {
         vendorOriginalName[vendorKey] = mention.vendorName;
       }
@@ -219,14 +223,14 @@ const VendorsV2 = () => {
 
     for (const [categoryId, vendors] of Object.entries(categoryVendorMap)) {
       const sorted = Object.entries(vendors)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 5);
+        .sort(([, a], [, b]) => b.total - a.total)
+        .slice(0, 9);
 
-      result[categoryId] = sorted.map(([vendorKey]) => {
+      result[categoryId] = sorted.map(([vendorKey, counts]) => {
         const name = vendorOriginalName[vendorKey] || vendorKey;
         const websiteUrl = getWebsiteForVendor(name);
         const logoUrl = getVendorLogoUrl(name, websiteUrl);
-        return { name, logoUrl };
+        return { name, logoUrl, reviewCount: counts.total, positiveCount: counts.positive, warningCount: counts.warning };
       });
     }
 
@@ -990,6 +994,7 @@ const VendorsV2 = () => {
                 categoryCounts={categoryCounts}
                 topVendorsByCategory={topVendorsByCategory}
                 onCategorySelect={handleCategoryChange}
+                onVendorSelect={handleVendorSelect}
               />
 
               {/* How It Works -- anonymous users only */}
