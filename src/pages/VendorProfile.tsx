@@ -21,6 +21,8 @@ import { cn } from "@/lib/utils";
 import { categories as vendorCategories } from "@/hooks/useVendorFilters";
 import { useVendorOwnership } from "@/hooks/useVendorOwnership";
 import { ClaimProfileModal } from "@/components/vendors/ClaimProfileModal";
+import { VendorPulseSummary } from "@/components/vendors/VendorPulseSummary";
+import { DimensionalInsights } from "@/components/vendors/DimensionalInsights";
 
 interface VendorProfileData {
   vendorName: string;
@@ -884,6 +886,32 @@ const VendorProfile = () => {
               </div>
             </div>
           </section>
+
+          {/* ══════════════════════════════════════════
+              VENDOR PULSE SUMMARY & DIMENSIONAL INSIGHTS
+              ══════════════════════════════════════════ */}
+          {profileData.stats.totalMentions < 5 && (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-6 text-center mb-6">
+              <p className="text-sm text-zinc-400">
+                More insights will appear as dealer feedback grows.
+              </p>
+              <p className="text-xs text-zinc-600 mt-1">
+                {profileData.stats.totalMentions} of 5 mentions needed for full analysis.
+              </p>
+            </div>
+          )}
+
+          {/* Vendor Pulse Summary */}
+          <VendorPulseSummary
+            vendorName={profileData.vendorName}
+            mentionCount={profileData.stats.totalMentions}
+          />
+
+          {/* Dimensional Insights */}
+          <DimensionalInsights
+            vendorName={profileData.vendorName}
+            mentionCount={profileData.stats.totalMentions}
+          />
 
           {/* ══════════════════════════════════════════
               FREQUENTLY COMPARED WITH
