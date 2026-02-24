@@ -23,6 +23,8 @@ import { useVendorOwnership } from "@/hooks/useVendorOwnership";
 import { ClaimProfileModal } from "@/components/vendors/ClaimProfileModal";
 import { VendorPulseSummary } from "@/components/vendors/VendorPulseSummary";
 import { DimensionalInsights } from "@/components/vendors/DimensionalInsights";
+import { PricingIntelligence } from "@/components/vendors/PricingIntelligence";
+import { SwitchingIntel } from "@/components/vendors/SwitchingIntel";
 
 interface VendorProfileData {
   vendorName: string;
@@ -909,6 +911,18 @@ const VendorProfile = () => {
 
           {/* Dimensional Insights */}
           <DimensionalInsights
+            vendorName={profileData.vendorName}
+            mentionCount={profileData.stats.totalMentions}
+          />
+
+          {/* Pricing Intelligence */}
+          <PricingIntelligence
+            vendorName={profileData.vendorName}
+            mentionCount={profileData.stats.totalMentions}
+          />
+
+          {/* Switching Intel */}
+          <SwitchingIntel
             vendorName={profileData.vendorName}
             mentionCount={profileData.stats.totalMentions}
           />
