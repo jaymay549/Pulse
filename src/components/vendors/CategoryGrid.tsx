@@ -18,6 +18,7 @@ interface CategoryGridProps {
   topVendorsByCategory: Record<string, TopVendor[]>;
   onCategorySelect: (categoryId: string) => void;
   onVendorSelect?: (vendorName: string) => void;
+  maxCategories?: number;
   className?: string;
 }
 
@@ -27,9 +28,11 @@ export function CategoryGrid({
   topVendorsByCategory,
   onCategorySelect,
   onVendorSelect,
+  maxCategories,
   className,
 }: CategoryGridProps) {
-  const gridCategories = categories.filter((cat) => cat.id !== "all");
+  const allCategories = categories.filter((cat) => cat.id !== "all");
+  const gridCategories = maxCategories ? allCategories.slice(0, maxCategories) : allCategories;
 
   // Internal hover/active state for the two-panel preview
   const [activeCategory, setActiveCategory] = useState<string>(
@@ -42,7 +45,7 @@ export function CategoryGrid({
   return (
     <div className={cn("", className)}>
       {/* Section header with "See all" link */}
-      <div className="flex items-end justify-between mb-5">
+      <div className="flex items-end justify-between mb-6">
         <h2 className="text-xl sm:text-2xl font-extrabold text-foreground tracking-tight">
           Most Popular Vendor Categories
         </h2>
@@ -125,7 +128,7 @@ export function CategoryGrid({
           )}
 
           {activeVendors.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {activeVendors.map((vendor) => (
                 <button
                   key={vendor.name}
@@ -176,7 +179,7 @@ export function CategoryGrid({
 
           {/* "See all" button below vendor grid on desktop */}
           {activeCategoryData && activeVendors.length > 0 && (
-            <div className="mt-4 text-center">
+            <div className="mt-6 text-center">
               <button
                 onClick={() => onCategorySelect(activeCategory)}
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"

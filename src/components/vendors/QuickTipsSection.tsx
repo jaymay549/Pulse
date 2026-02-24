@@ -29,22 +29,22 @@ const TIPS = [
 export function QuickTipsSection({ className }: QuickTipsSectionProps) {
   return (
     <div className={cn("", className)}>
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-6">
         <Lightbulb className="h-4 w-4 text-yellow-600" />
         <h2 className="text-sm font-bold text-foreground uppercase tracking-wide">
           Tips to Get Started
         </h2>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {TIPS.map((tip) => (
           <div
             key={tip.title}
-            className="p-4 bg-white rounded-xl border border-border/50"
+            className="p-5 bg-white rounded-xl border border-border/50"
           >
-            <div className={cn("inline-flex items-center justify-center h-8 w-8 rounded-lg mb-2.5", tip.color)}>
+            <div className={cn("inline-flex items-center justify-center h-8 w-8 rounded-lg mb-3", tip.color)}>
               <tip.icon className="h-4 w-4" />
             </div>
-            <h3 className="text-sm font-semibold text-foreground mb-1">
+            <h3 className="text-sm font-semibold text-foreground mb-2">
               {tip.title}
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">

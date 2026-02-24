@@ -868,11 +868,11 @@ const VendorsV2 = () => {
         </header>
 
         {/* Main Content -- single column */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
           {/* Hero -- only on landing state (no category/vendor/AI selected) */}
           {isLandingState && (
-            <div className="max-w-2xl mx-auto text-center pt-8 sm:pt-12 pb-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/20 border border-secondary/30 text-xs font-semibold text-yellow-800 mb-4">
+            <div className="max-w-3xl mx-auto text-center pt-16 sm:pt-24 lg:pt-32 pb-12 sm:pb-16">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/20 border border-secondary/30 text-xs font-semibold text-yellow-800 mb-6">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-500 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
@@ -880,10 +880,13 @@ const VendorsV2 = () => {
                 Updated Daily
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground mb-6 leading-[1.1] tracking-tight">
-                What do you want to know about{" "}
-                <span className="text-yellow-600">auto vendors</span>?
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground mb-4 leading-[1.1] tracking-tight">
+                Raw Vendor Intel,{" "}
+                <span className="text-yellow-600">Straight From Dealers</span>
               </h1>
+              <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
+                No paid placements. No vendor spin. Just real feedback from verified automotive dealers.
+              </p>
             </div>
           )}
 
@@ -902,7 +905,7 @@ const VendorsV2 = () => {
           <div className={cn(
             "mx-auto w-full transition-all",
             isLandingState
-              ? "max-w-2xl"
+              ? "max-w-3xl"
               : "max-w-full"
           )}>
             {/* Category context header when filtering */}
@@ -946,7 +949,7 @@ const VendorsV2 = () => {
 
             {/* Stats line -- only on landing state */}
             {isLandingState && (
-              <div className="flex justify-center gap-4 mt-4 text-sm text-muted-foreground">
+              <div className="flex justify-center gap-4 mt-6 text-sm text-muted-foreground">
                 <span><strong className="text-foreground">{totalVerifiedCount}+</strong> recommendations</span>
                 <span className="text-border">&#8226;</span>
                 <span><strong className="text-foreground">{totalWarningCountValue}+</strong> warnings</span>
@@ -977,7 +980,7 @@ const VendorsV2 = () => {
 
           {/* ===== BRANCH 1: Landing State ===== */}
           {isLandingState && (
-            <div className="mt-8 space-y-10">
+            <div className="mt-12 space-y-16 sm:space-y-20">
               {/* Value Props -- anonymous users only */}
               {!isAuthenticated && (
                 <ValuePropSection />
@@ -995,6 +998,7 @@ const VendorsV2 = () => {
                 topVendorsByCategory={topVendorsByCategory}
                 onCategorySelect={handleCategoryChange}
                 onVendorSelect={handleVendorSelect}
+                maxCategories={8}
               />
 
               {/* How It Works -- anonymous users only */}
@@ -1283,7 +1287,7 @@ const VendorsV2 = () => {
         </div>
 
         {/* Footer */}
-        <footer className="py-8 mt-12 border-t border-border bg-white">
+        <footer className="py-12 mt-20 border-t border-border bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-center gap-6">
               <Link to="/">

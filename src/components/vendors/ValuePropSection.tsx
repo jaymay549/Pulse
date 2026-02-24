@@ -29,11 +29,11 @@ const VALUE_PROPS: { icon: LucideIcon; title: string; description: string; gradi
 export function ValuePropSection({ className }: ValuePropSectionProps) {
   return (
     <section className={cn("w-full", className)}>
-      <div className="text-center max-w-2xl mx-auto mb-10">
+      <div className="text-center max-w-2xl mx-auto mb-12">
         <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
           Why Dealers Trust CDG Pulse
         </h2>
-        <p className="text-sm text-muted-foreground mt-2">
+        <p className="text-sm text-muted-foreground mt-3">
           Everything you need to research, compare, and choose the right vendors for your dealership.
         </p>
       </div>
@@ -52,10 +52,10 @@ export function ValuePropSection({ className }: ValuePropSectionProps) {
               <prop.icon className="h-14 w-14 text-white/90" strokeWidth={1.5} />
             </div>
 
-            <h3 className="text-base font-semibold text-foreground mt-4">
+            <h3 className="text-base font-semibold text-foreground mt-5">
               {prop.title}
             </h3>
-            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
               {prop.description}
             </p>
           </div>

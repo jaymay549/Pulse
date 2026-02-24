@@ -65,7 +65,7 @@ export const VendorPricingTiers: React.FC<VendorPricingTiersProps> = ({
     <div id="tiers-section" className="mt-10">
       <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-primary/5 via-yellow-500/10 to-primary/5 border-2 border-border">
         {/* Vendor Tiers Section */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-10">
           <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
             Choose Your Access Level
           </h3>
@@ -75,7 +75,7 @@ export const VendorPricingTiers: React.FC<VendorPricingTiersProps> = ({
         </div>
 
         {/* Vendor Tiers - Stack on mobile, side by side on larger screens */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto mb-8">
           {/* Viewer Tier - For Vendors */}
           <div className="p-5 pt-8 rounded-xl bg-white border-2 border-border relative flex flex-col min-h-0">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-bold">
