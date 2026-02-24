@@ -17,7 +17,6 @@ import {
   AIInsightBanner,
   FilterBar,
   UpgradeTeaser,
-  TrendingVendorChips,
   CategoryPills,
   InlineAIChat,
   UpgradePromptCard,
