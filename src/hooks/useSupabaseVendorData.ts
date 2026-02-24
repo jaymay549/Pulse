@@ -286,3 +286,31 @@ export async function fetchVendorTrend(
 
   return data as any;
 }
+
+export interface VendorDimension {
+  dimension: string;
+  mention_count: number;
+  positive_count: number;
+  negative_count: number;
+  mixed_count: number;
+  neutral_count: number;
+  positive_percent: number;
+}
+
+/**
+ * Fetch dimension-level sentiment breakdown for a vendor
+ */
+export async function fetchVendorDimensions(
+  vendorName: string
+): Promise<VendorDimension[]> {
+  const { data, error } = await supabase.rpc("get_vendor_dimensions", {
+    p_vendor_name: vendorName,
+  });
+
+  if (error) {
+    console.error("[Supabase] get_vendor_dimensions error:", error);
+    return [];
+  }
+
+  return (data || []) as VendorDimension[];
+}
