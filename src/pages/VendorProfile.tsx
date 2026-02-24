@@ -80,8 +80,7 @@ const VendorProfile = () => {
   const [ctaChatMessages, setCtaChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [ctaChatInput, setCtaChatInput] = useState("");
   const [ctaChatLoading, setCtaChatLoading] = useState(false);
-  const ctaChatScrollRef = useRef<HTMLDivElement>(null);
-  const ctaChatUserScrolledRef = useRef(false);
+  const ctaChatEndRef = useRef<HTMLDivElement>(null);
   const ctaChatInputRef = useRef<HTMLTextAreaElement>(null);
 
   const vendorName = vendorSlug ? decodeURIComponent(vendorSlug) : "";
@@ -240,11 +239,11 @@ const VendorProfile = () => {
     return { headline, sentiment, stats: { total: totalMentions, positive: positiveCount, warnings: warningCount } };
   }, [profileData]);
 
-  // Auto-scroll chat messages within container only (must be before early returns)
+  // Auto-scroll chat messages (must be before early returns)
   useEffect(() => {
-    const el = ctaChatScrollRef.current;
-    if (!el || ctaChatUserScrolledRef.current || ctaChatMessages.length === 0) return;
-    el.scrollTop = el.scrollHeight;
+    if (ctaChatMessages.length > 0) {
+      ctaChatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [ctaChatMessages]);
 
   useEffect(() => {
@@ -298,7 +297,6 @@ const VendorProfile = () => {
     setCtaChatMessages((prev) => [...prev, userMsg]);
     setCtaChatInput("");
     setCtaChatLoading(true);
-    ctaChatUserScrolledRef.current = false;
 
     // Build a compact context from the profile
     const vendorContext = [{
@@ -687,16 +685,7 @@ const VendorProfile = () => {
                       </div>
 
                       {/* Messages */}
-                      <div
-                        ref={ctaChatScrollRef}
-                        onScroll={() => {
-                          const el = ctaChatScrollRef.current;
-                          if (!el) return;
-                          const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-                          ctaChatUserScrolledRef.current = !atBottom;
-                        }}
-                        className="flex-1 overflow-y-auto px-3 py-3 space-y-3"
-                      >
+                      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
                         {ctaChatMessages.length === 0 && (
                           <div className="space-y-2 pt-1">
                             <p className="text-[11px] text-slate-400 text-center">
@@ -745,6 +734,7 @@ const VendorProfile = () => {
                           </div>
                         )}
 
+                        <div ref={ctaChatEndRef} />
                       </div>
 
                       {/* Input */}

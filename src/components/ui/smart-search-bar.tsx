@@ -100,23 +100,26 @@ export function SmartSearchBar({
   const suggestionVariants = {
     hidden: (i: number) => ({
       opacity: 0,
-      y: -6,
-      transition: { duration: 0.08, delay: i * 0.02 },
+      y: -8,
+      scale: 0.96,
+      transition: { duration: 0.1, delay: i * 0.02 },
     }),
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
+      scale: 1,
       transition: {
         type: "spring" as const,
-        stiffness: 500,
-        damping: 30,
-        delay: i * 0.025,
+        stiffness: 400,
+        damping: 25,
+        delay: i * 0.03,
       },
     }),
     exit: (i: number) => ({
       opacity: 0,
       y: -4,
-      transition: { duration: 0.06, delay: i * 0.01 },
+      scale: 0.96,
+      transition: { duration: 0.08, delay: i * 0.01 },
     }),
   }
 
@@ -124,21 +127,25 @@ export function SmartSearchBar({
     <div ref={containerRef} className={cn("relative w-full", className)}>
       <motion.div
         className={cn(
-          "flex items-center w-full rounded-2xl relative overflow-hidden transition-all duration-300",
+          "flex items-center w-full rounded-xl border-2 relative overflow-hidden transition-all duration-200",
           isFocused
-            ? "bg-white shadow-[0_0_0_1px_hsl(45,80%,55%),0_4px_24px_-4px_hsl(40,30%,20%,0.12),0_8px_40px_-8px_hsl(40,30%,20%,0.08)]"
-            : "bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04),0_4px_16px_-2px_rgba(0,0,0,0.04)]"
+            ? "border-primary/50 shadow-lg shadow-primary/10 bg-white"
+            : "border-border bg-white/80"
         )}
-        animate={{ scale: isFocused ? 1.005 : 1 }}
-        transition={{ type: "spring", stiffness: 500, damping: 35 }}
+        animate={{ scale: isFocused ? 1.01 : 1 }}
+        transition={{ type: "spring", stiffness: 400, damping: 30 }}
       >
         {/* Search Icon */}
-        <div className="pl-5 py-4">
-          <Search className={cn(
-            "h-[18px] w-[18px] transition-colors duration-200",
-            isFocused ? "text-amber-500" : "text-foreground/25"
-          )} />
-        </div>
+        <motion.div
+          className="pl-5 py-4"
+          animate={{
+            scale: isFocused ? 1.1 : 1,
+            color: isFocused ? "var(--primary)" : "var(--muted-foreground)",
+          }}
+          transition={{ duration: 0.2 }}
+        >
+          <Search className="h-5 w-5" />
+        </motion.div>
 
         {/* Input */}
         <input
@@ -157,8 +164,8 @@ export function SmartSearchBar({
           onKeyDown={handleKeyDown}
           disabled={isLoading}
           className={cn(
-            "w-full py-4 pl-3 pr-3 bg-transparent outline-none text-[15px] tracking-[-0.01em]",
-            "text-foreground placeholder:text-foreground/30 font-normal"
+            "w-full py-4 pl-3 pr-3 bg-transparent outline-none placeholder:text-muted-foreground text-base",
+            "text-foreground font-normal"
           )}
         />
 
@@ -174,7 +181,7 @@ export function SmartSearchBar({
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={handleClear}
-                className="p-1 text-foreground/25 hover:text-foreground/60 transition-colors"
+                className="p-1 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="h-4 w-4" />
               </motion.button>
@@ -183,9 +190,9 @@ export function SmartSearchBar({
 
           {isPro && (
             <motion.div
-              className="text-amber-400"
+              className="text-primary/60"
               animate={{
-                opacity: searchQuery.trim().length > 0 ? 1 : 0.35,
+                opacity: searchQuery.trim().length > 0 ? 1 : 0.4,
               }}
               title="Press Enter to ask AI"
             >
@@ -199,14 +206,14 @@ export function SmartSearchBar({
       <AnimatePresence>
         {showDropdown && filteredSuggestions.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.99 }}
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.99 }}
-            transition={{ type: "spring", stiffness: 500, damping: 35 }}
-            className="absolute z-50 w-full mt-2 overflow-hidden bg-white rounded-xl shadow-[0_8px_40px_-8px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)]"
+            exit={{ opacity: 0, y: 8, scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="absolute z-50 w-full mt-2 overflow-hidden bg-white rounded-xl shadow-xl border border-border"
             style={{ maxHeight: "320px", overflowY: "auto" }}
           >
-            <div className="p-1.5">
+            <div className="p-2">
               {filteredSuggestions.map((suggestion, index) => (
                 <motion.button
                   key={suggestion.name}
@@ -216,18 +223,18 @@ export function SmartSearchBar({
                   animate="visible"
                   exit="exit"
                   onClick={() => handleSuggestionClick(suggestion.name)}
-                  className="flex items-center gap-3 w-full px-3 py-2.5 cursor-pointer rounded-lg hover:bg-amber-50/60 group transition-colors text-left"
+                  className="flex items-center gap-3 w-full px-3 py-2.5 cursor-pointer rounded-lg hover:bg-primary/5 group transition-colors text-left"
                 >
-                  <Avatar className="h-7 w-7 border border-black/[0.06] shrink-0">
+                  <Avatar className="h-8 w-8 border border-border/50 shrink-0">
                     <AvatarImage
                       src={suggestion.logoUrl || undefined}
                       alt={suggestion.name}
                     />
-                    <AvatarFallback className="bg-amber-50 text-amber-700 text-[10px] font-bold">
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
                       {suggestion.name.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="font-medium text-sm text-foreground/80 group-hover:text-foreground transition-colors truncate">
+                  <span className="font-medium text-foreground group-hover:text-primary transition-colors truncate">
                     {suggestion.name}
                   </span>
                 </motion.button>
@@ -243,10 +250,10 @@ export function SmartSearchBar({
           searchQuery.trim().length >= 2 &&
           filteredSuggestions.length === 0 && (
             <motion.div
-              initial={{ opacity: 0, y: 6 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 6 }}
-              className="absolute z-50 w-full mt-2 p-4 bg-white rounded-xl shadow-[0_8px_40px_-8px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] text-center"
+              exit={{ opacity: 0, y: 8 }}
+              className="absolute z-50 w-full mt-2 p-4 bg-white rounded-xl shadow-xl border border-border text-center"
             >
               <p className="text-sm text-muted-foreground">
                 No vendors found for "{searchQuery}"
