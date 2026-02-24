@@ -16,3 +16,4 @@ export { CategoryGrid } from "./CategoryGrid";
 export { ValuePropSection } from "./ValuePropSection";
 export { HowItWorksSection } from "./HowItWorksSection";
 export { QuickTipsSection } from "./QuickTipsSection";
+export { CategoryLandscape } from "./CategoryLandscape";
