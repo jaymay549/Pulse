@@ -3,7 +3,7 @@ import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { VendorDashboardSidebar } from "./VendorDashboardSidebar";
 
-export type DashboardSection = "overview" | "mentions" | "profile" | "intel";
+export type DashboardSection = "overview" | "mentions" | "profile" | "intel" | "dimensions";
 
 interface VendorDashboardLayoutProps {
   vendorName: string;

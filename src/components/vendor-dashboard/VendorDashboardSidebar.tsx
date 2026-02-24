@@ -1,4 +1,4 @@
-import { BarChart3, MessageSquare, Pencil, TrendingUp, ExternalLink, ArrowLeft } from "lucide-react";
+import { BarChart3, MessageSquare, Layers, Pencil, TrendingUp, ExternalLink, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DashboardSection } from "./VendorDashboardLayout";
 
@@ -11,6 +11,7 @@ interface VendorDashboardSidebarProps {
 const navItems: { id: DashboardSection; icon: typeof BarChart3; label: string }[] = [
   { id: "overview", icon: BarChart3, label: "Overview" },
   { id: "mentions", icon: MessageSquare, label: "Mentions" },
+  { id: "dimensions", icon: Layers, label: "Dimensions" },
   { id: "profile", icon: Pencil, label: "Edit Profile" },
   { id: "intel", icon: TrendingUp, label: "Market Intel" },
 ];

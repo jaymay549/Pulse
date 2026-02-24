@@ -8,6 +8,7 @@ import { DashboardOverview } from "@/components/vendor-dashboard/DashboardOvervi
 import { DashboardMentions } from "@/components/vendor-dashboard/DashboardMentions";
 import { DashboardEditProfile } from "@/components/vendor-dashboard/DashboardEditProfile";
 import { DashboardIntel } from "@/components/vendor-dashboard/DashboardIntel";
+import { DashboardDimensions } from "@/components/vendor-dashboard/DashboardDimensions";
 import { VendorDashboardLayout, type DashboardSection } from "@/components/vendor-dashboard/VendorDashboardLayout";
 
 export default function VendorDashboardPage() {
@@ -51,6 +52,7 @@ export default function VendorDashboardPage() {
         {activeSection === "mentions" && <DashboardMentions vendorName={vendorName} />}
         {activeSection === "profile" && <DashboardEditProfile />}
         {activeSection === "intel" && <DashboardIntel vendorName={vendorName} />}
+        {activeSection === "dimensions" && <DashboardDimensions vendorName={vendorName} />}
       </div>
     </VendorDashboardLayout>
   );
