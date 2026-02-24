@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import { Search, Crown, Share2, CreditCard, ArrowRight, Building2, Shield } from "lucide-react";
+import { Search, Crown, Share2, CreditCard, ArrowRight, Building2, Shield, ChevronLeft } from "lucide-react";
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,10 @@ import {
   CategoryPills,
   InlineAIChat,
   UpgradePromptCard,
+  CategoryGrid,
+  ValuePropSection,
+  HowItWorksSection,
+  QuickTipsSection,
 } from "@/components/vendors";
 import UpgradeModal from "@/components/UpgradeModal";
 import QuoteCardModal from "@/components/wins/QuoteCardModal";
@@ -195,6 +199,40 @@ const VendorsV2 = () => {
     return wamMentions.length > 0 ? wamMentions : dbReviews;
   }, [wamMentions, dbReviews]);
 
+  // Derive top vendors per category from loaded mentions (for CategoryGrid)
+  const topVendorsByCategory = useMemo(() => {
+    const result: Record<string, { name: string; logoUrl: string | null }[]> = {};
+    const categoryVendorMap: Record<string, Record<string, number>> = {};
+
+    for (const mention of mentions) {
+      if (!mention.category || !mention.vendorName) continue;
+      if (!categoryVendorMap[mention.category]) {
+        categoryVendorMap[mention.category] = {};
+      }
+      const vendorKey = mention.vendorName.toLowerCase();
+      categoryVendorMap[mention.category][vendorKey] =
+        (categoryVendorMap[mention.category][vendorKey] || 0) + 1;
+    }
+
+    for (const [categoryId, vendors] of Object.entries(categoryVendorMap)) {
+      const sorted = Object.entries(vendors)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5);
+
+      result[categoryId] = sorted.map(([vendorKey]) => {
+        const original = mentions.find(
+          (m) => m.vendorName?.toLowerCase() === vendorKey
+        );
+        const name = original?.vendorName || vendorKey;
+        const websiteUrl = getWebsiteForVendor(name);
+        const logoUrl = getVendorLogoUrl(name, websiteUrl);
+        return { name, logoUrl };
+      });
+    }
+
+    return result;
+  }, [mentions, getWebsiteForVendor, getVendorLogoUrl]);
+
   // Access level - simplified 2-tier system
   const accessLevel = getAccessLevel(tier);
   const isProUserValue = isProUser(tier);
@@ -223,6 +261,9 @@ const VendorsV2 = () => {
     externalWarningCount: paginationInfo?.totalWarningCount,
     externalTotalCount: paginationInfo?.totalSystemCount,
   });
+
+  // Landing state = no category/vendor/AI selected
+  const isLandingState = selectedCategory === "all" && selectedVendor === null && !aiQuery && !showUpgradePrompt;
 
   // Sync URL params to state (for browser back/forward and initial load)
   useEffect(() => {
@@ -824,8 +865,8 @@ const VendorsV2 = () => {
 
         {/* Main Content -- single column */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
-          {/* Hero -- only on default "all" view with no vendor selected */}
-          {selectedCategory === "all" && selectedVendor === null && !aiQuery && !showUpgradePrompt && (
+          {/* Hero -- only on landing state (no category/vendor/AI selected) */}
+          {isLandingState && (
             <div className="max-w-2xl mx-auto text-center pt-8 sm:pt-12 pb-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/20 border border-secondary/30 text-xs font-semibold text-yellow-800 mb-4">
                 <span className="relative flex h-2 w-2">
@@ -842,10 +883,21 @@ const VendorsV2 = () => {
             </div>
           )}
 
+          {/* Breadcrumb -- when not on landing and a category is selected */}
+          {!isLandingState && selectedCategory !== "all" && (
+            <button
+              onClick={() => handleCategoryChange("all")}
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mt-4 mb-2"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              All Categories
+            </button>
+          )}
+
           {/* Smart Search Bar -- always visible, centered */}
           <div className={cn(
             "mx-auto w-full transition-all",
-            selectedCategory === "all" && selectedVendor === null && !aiQuery && !showUpgradePrompt
+            isLandingState
               ? "max-w-2xl"
               : "max-w-full"
           )}>
@@ -874,7 +926,7 @@ const VendorsV2 = () => {
             />
 
             {/* Suggested prompt chips -- only on landing state */}
-            {selectedCategory === "all" && selectedVendor === null && !aiQuery && !showUpgradePrompt && (
+            {isLandingState && (
               <div className="flex flex-wrap justify-center gap-2 mt-4">
                 {SUGGESTED_PROMPTS.map((prompt) => (
                   <button
@@ -889,7 +941,7 @@ const VendorsV2 = () => {
             )}
 
             {/* Stats line -- only on landing state */}
-            {selectedCategory === "all" && selectedVendor === null && !aiQuery && !showUpgradePrompt && (
+            {isLandingState && (
               <div className="flex justify-center gap-4 mt-4 text-sm text-muted-foreground">
                 <span><strong className="text-foreground">{totalVerifiedCount}+</strong> recommendations</span>
                 <span className="text-border">&#8226;</span>
@@ -919,223 +971,43 @@ const VendorsV2 = () => {
             )}
           </div>
 
-          {/* Category Pills */}
-          <CategoryPills
-            categories={sortedCategories}
-            selectedCategory={selectedCategory}
-            categoryCounts={categoryCounts}
-            onCategorySelect={handleCategoryChange}
-            className="mt-6"
-          />
+          {/* ===== BRANCH 1: Landing State ===== */}
+          {isLandingState && (
+            <div className="mt-8 space-y-10">
+              {/* Value Props -- anonymous users only */}
+              {!isAuthenticated && (
+                <ValuePropSection />
+              )}
 
-          {/* Rest of content */}
-          <div className="mt-6">
-            {/* AI Insight Banner */}
-            {(selectedVendor !== null || selectedCategory !== "all") && (
-              <AIInsightBanner
-                data={wamMentions}
-                selectedCategory={selectedCategory}
-                searchQuery={searchQuery}
-                selectedVendor={selectedVendor}
-                isProUser={isProUserValue}
-                getToken={getToken}
-                onUpgradeClick={() => setShowUpgradeModal(true)}
-                className="mb-6"
+              {/* Quick Tips -- signed-in free users only */}
+              {isAuthenticated && !isProUserValue && (
+                <QuickTipsSection />
+              )}
+
+              {/* Category Grid -- all users */}
+              <CategoryGrid
+                categories={sortedCategories}
+                categoryCounts={categoryCounts}
+                topVendorsByCategory={topVendorsByCategory}
+                onCategorySelect={handleCategoryChange}
               />
-            )}
 
-            {/* Filter Bar -- only when vendor selected */}
-            {selectedVendor !== null && (
-              <div className="mb-6">
-                <FilterBar
-                  typeFilter={typeFilter}
-                  onTypeFilterChange={handleTypeFilterChange}
-                  positiveCount={positiveCount}
-                  warningCount={warningCount}
-                  totalCount={totalCount}
-                  canAccessWarnings={accessLevel.unlimitedAccess}
-                  onWarningsLocked={() => setShowUpgradeModal(true)}
+              {/* How It Works -- anonymous users only */}
+              {!isAuthenticated && (
+                <HowItWorksSection />
+              )}
+
+              {/* Pricing Tiers -- anonymous users only */}
+              {!isAuthenticated && (
+                <VendorPricingTiers
+                  totalReviews={paginationInfo?.totalSystemCount ?? wamMentions.length}
+                  totalWarnings={totalWarningCountValue}
+                  onSignInClick={() => setShowSignIn(true)}
                 />
-              </div>
-            )}
+              )}
 
-            {/* Trending Vendor Chips */}
-            {selectedVendor === null && selectedCategory === "all" && (
-              <TrendingVendorChips
-                onVendorSelect={handleVendorSelect}
-                getLogoUrl={(vendorName) => getVendorLogoUrl(vendorName)}
-                className="mt-0 mb-3"
-              />
-            )}
-
-            {/* Category Vendors Section - Show when category is selected */}
-            {selectedCategory !== "all" && categoryVendors.length > 0 && (
-              <div className="mb-6 sm:mb-8">
-                <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                  <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
-                  <h2 className="text-lg sm:text-xl font-bold text-foreground">
-                    Vendors ({categoryVendors.length})
-                  </h2>
-                </div>
-                <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-                  {categoryVendors.map((vendor) => {
-                    const vendorWebsiteUrl = getWebsiteForVendor(vendor.name);
-                    const vendorLogoUrl = getVendorLogoUrl(vendor.name, vendorWebsiteUrl);
-
-                    return (
-                      <button
-                        key={vendor.name}
-                        onClick={() => handleVendorSelect(vendor.name)}
-                        className="text-left p-3 sm:p-4 bg-white rounded-lg border border-border/50 hover:border-primary/50 hover:shadow-md transition-all group shrink-0 w-[280px] sm:w-[300px]"
-                      >
-                        <div className="flex items-start gap-2.5 sm:gap-3">
-                          {/* Vendor Logo */}
-                          <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border border-border/50 shrink-0">
-                            <AvatarImage src={vendorLogoUrl || undefined} alt={vendor.name} />
-                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs sm:text-sm">
-                              {vendor.name.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-
-                          {/* Vendor Info */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 sm:gap-2">
-                              <h3 className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                                {vendor.name}
-                              </h3>
-                              <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 opacity-0 group-hover:opacity-100" />
-                            </div>
-                            <div className="mt-1 sm:mt-1.5 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground">
-                              <span className="font-medium">{vendor.reviewCount} review{vendor.reviewCount !== 1 ? "s" : ""}</span>
-                              {vendor.positiveCount > 0 && (
-                                <span className="px-1.5 py-0.5 rounded bg-green-50 text-green-700 font-medium text-xs">
-                                  {vendor.positiveCount} positive
-                                </span>
-                              )}
-                              {vendor.warningCount > 0 && (
-                                <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-700 font-medium text-xs">
-                                  {vendor.warningCount} warning{vendor.warningCount !== 1 ? "s" : ""}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Results Grid */}
-            {visibleEntries.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                {visibleEntries.map((entry) => {
-                  // Backend handles all redaction - but force lock for non-authenticated users and non-pro users searching
-                  const isSearchingAsNonPro = !isProUserValue && searchQuery.trim().length > 0;
-                  const isLocked = entry.isLocked === true || isSearchingAsNonPro || !isAuthenticated;
-                  // Hide vendor names when searching as non-pro user
-                  const showVendorNames = isSearchingAsNonPro ? false : !!entry.vendorName;
-
-                  // Get website and logo for this vendor
-                  const vendorWebsiteUrl = entry.vendorName
-                    ? getWebsiteForVendor(entry.vendorName)
-                    : null;
-                  const vendorLogoUrl = entry.vendorName
-                    ? getVendorLogoUrl(entry.vendorName, vendorWebsiteUrl)
-                    : null;
-                  const vendorResponse = responses[Number(entry.id)] || null;
-
-                  return (
-                    <VendorCard
-                      key={entry.id}
-                      entry={entry}
-                      isLocked={isLocked}
-                      showVendorNames={showVendorNames}
-                      isFullAccess={accessLevel.unlimitedAccess}
-                      isAuthenticated={isAuthenticated}
-                      vendorResponse={vendorResponse}
-                      vendorWebsite={vendorWebsiteUrl}
-                      vendorLogo={vendorLogoUrl}
-                      onCardClick={(e) => setSelectedCard(e)}
-                      onVendorClick={handleVendorSelect}
-                      onUpgradeClick={() => {
-                        if (isAuthenticated) {
-                          setShowUpgradeModal(true);
-                        } else {
-                          window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
-                        }
-                      }}
-                    />
-                  );
-                })}
-
-                {/* Teaser Card */}
-                {showTeaserCard && (
-                  <UpgradeTeaser
-                    remainingCount={remainingCount}
-                    isAuthenticated={isAuthenticated}
-                    onUpgradeClick={() => {
-                      if (isAuthenticated) {
-                        setShowUpgradeModal(true);
-                      } else {
-                        window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
-                      }
-                    }}
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Infinite scroll sentinel - loads more when scrolled into view */}
-            {isProUserValue && paginationInfo?.hasMore && visibleEntries.length > 0 && (
-              <div ref={loadMoreRef} className="mt-8 flex justify-center py-4">
-                {isLoadingMore && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <span className="text-sm">Loading more reviews...</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Empty State - no reviews found */}
-            {!isWamLoading && filteredData.length === 0 && (
-              <div className="text-center py-16">
-                <Search className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-foreground mb-2">
-                  No reviews found
-                </h3>
-                <p className="text-muted-foreground">
-                  Try selecting a different category
-                </p>
-              </div>
-            )}
-
-            {/* Loading State */}
-            {isWamLoading && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div
-                    key={i}
-                    className="h-48 bg-muted/50 rounded-lg animate-pulse"
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Upgrade Section for Non-Pro Users */}
-            {!accessLevel.unlimitedAccess && !isAuthenticated && (
-              <VendorPricingTiers
-                totalReviews={paginationInfo?.totalSystemCount ?? wamMentions.length}
-                totalWarnings={totalWarningCountValue}
-                onSignInClick={() => setShowSignIn(true)}
-              />
-            )}
-
-            {/* Authenticated Non-Pro Upgrade Banner */}
-            {!accessLevel.unlimitedAccess && isAuthenticated && (
-              <div className="mt-8">
+              {/* Upgrade Banner -- signed-in free users only */}
+              {isAuthenticated && !isProUserValue && (
                 <div className="p-6 rounded-xl bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 border-2 border-yellow-400/30 flex flex-col md:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="p-3 rounded-full bg-yellow-500/20">
@@ -1161,9 +1033,248 @@ const VendorsV2 = () => {
                     Upgrade to Unlock
                   </Button>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
+
+          {/* ===== BRANCH 2: Category / Vendor View ===== */}
+          {!isLandingState && (
+            <div className="mt-6">
+              {/* Category Pills -- for switching categories */}
+              <CategoryPills
+                categories={sortedCategories}
+                selectedCategory={selectedCategory}
+                categoryCounts={categoryCounts}
+                onCategorySelect={handleCategoryChange}
+                className="mb-6"
+              />
+
+              {/* AI Insight Banner */}
+              {(selectedVendor !== null || selectedCategory !== "all") && (
+                <AIInsightBanner
+                  data={wamMentions}
+                  selectedCategory={selectedCategory}
+                  searchQuery={searchQuery}
+                  selectedVendor={selectedVendor}
+                  isProUser={isProUserValue}
+                  getToken={getToken}
+                  onUpgradeClick={() => setShowUpgradeModal(true)}
+                  className="mb-6"
+                />
+              )}
+
+              {/* Filter Bar -- only when vendor selected */}
+              {selectedVendor !== null && (
+                <div className="mb-6">
+                  <FilterBar
+                    typeFilter={typeFilter}
+                    onTypeFilterChange={handleTypeFilterChange}
+                    positiveCount={positiveCount}
+                    warningCount={warningCount}
+                    totalCount={totalCount}
+                    canAccessWarnings={accessLevel.unlimitedAccess}
+                    onWarningsLocked={() => setShowUpgradeModal(true)}
+                  />
+                </div>
+              )}
+
+              {/* Category Vendors Section - Show when category is selected */}
+              {selectedCategory !== "all" && categoryVendors.length > 0 && (
+                <div className="mb-6 sm:mb-8">
+                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                    <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
+                    <h2 className="text-lg sm:text-xl font-bold text-foreground">
+                      Vendors ({categoryVendors.length})
+                    </h2>
+                  </div>
+                  <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                    {categoryVendors.map((vendor) => {
+                      const vendorWebsiteUrl = getWebsiteForVendor(vendor.name);
+                      const vendorLogoUrl = getVendorLogoUrl(vendor.name, vendorWebsiteUrl);
+
+                      return (
+                        <button
+                          key={vendor.name}
+                          onClick={() => handleVendorSelect(vendor.name)}
+                          className="text-left p-3 sm:p-4 bg-white rounded-lg border border-border/50 hover:border-primary/50 hover:shadow-md transition-all group shrink-0 w-[280px] sm:w-[300px]"
+                        >
+                          <div className="flex items-start gap-2.5 sm:gap-3">
+                            {/* Vendor Logo */}
+                            <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border border-border/50 shrink-0">
+                              <AvatarImage src={vendorLogoUrl || undefined} alt={vendor.name} />
+                              <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs sm:text-sm">
+                                {vendor.name.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+
+                            {/* Vendor Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 sm:gap-2">
+                                <h3 className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                                  {vendor.name}
+                                </h3>
+                                <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0 opacity-0 group-hover:opacity-100" />
+                              </div>
+                              <div className="mt-1 sm:mt-1.5 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground">
+                                <span className="font-medium">{vendor.reviewCount} review{vendor.reviewCount !== 1 ? "s" : ""}</span>
+                                {vendor.positiveCount > 0 && (
+                                  <span className="px-1.5 py-0.5 rounded bg-green-50 text-green-700 font-medium text-xs">
+                                    {vendor.positiveCount} positive
+                                  </span>
+                                )}
+                                {vendor.warningCount > 0 && (
+                                  <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-700 font-medium text-xs">
+                                    {vendor.warningCount} warning{vendor.warningCount !== 1 ? "s" : ""}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Results Grid */}
+              {visibleEntries.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                  {visibleEntries.map((entry) => {
+                    // Backend handles all redaction - but force lock for non-authenticated users and non-pro users searching
+                    const isSearchingAsNonPro = !isProUserValue && searchQuery.trim().length > 0;
+                    const isLocked = entry.isLocked === true || isSearchingAsNonPro || !isAuthenticated;
+                    // Hide vendor names when searching as non-pro user
+                    const showVendorNames = isSearchingAsNonPro ? false : !!entry.vendorName;
+
+                    // Get website and logo for this vendor
+                    const vendorWebsiteUrl = entry.vendorName
+                      ? getWebsiteForVendor(entry.vendorName)
+                      : null;
+                    const vendorLogoUrl = entry.vendorName
+                      ? getVendorLogoUrl(entry.vendorName, vendorWebsiteUrl)
+                      : null;
+                    const vendorResponse = responses[Number(entry.id)] || null;
+
+                    return (
+                      <VendorCard
+                        key={entry.id}
+                        entry={entry}
+                        isLocked={isLocked}
+                        showVendorNames={showVendorNames}
+                        isFullAccess={accessLevel.unlimitedAccess}
+                        isAuthenticated={isAuthenticated}
+                        vendorResponse={vendorResponse}
+                        vendorWebsite={vendorWebsiteUrl}
+                        vendorLogo={vendorLogoUrl}
+                        onCardClick={(e) => setSelectedCard(e)}
+                        onVendorClick={handleVendorSelect}
+                        onUpgradeClick={() => {
+                          if (isAuthenticated) {
+                            setShowUpgradeModal(true);
+                          } else {
+                            window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
+                          }
+                        }}
+                      />
+                    );
+                  })}
+
+                  {/* Teaser Card */}
+                  {showTeaserCard && (
+                    <UpgradeTeaser
+                      remainingCount={remainingCount}
+                      isAuthenticated={isAuthenticated}
+                      onUpgradeClick={() => {
+                        if (isAuthenticated) {
+                          setShowUpgradeModal(true);
+                        } else {
+                          window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
+                        }
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Infinite scroll sentinel - loads more when scrolled into view */}
+              {isProUserValue && paginationInfo?.hasMore && visibleEntries.length > 0 && (
+                <div ref={loadMoreRef} className="mt-8 flex justify-center py-4">
+                  {isLoadingMore && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      <span className="text-sm">Loading more reviews...</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Empty State - no reviews found */}
+              {!isWamLoading && filteredData.length === 0 && (
+                <div className="text-center py-16">
+                  <Search className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                  <h3 className="text-lg font-bold text-foreground mb-2">
+                    No reviews found
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Try selecting a different category
+                  </p>
+                </div>
+              )}
+
+              {/* Loading State */}
+              {isWamLoading && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div
+                      key={i}
+                      className="h-48 bg-muted/50 rounded-lg animate-pulse"
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Upgrade Section for Non-Pro Users */}
+              {!accessLevel.unlimitedAccess && !isAuthenticated && (
+                <VendorPricingTiers
+                  totalReviews={paginationInfo?.totalSystemCount ?? wamMentions.length}
+                  totalWarnings={totalWarningCountValue}
+                  onSignInClick={() => setShowSignIn(true)}
+                />
+              )}
+
+              {/* Authenticated Non-Pro Upgrade Banner */}
+              {!accessLevel.unlimitedAccess && isAuthenticated && (
+                <div className="mt-8">
+                  <div className="p-6 rounded-xl bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 border-2 border-yellow-400/30 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-full bg-yellow-500/20">
+                        <Crown className="h-7 w-7 text-yellow-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-foreground">
+                          Upgrade to See All Reviews
+                        </h3>
+                        <p className="text-muted-foreground text-sm">
+                          Unlock all {paginationInfo?.totalSystemCount ?? wamMentions.length} reviews including{" "}
+                          {totalWarningCountValue} warnings.
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="yellow"
+                      size="lg"
+                      className="font-bold whitespace-nowrap"
+                      onClick={() => setShowUpgradeModal(true)}
+                    >
+                      <Crown className="h-4 w-4 mr-2" />
+                      Upgrade to Unlock
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Footer */}
