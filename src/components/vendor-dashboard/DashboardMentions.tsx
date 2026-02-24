@@ -1,14 +1,19 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Flag } from "lucide-react";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
+import { useFlagMention, useVendorFlags } from "@/hooks/useMentionFlags";
+import { FlagMentionModal } from "./FlagMentionModal";
 
 interface DashboardMentionsProps {
   vendorName: string;
+  vendorProfileId?: string;
 }
 
 interface Mention {
   id: string;
+  headline: string | null;
   quote: string;
   type: string;
   created_at: string;
@@ -79,18 +84,20 @@ function FilterButton({
   );
 }
 
-export function DashboardMentions({ vendorName }: DashboardMentionsProps): JSX.Element {
+export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMentionsProps): JSX.Element {
   const supabase = useClerkSupabase();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<FilterType>("all");
   const [replies, setReplies] = useState<Record<string, string>>({});
+  const [flagModalOpen, setFlagModalOpen] = useState(false);
+  const [selectedMention, setSelectedMention] = useState<Mention | null>(null);
 
   const { data: mentions = [] } = useQuery({
     queryKey: ["vendor-respond-mentions", vendorName],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vendor_mentions")
-        .select("id, quote, type, created_at")
+        .select("id, headline, quote, type, created_at")
         .eq("vendor_name", vendorName)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -114,6 +121,11 @@ export function DashboardMentions({ vendorName }: DashboardMentionsProps): JSX.E
     enabled: mentions.length > 0,
   });
 
+  const { data: flags = [] } = useVendorFlags(vendorProfileId);
+  const flaggedMentionIds = new Set(flags.map((f) => f.mention_id));
+
+  const flagMutation = useFlagMention();
+
   const replyMutation = useMutation({
     mutationFn: async ({ mentionId, responseText }: { mentionId: string; responseText: string }) => {
       const { error } = await supabase.from("vendor_responses").insert({
@@ -136,6 +148,30 @@ export function DashboardMentions({ vendorName }: DashboardMentionsProps): JSX.E
   const warningCount = mentions.filter((m) => m.type === "warning").length;
 
   const filteredMentions = filter === "all" ? mentions : mentions.filter((m) => m.type === filter);
+
+  const handleFlag = (mention: Mention) => {
+    setSelectedMention(mention);
+    setFlagModalOpen(true);
+  };
+
+  const submitFlag = (reason: string, note: string) => {
+    if (!vendorProfileId || !selectedMention) return;
+
+    flagMutation.mutate(
+      {
+        mention_id: Number(selectedMention.id),
+        vendor_profile_id: vendorProfileId,
+        reason,
+        note,
+      },
+      {
+        onSuccess: () => {
+          setFlagModalOpen(false);
+          setSelectedMention(null);
+        },
+      }
+    );
+  };
 
   return (
     <div>
@@ -167,12 +203,33 @@ export function DashboardMentions({ vendorName }: DashboardMentionsProps): JSX.E
           {filteredMentions.map((mention) => {
             const hasResponded = respondedIds.has(mention.id);
             const replyText = replies[mention.id] ?? "";
+            const isFlagged = flaggedMentionIds.has(Number(mention.id));
 
             return (
               <div key={mention.id} className="rounded-xl border bg-white p-4">
                 <div className="flex items-start justify-between gap-4">
-                  <p className="text-sm italic text-slate-700">{mention.quote}</p>
-                  <TypeBadge type={mention.type} />
+                  <div className="flex-1 min-w-0">
+                    {mention.headline && (
+                      <p className="text-sm font-medium text-slate-900 mb-1">{mention.headline}</p>
+                    )}
+                    <p className="text-sm italic text-slate-700">{mention.quote}</p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <TypeBadge type={mention.type} />
+                    {vendorProfileId && !isFlagged && (
+                      <button
+                        type="button"
+                        onClick={() => handleFlag(mention)}
+                        className="p-1.5 rounded-md hover:bg-slate-100 transition-colors"
+                        title="Flag this mention"
+                      >
+                        <Flag className="h-4 w-4 text-slate-400 hover:text-amber-500" />
+                      </button>
+                    )}
+                    {isFlagged && (
+                      <span className="text-xs text-amber-600 font-medium">Flagged</span>
+                    )}
+                  </div>
                 </div>
                 <p className="mt-1 text-xs text-slate-400">{formatRelativeTime(mention.created_at)}</p>
 
@@ -207,6 +264,17 @@ export function DashboardMentions({ vendorName }: DashboardMentionsProps): JSX.E
             );
           })}
         </div>
+      )}
+
+      {/* Flag modal */}
+      {selectedMention && (
+        <FlagMentionModal
+          open={flagModalOpen}
+          onOpenChange={setFlagModalOpen}
+          mentionQuote={selectedMention.quote}
+          onSubmit={submitFlag}
+          isPending={flagMutation.isPending}
+        />
       )}
     </div>
   );

@@ -239,7 +239,72 @@ async function enrichVendor(
       }
     }
 
-    // Step 4: Update vendor_metadata
+    // Step 4: Generate AI overview from scraped data
+    if (website_url) {
+      try {
+        const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+        if (!GEMINI_API_KEY) {
+          console.warn(`[${vendor_name}] GEMINI_API_KEY not set, skipping auto-summary`);
+        } else {
+          const contextParts: string[] = [];
+          if (updates.tagline) contextParts.push(`Tagline: ${updates.tagline}`);
+          if (updates.description) contextParts.push(`Description: ${updates.description}`);
+          if (updates.headquarters) contextParts.push(`HQ: ${updates.headquarters}`);
+
+          const prompt = `You are analyzing a vendor in the automotive dealership technology space.
+
+VENDOR: ${vendor_name}
+WEBSITE: ${website_url}
+${contextParts.length > 0 ? `CONTEXT:\n${contextParts.join("\n")}` : ""}
+
+Generate a structured profile. Return JSON:
+{
+  "auto_summary": "2-3 sentence neutral, factual overview of what this company does for auto dealerships. No marketing fluff.",
+  "auto_products": ["Key", "product", "areas"],
+  "auto_segments": ["Target", "customer", "segments"],
+  "auto_integrations": ["Known", "integration", "partners"]
+}
+
+If insufficient data for a field, use an empty array. Return only valid JSON.`;
+
+          const geminiRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                  responseMimeType: "application/json",
+                  temperature: 0.2,
+                },
+              }),
+            }
+          );
+
+          if (geminiRes.ok) {
+            const geminiData = await geminiRes.json();
+            const rawJson = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawJson) {
+              const parsed = JSON.parse(rawJson);
+              if (parsed.auto_summary) updates.auto_summary = parsed.auto_summary;
+              if (parsed.auto_products?.length) updates.auto_products = parsed.auto_products;
+              if (parsed.auto_segments?.length) updates.auto_segments = parsed.auto_segments;
+              if (parsed.auto_integrations?.length) updates.auto_integrations = parsed.auto_integrations;
+              updates.auto_summary_generated_at = new Date().toISOString();
+              console.log(`[${vendor_name}] Generated auto-summary`);
+            }
+          } else {
+            console.warn(`[${vendor_name}] Gemini returned ${geminiRes.status}, skipping auto-summary`);
+          }
+        }
+      } catch (e) {
+        // Don't block enrichment if auto-summary fails
+        console.error(`[${vendor_name}] Auto-summary generation failed:`, e);
+      }
+    }
+
+    // Step 5: Update vendor_metadata
     const updateKeys = Object.keys(updates);
     console.log(`[${vendor_name}] Saving fields: ${updateKeys.join(", ") || "(none)"}`);
 

@@ -333,3 +333,82 @@ export async function fetchVendorPulseSummary(
   }
   return data;
 }
+
+// ── Vendor Intelligence (replaces PulseSummary + AIInsightBanner on profile) ──
+
+export interface VendorIntelligenceData {
+  vendor_name: string;
+  state: "rich" | "thin" | "empty";
+  summary_text: string | null;
+  sentiment: string | null;
+  trend_direction: string | null;
+  top_dimension: string | null;
+  stats: {
+    total: number;
+    positive: number;
+    warnings: number;
+    external_count: number;
+  } | null;
+}
+
+export async function fetchVendorIntelligence(
+  vendorName: string
+): Promise<VendorIntelligenceData | null> {
+  const { data, error } = await supabase
+    .from("vendor_intelligence_cache")
+    .select("*")
+    .eq("vendor_name", vendorName)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[Supabase] fetchVendorIntelligence error:", error);
+    return null;
+  }
+  return data as VendorIntelligenceData | null;
+}
+
+export interface VendorBootstrapMetadata {
+  auto_summary: string | null;
+  auto_products: string[] | null;
+  auto_segments: string[] | null;
+  auto_integrations: string[] | null;
+}
+
+export async function fetchVendorBootstrapMetadata(
+  vendorName: string
+): Promise<VendorBootstrapMetadata | null> {
+  const { data, error } = await supabase
+    .from("vendor_metadata")
+    .select("auto_summary, auto_products, auto_segments, auto_integrations")
+    .eq("vendor_name", vendorName)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[Supabase] fetchVendorBootstrapMetadata error:", error);
+    return null;
+  }
+  return data as VendorBootstrapMetadata | null;
+}
+
+export interface VendorCustomContent {
+  highlights: string[] | null;
+  customer_segments: string[] | null;
+  integration_partners: string[] | null;
+  custom_description: string | null;
+}
+
+export async function fetchVendorCustomContent(
+  vendorName: string
+): Promise<VendorCustomContent | null> {
+  const { data, error } = await supabase
+    .from("vendor_custom_content")
+    .select("highlights, customer_segments, integration_partners, custom_description")
+    .eq("vendor_name", vendorName)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[Supabase] fetchVendorCustomContent error:", error);
+    return null;
+  }
+  return data as VendorCustomContent | null;
+}

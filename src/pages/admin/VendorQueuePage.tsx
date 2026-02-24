@@ -4,6 +4,7 @@ import { useQueueStats } from "@/hooks/useVendorQueue";
 import ConversationView from "@/components/admin/queue/ConversationView";
 import VendorView from "@/components/admin/queue/VendorView";
 import MentionsSearchView from "@/components/admin/queue/MentionsSearchView";
+import FlaggedMentionsView from "@/components/admin/queue/FlaggedMentionsView";
 import VersionInfoPanel from "@/components/admin/queue/VersionInfoPanel";
 
 const VendorQueuePage = () => {
@@ -57,6 +58,12 @@ const VendorQueuePage = () => {
           >
             Search Mentions
           </TabsTrigger>
+          <TabsTrigger
+            value="flags"
+            className="text-xs data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 text-zinc-500"
+          >
+            Flagged Mentions
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="conversation">
@@ -67,6 +74,9 @@ const VendorQueuePage = () => {
         </TabsContent>
         <TabsContent value="search">
           <MentionsSearchView />
+        </TabsContent>
+        <TabsContent value="flags">
+          <FlaggedMentionsView />
         </TabsContent>
       </Tabs>
     </div>

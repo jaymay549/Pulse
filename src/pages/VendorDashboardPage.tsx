@@ -49,7 +49,7 @@ export default function VendorDashboardPage() {
     <VendorDashboardLayout vendorName={vendorName} activeSection={activeSection} onNavigate={setActiveSection}>
       <div className="max-w-5xl">
         {activeSection === "overview" && <DashboardOverview vendorName={vendorName} onNavigate={setActiveSection} />}
-        {activeSection === "mentions" && <DashboardMentions vendorName={vendorName} />}
+        {activeSection === "mentions" && <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfile.id} />}
         {activeSection === "profile" && <DashboardEditProfile />}
         {activeSection === "intel" && <DashboardIntel vendorName={vendorName} />}
         {activeSection === "dimensions" && <DashboardDimensions vendorName={vendorName} />}
