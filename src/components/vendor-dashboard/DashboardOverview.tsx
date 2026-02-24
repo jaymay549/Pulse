@@ -34,6 +34,21 @@ interface VendorMention {
   created_at: string;
 }
 
+interface SentimentMonth {
+  month: string;
+  total_mentions: number;
+  positive_count: number;
+  warning_count: number;
+  positive_percent: number;
+}
+
+const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function parseMonthLabel(yyyyMm: string): string {
+  const monthIndex = parseInt(yyyyMm.split("-")[1], 10) - 1;
+  return MONTH_LABELS[monthIndex] ?? yyyyMm;
+}
+
 function formatRelativeTime(dateString: string): string {
   const now = new Date();
   const date = new Date(dateString);
@@ -135,6 +150,18 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
     },
   });
 
+  const { data: sentimentHistory = [] } = useQuery({
+    queryKey: ["vendor-sentiment-history", vendorName],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc(
+        "get_vendor_sentiment_history" as never,
+        { p_vendor_name: vendorName } as never
+      );
+      if (error) throw error;
+      return (data || []) as SentimentMonth[];
+    },
+  });
+
   if (profileLoading) {
     return <p className="text-sm text-slate-500">Loading...</p>;
   }
@@ -167,6 +194,47 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
           <p className="mt-1 text-xs text-slate-500">Concerns Flagged</p>
         </div>
       </div>
+
+      {/* Sentiment over time chart */}
+      {sentimentHistory.length >= 2 && (
+        <div className="mt-8">
+          <h2 className="mb-3 text-lg font-medium text-slate-900">Sentiment Over Time</h2>
+          <div className="rounded-xl border bg-white p-5">
+            <div className="flex items-end gap-3" style={{ height: 160 }}>
+              {sentimentHistory.map((m) => {
+                const pct = m.positive_percent ?? 0;
+                const barHeight = Math.max(pct, 4); // minimum 4% so the bar is always visible
+                return (
+                  <div
+                    key={m.month}
+                    className="group flex flex-1 flex-col items-center gap-1"
+                  >
+                    {/* Percentage label */}
+                    <span className="text-xs font-medium text-slate-600">
+                      {pct}%
+                    </span>
+                    {/* Bar container */}
+                    <div className="relative flex w-full flex-1 items-end justify-center">
+                      <div
+                        className="w-full max-w-[40px] rounded-t-md bg-emerald-400 transition-all group-hover:bg-emerald-500"
+                        style={{ height: `${barHeight}%` }}
+                        title={`${parseMonthLabel(m.month)}: ${pct}% positive (${m.total_mentions} mentions)`}
+                      />
+                    </div>
+                    {/* Month label */}
+                    <span className="text-xs text-slate-500">
+                      {parseMonthLabel(m.month)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-3 text-xs text-slate-400">
+              Monthly positive sentiment % over the last {sentimentHistory.length} months
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Recent activity */}
       <h2 className="mt-8 mb-3 text-lg font-medium text-slate-900">Recent Activity</h2>
