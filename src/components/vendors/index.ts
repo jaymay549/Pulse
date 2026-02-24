@@ -12,3 +12,7 @@ export { ChatMarkdown } from "./ChatMarkdown";
 export { CategoryPills } from "./CategoryPills";
 export { InlineAIChat } from "./InlineAIChat";
 export { UpgradePromptCard } from "./UpgradePromptCard";
+export { CategoryGrid } from "./CategoryGrid";
+export { ValuePropSection } from "./ValuePropSection";
+export { HowItWorksSection } from "./HowItWorksSection";
+export { QuickTipsSection } from "./QuickTipsSection";
