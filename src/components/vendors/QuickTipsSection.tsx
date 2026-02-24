@@ -1,9 +1,7 @@
-import React from "react";
 import { Lightbulb, Sparkles, AlertTriangle, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface QuickTipsSectionProps {
-  onAISubmit?: (query: string) => void;
   className?: string;
 }
 

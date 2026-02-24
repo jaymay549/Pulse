@@ -202,6 +202,7 @@ const VendorsV2 = () => {
   const topVendorsByCategory = useMemo(() => {
     const result: Record<string, { name: string; logoUrl: string | null }[]> = {};
     const categoryVendorMap: Record<string, Record<string, number>> = {};
+    const vendorOriginalName: Record<string, string> = {};
 
     for (const mention of mentions) {
       if (!mention.category || !mention.vendorName) continue;
@@ -211,6 +212,9 @@ const VendorsV2 = () => {
       const vendorKey = mention.vendorName.toLowerCase();
       categoryVendorMap[mention.category][vendorKey] =
         (categoryVendorMap[mention.category][vendorKey] || 0) + 1;
+      if (!vendorOriginalName[vendorKey]) {
+        vendorOriginalName[vendorKey] = mention.vendorName;
+      }
     }
 
     for (const [categoryId, vendors] of Object.entries(categoryVendorMap)) {
@@ -219,10 +223,7 @@ const VendorsV2 = () => {
         .slice(0, 5);
 
       result[categoryId] = sorted.map(([vendorKey]) => {
-        const original = mentions.find(
-          (m) => m.vendorName?.toLowerCase() === vendorKey
-        );
-        const name = original?.vendorName || vendorKey;
+        const name = vendorOriginalName[vendorKey] || vendorKey;
         const websiteUrl = getWebsiteForVendor(name);
         const logoUrl = getVendorLogoUrl(name, websiteUrl);
         return { name, logoUrl };
@@ -262,7 +263,7 @@ const VendorsV2 = () => {
   });
 
   // Landing state = no category/vendor/AI selected
-  const isLandingState = selectedCategory === "all" && selectedVendor === null && !aiQuery && !showUpgradePrompt;
+  const isLandingState = selectedCategory === "all" && selectedVendor === null && !aiQuery;
 
   // Sync URL params to state (for browser back/forward and initial load)
   useEffect(() => {

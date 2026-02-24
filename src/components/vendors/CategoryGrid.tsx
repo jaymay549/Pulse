@@ -1,4 +1,3 @@
-import React from "react";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,9 +23,8 @@ export function CategoryGrid({
   onCategorySelect,
   className,
 }: CategoryGridProps) {
-  const gridCategories = categories
-    .filter((cat) => cat.id !== "all")
-    .sort((a, b) => (categoryCounts[b.id] || 0) - (categoryCounts[a.id] || 0));
+  // Parent passes sortedCategories (already sorted by count) - just filter out "all"
+  const gridCategories = categories.filter((cat) => cat.id !== "all");
 
   return (
     <div className={cn("", className)}>
