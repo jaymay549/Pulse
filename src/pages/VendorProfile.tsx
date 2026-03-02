@@ -50,6 +50,47 @@ interface VendorProfileData {
   mentions: VendorEntry[];
 }
 
+function ExpandableDescription({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [clamped, setClamped] = useState(false);
+  const ref = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (el) setClamped(el.scrollHeight > el.clientHeight + 1);
+  }, [text]);
+
+  return (
+    <div className="mt-3.5 max-w-2xl">
+      <p
+        ref={ref}
+        className={cn(
+          "text-[15px] text-slate-500 leading-relaxed",
+          !expanded && "line-clamp-3"
+        )}
+      >
+        {text}
+      </p>
+      {clamped && !expanded && (
+        <button
+          onClick={() => setExpanded(true)}
+          className="mt-1 text-[13px] font-medium text-primary hover:underline"
+        >
+          Show more
+        </button>
+      )}
+      {expanded && (
+        <button
+          onClick={() => setExpanded(false)}
+          className="mt-1 text-[13px] font-medium text-primary hover:underline"
+        >
+          Show less
+        </button>
+      )}
+    </div>
+  );
+}
+
 const VendorProfile = () => {
   const { vendorSlug } = useParams<{ vendorSlug: string }>();
   const navigate = useNavigate();
@@ -60,6 +101,7 @@ const VendorProfile = () => {
     user,
     role,
     tier,
+    isAdmin,
     isLoading: isAuthLoading,
   } = useClerkAuth();
 
@@ -477,7 +519,7 @@ const VendorProfile = () => {
                 <img
                   src={profileData.metadata.banner_url}
                   alt={`${profileData.vendorName} banner`}
-                  className="w-full h-full object-cover object-top"
+                  className="w-full h-full object-cover object-center"
                 />
               ) : (
                 <div
@@ -526,7 +568,14 @@ const VendorProfile = () => {
                       </Button>
                     </Link>
                   )}
-                  {isAuthenticated && !isVendorOwner && (
+                  {isAuthenticated && !isVendorOwner && isAdmin && (
+                    <Link to={`/vendor-dashboard?vendor=${encodeURIComponent(vendorName)}`}>
+                      <Button variant="outline" size="sm" className="mt-2">
+                        Manage Profile
+                      </Button>
+                    </Link>
+                  )}
+                  {isAuthenticated && !isVendorOwner && !isAdmin && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -589,15 +638,19 @@ const VendorProfile = () => {
                   </div>
 
                   {profileData.metadata?.description && (
-                    <p className="text-[15px] text-slate-500 mt-3.5 max-w-2xl leading-relaxed">
-                      {profileData.metadata.description}
-                    </p>
+                    <ExpandableDescription text={profileData.metadata.description} />
                   )}
 
                   <div className="flex items-center gap-1.5 mt-3.5 text-[11px] text-slate-400">
                     <MessageCircle className="h-3 w-3" />
                     <span>Based on {profileData.stats.totalMentions} community discussions</span>
                   </div>
+
+                  {/* ── CDG Intelligence (consolidated) ── */}
+                  <VendorIntelligenceCard
+                    vendorName={vendorName}
+                    className="mt-6"
+                  />
                 </div>
 
                 {/* Right — Vendor CTA / Chat card */}
@@ -776,11 +829,6 @@ const VendorProfile = () => {
                 </div>
               </div>
 
-              {/* ── CDG Intelligence (consolidated) ── */}
-              <VendorIntelligenceCard
-                vendorName={vendorName}
-                className="mt-6"
-              />
             </div>
           </section>
 
@@ -884,20 +932,20 @@ const VendorProfile = () => {
               DIMENSIONAL INSIGHTS & INTEL
               ══════════════════════════════════════════ */}
 
-          {/* Dimensional Insights */}
-          <DimensionalInsights
-            vendorName={profileData.vendorName}
-            mentionCount={profileData.stats.totalMentions}
-          />
+          {/* Dimensional + Switching side by side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            <DimensionalInsights
+              vendorName={profileData.vendorName}
+              mentionCount={profileData.stats.totalMentions}
+            />
+            <SwitchingIntel
+              vendorName={profileData.vendorName}
+              mentionCount={profileData.stats.totalMentions}
+            />
+          </div>
 
           {/* Pricing Intelligence */}
           <PricingIntelligence
-            vendorName={profileData.vendorName}
-            mentionCount={profileData.stats.totalMentions}
-          />
-
-          {/* Switching Intel */}
-          <SwitchingIntel
             vendorName={profileData.vendorName}
             mentionCount={profileData.stats.totalMentions}
           />

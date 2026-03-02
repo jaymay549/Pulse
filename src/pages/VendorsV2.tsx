@@ -266,6 +266,45 @@ const VendorsV2 = () => {
     externalTotalCount: paginationInfo?.totalSystemCount,
   });
 
+  const aiVendorContext = useMemo(() => {
+    const byVendor = new Map<
+      string,
+      {
+        name: string;
+        category: string;
+        positiveCount: number;
+        warningCount: number;
+        mentions: Array<{ title: string; type: "positive" | "warning"; quote: string }>;
+      }
+    >();
+
+    for (const m of filteredData) {
+      if (!m.vendorName) continue;
+      const key = m.vendorName.toLowerCase();
+      const existing = byVendor.get(key) || {
+        name: m.vendorName,
+        category: m.category || "",
+        positiveCount: 0,
+        warningCount: 0,
+        mentions: [],
+      };
+
+      if (m.type === "positive") existing.positiveCount += 1;
+      if (m.type === "warning") existing.warningCount += 1;
+      if (existing.mentions.length < 8) {
+        existing.mentions.push({
+          title: m.title,
+          type: m.type,
+          quote: m.quote || m.explanation || "",
+        });
+      }
+
+      byVendor.set(key, existing);
+    }
+
+    return Array.from(byVendor.values()).slice(0, 40);
+  }, [filteredData]);
+
   // Landing state = no category/vendor/AI selected
   const isLandingState = selectedCategory === "all" && selectedVendor === null && !aiQuery;
 
@@ -928,6 +967,7 @@ const VendorsV2 = () => {
               <InlineAIChat
                 initialQuery={aiQuery.text}
                 queryId={aiQuery.id}
+                vendorData={aiVendorContext}
                 onClose={handleAIChatClose}
                 className="mt-4"
               />

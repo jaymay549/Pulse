@@ -1,5 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, Minus } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 
 interface DashboardOverviewProps {
@@ -196,45 +207,79 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
       </div>
 
       {/* Sentiment over time chart */}
-      {sentimentHistory.length >= 2 && (
-        <div className="mt-8">
-          <h2 className="mb-3 text-lg font-medium text-slate-900">Sentiment Over Time</h2>
-          <div className="rounded-xl border bg-white p-5">
-            <div className="flex items-end gap-3" style={{ height: 160 }}>
-              {sentimentHistory.map((m) => {
-                const pct = m.positive_percent ?? 0;
-                const barHeight = Math.max(pct, 4); // minimum 4% so the bar is always visible
-                return (
-                  <div
-                    key={m.month}
-                    className="group flex flex-1 flex-col items-center gap-1"
-                  >
-                    {/* Percentage label */}
-                    <span className="text-xs font-medium text-slate-600">
-                      {pct}%
-                    </span>
-                    {/* Bar container */}
-                    <div className="relative flex w-full flex-1 items-end justify-center">
-                      <div
-                        className="w-full max-w-[40px] rounded-t-md bg-emerald-400 transition-all group-hover:bg-emerald-500"
-                        style={{ height: `${barHeight}%` }}
-                        title={`${parseMonthLabel(m.month)}: ${pct}% positive (${m.total_mentions} mentions)`}
-                      />
-                    </div>
-                    {/* Month label */}
-                    <span className="text-xs text-slate-500">
-                      {parseMonthLabel(m.month)}
-                    </span>
-                  </div>
-                );
-              })}
+      {sentimentHistory.length >= 2 && (() => {
+        const chartData = sentimentHistory.map((m) => ({
+          month: parseMonthLabel(m.month),
+          positive: m.positive_percent ?? 0,
+          total: m.total_mentions,
+          positiveCount: m.positive_count,
+          warningCount: m.warning_count,
+        }));
+
+        return (
+          <div className="mt-8 space-y-4">
+            {/* Sentiment trend area chart */}
+            <div className="rounded-xl border bg-white p-5">
+              <h2 className="mb-4 text-lg font-medium text-slate-900">Sentiment Trend</h2>
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="sentimentGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} unit="%" />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
+                    formatter={(value: number) => [`${value}%`, "Positive"]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="positive"
+                    stroke="#10b981"
+                    strokeWidth={2.5}
+                    fill="url(#sentimentGrad)"
+                    dot={{ r: 4, fill: "#10b981", strokeWidth: 2, stroke: "#fff" }}
+                    activeDot={{ r: 6 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+              <p className="mt-2 text-xs text-slate-400">
+                Monthly positive sentiment % over the last {sentimentHistory.length} months
+              </p>
             </div>
-            <p className="mt-3 text-xs text-slate-400">
-              Monthly positive sentiment % over the last {sentimentHistory.length} months
-            </p>
+
+            {/* Mention volume bar chart */}
+            <div className="rounded-xl border bg-white p-5">
+              <h2 className="mb-4 text-lg font-medium text-slate-900">Mention Volume</h2>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
+                    formatter={(value: number, name: string) => [value, name === "positiveCount" ? "Positive" : "Concerns"]}
+                  />
+                  <Bar dataKey="positiveCount" stackId="mentions" fill="#10b981" radius={[0, 0, 0, 0]} name="Positive" />
+                  <Bar dataKey="warningCount" stackId="mentions" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Concerns" />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="mt-2 flex gap-4 text-xs text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" /> Positive
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" /> Concerns
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Recent activity */}
       <h2 className="mt-8 mb-3 text-lg font-medium text-slate-900">Recent Activity</h2>

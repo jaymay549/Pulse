@@ -69,11 +69,11 @@ export function PricingIntelligence({
   if (amounts.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 sm:p-6">
+    <div className="rounded-2xl border border-border/50 bg-white p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
-        <DollarSign className="h-4 w-4 text-emerald-400" />
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-zinc-400">
+        <DollarSign className="h-4 w-4 text-amber-500" />
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">
           Pricing Intelligence
         </h3>
       </div>
@@ -83,7 +83,7 @@ export function PricingIntelligence({
         {amounts.map((amount) => (
           <span
             key={amount}
-            className="inline-flex items-center rounded-full bg-zinc-800 px-3 py-1 text-[13px] font-medium text-zinc-200"
+            className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-[13px] font-medium text-slate-700"
           >
             {amount}
           </span>
@@ -91,17 +91,17 @@ export function PricingIntelligence({
       </div>
 
       {/* Contract term + data point count */}
-      <div className="flex items-center gap-3 text-[12px] text-zinc-500">
+      <div className="flex items-center gap-3 text-[12px] text-slate-400">
         {topTerm && (
           <span>
             Most common term:{" "}
-            <span className="text-zinc-300 font-medium">{topTerm}</span>
+            <span className="text-slate-600 font-medium">{topTerm}</span>
           </span>
         )}
-        {topTerm && <span className="text-zinc-700">&middot;</span>}
+        {topTerm && <span className="text-slate-300">&middot;</span>}
         <span>
           Based on{" "}
-          <span className="text-zinc-300 font-medium tabular-nums">
+          <span className="text-slate-600 font-medium tabular-nums">
             {data.data_points}
           </span>{" "}
           data point{data.data_points !== 1 ? "s" : ""}

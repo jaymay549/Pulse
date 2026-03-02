@@ -40,14 +40,10 @@ export function VendorIntelligenceCard({
   // Loading
   if (intelLoading) {
     return (
-      <div className={cn("rounded-2xl border border-border/50 bg-white p-6", className)}>
-        <div className="flex items-center gap-2 mb-4">
-          <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
-          <div className="h-4 w-32 bg-slate-100 rounded animate-pulse" />
-        </div>
-        <div className="space-y-2">
-          <div className="h-3 bg-slate-100 rounded animate-pulse w-full" />
-          <div className="h-3 bg-slate-100 rounded animate-pulse w-4/5" />
+      <div className={cn("rounded-xl border border-border/50 bg-white p-4", className)}>
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-300" />
+          <div className="h-3 w-24 bg-slate-100 rounded animate-pulse" />
         </div>
       </div>
     );
@@ -62,50 +58,45 @@ export function VendorIntelligenceCard({
     return (
       <div
         className={cn(
-          "rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-900 to-slate-800 p-5 sm:p-6",
+          "rounded-xl border border-border/50 bg-gradient-to-b from-slate-50/80 to-white p-4",
           className
         )}
       >
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="h-5 w-5 text-amber-400" />
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.15em] text-zinc-400">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">
             CDG Intelligence
           </h3>
         </div>
 
-        <p className="text-[15px] leading-relaxed text-zinc-100 mb-4">
+        <p className="text-[13px] leading-relaxed text-slate-600 mb-2.5">
           {intelligence.sentiment === "positive" && (
-            <TrendingUp className="inline h-4 w-4 text-emerald-400 mr-2 mb-0.5" />
+            <TrendingUp className="inline h-3.5 w-3.5 text-emerald-500 mr-1.5 mb-0.5" />
           )}
           {intelligence.sentiment === "negative" && (
-            <TrendingDown className="inline h-4 w-4 text-red-400 mr-2 mb-0.5" />
+            <TrendingDown className="inline h-3.5 w-3.5 text-red-400 mr-1.5 mb-0.5" />
           )}
           {intelligence.summary_text}
         </p>
 
-        <div className="flex items-center gap-4 text-[11px] font-semibold tracking-wide">
-          <span className="text-zinc-400">
-            <span className="text-zinc-200">{stats.total}</span> Total
+        <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold tracking-wide">
+          <span className="text-slate-400">
+            <span className="text-slate-600">{stats.total}</span> mentions
           </span>
-          <span className="text-emerald-400 flex items-center gap-1">
-            <span className="h-1 w-1 rounded-full bg-emerald-400" />
-            {stats.positive} Positive
+          <span className="text-emerald-600 flex items-center gap-1">
+            <span className="h-1 w-1 rounded-full bg-emerald-500" />
+            {stats.positive} positive
           </span>
           <span className="text-red-400 flex items-center gap-1">
             <span className="h-1 w-1 rounded-full bg-red-400" />
-            {stats.warnings} Concerns
+            {stats.warnings} concerns
           </span>
           {intelligence.top_dimension && (
-            <span className="text-zinc-500">
-              Top:{" "}
-              <span className="text-zinc-300 capitalize">
-                {intelligence.top_dimension.replace(/_/g, " ")}
-              </span>
+            <span className="text-slate-400">
+              Top: <span className="text-slate-500 capitalize">{intelligence.top_dimension.replace(/_/g, " ")}</span>
             </span>
           )}
         </div>
-
-        <p className="mt-4 text-[9px] text-zinc-600">AI can make mistakes</p>
       </div>
     );
   }
@@ -116,22 +107,22 @@ export function VendorIntelligenceCard({
     return (
       <div
         className={cn(
-          "rounded-2xl border border-border/50 bg-white p-5 sm:p-6",
+          "rounded-xl border border-border/50 bg-white p-4",
           className
         )}
       >
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="h-4 w-4 text-amber-500" />
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">
             Early Feedback
           </h3>
         </div>
 
-        <p className="text-[14px] leading-relaxed text-slate-700 mb-3">
+        <p className="text-[13px] leading-relaxed text-slate-600 mb-1.5">
           {intelligence.summary_text}
         </p>
 
-        <p className="text-xs text-slate-400">
+        <p className="text-[10px] text-slate-400">
           Based on {stats.total} early mention{stats.total !== 1 ? "s" : ""}
         </p>
       </div>
@@ -162,8 +153,8 @@ export function VendorIntelligenceCard({
 
   if (!hasAnyContent) {
     return (
-      <div className={cn("rounded-2xl border border-border/50 bg-white p-5 sm:p-6 text-center", className)}>
-        <p className="text-sm text-slate-400">
+      <div className={cn("rounded-xl border border-border/50 bg-white p-4 text-center", className)}>
+        <p className="text-[12px] text-slate-400">
           Community insights will appear as dealer feedback grows.
         </p>
       </div>
@@ -171,36 +162,36 @@ export function VendorIntelligenceCard({
   }
 
   return (
-    <div className={cn("rounded-2xl border border-border/50 bg-white p-5 sm:p-6", className)}>
+    <div className={cn("rounded-xl border border-border/50 bg-white p-4", className)}>
       {/* About */}
-      <div className="mb-5">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-3">
+      <div className="mb-3">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 mb-1.5">
           About
         </h3>
-        <p className="text-[14px] leading-relaxed text-slate-700">
+        <p className="text-[13px] leading-relaxed text-slate-600">
           {customDescription ||
             intelligence?.summary_text ||
             autoSummary ||
             `${vendorName} is a vendor in the automotive dealership technology space.`}
         </p>
         {customDescription && (
-          <p className="text-[11px] text-slate-400 mt-1">From the vendor</p>
+          <p className="text-[10px] text-slate-400 mt-0.5">From the vendor</p>
         )}
       </div>
 
       {/* Products / Highlights */}
       {(highlights.length > 0 || autoProducts.length > 0) && (
-        <div className="mb-5">
-          <div className="flex items-center gap-2 mb-2">
-            <Package className="h-4 w-4 text-slate-400" />
-            <h4 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        <div className="mb-3">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Package className="h-3.5 w-3.5 text-slate-400" />
+            <h4 className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
               {highlights.length > 0 ? "Product Highlights" : "Products"}
             </h4>
           </div>
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {(highlights.length > 0 ? highlights : autoProducts).map((item, i) => (
-              <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
-                <span className="text-slate-400 mt-0.5">&bull;</span>
+              <li key={i} className="text-[12px] text-slate-600 flex items-start gap-1.5">
+                <span className="text-slate-300 mt-0.5">&bull;</span>
                 {item}
               </li>
             ))}
@@ -210,19 +201,19 @@ export function VendorIntelligenceCard({
 
       {/* Customer Segments */}
       {(customerSegments.length > 0 || autoSegments.length > 0) && (
-        <div className="mb-5">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="h-4 w-4 text-slate-400" />
-            <h4 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        <div className="mb-3">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Users className="h-3.5 w-3.5 text-slate-400" />
+            <h4 className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
               Customer Segments
             </h4>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {(customerSegments.length > 0 ? customerSegments : autoSegments).map(
               (segment, i) => (
                 <span
                   key={i}
-                  className="inline-block rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600"
+                  className="inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600"
                 >
                   {segment}
                 </span>
@@ -234,21 +225,21 @@ export function VendorIntelligenceCard({
 
       {/* Integrations */}
       {(integrationPartners.length > 0 || autoIntegrations.length > 0) && (
-        <div className="mb-5">
-          <div className="flex items-center gap-2 mb-2">
-            <Network className="h-4 w-4 text-slate-400" />
-            <h4 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        <div className="mb-3">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Network className="h-3.5 w-3.5 text-slate-400" />
+            <h4 className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
               Integrations
             </h4>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {(integrationPartners.length > 0
               ? integrationPartners
               : autoIntegrations
             ).map((partner, i) => (
               <span
                 key={i}
-                className="inline-block rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600"
+                className="inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600"
               >
                 {partner}
               </span>
@@ -258,7 +249,7 @@ export function VendorIntelligenceCard({
       )}
 
       {/* Footer */}
-      <p className="text-xs text-slate-400 pt-3 border-t border-slate-100">
+      <p className="text-[10px] text-slate-400 pt-2 border-t border-slate-100">
         Community insights will appear as dealer feedback grows
       </p>
     </div>

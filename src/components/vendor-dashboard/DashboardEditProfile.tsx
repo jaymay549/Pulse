@@ -9,6 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
 interface VendorProfile {
   id: string;
   user_id: string;
@@ -31,10 +34,30 @@ interface ScreenshotFile {
 
 const MAX_SCREENSHOTS = 6;
 
-export function DashboardEditProfile(): JSX.Element {
-  const { user } = useClerkAuth();
+interface DashboardEditProfileProps {
+  /** When provided (admin mode), fetch profile by ID instead of current user */
+  vendorProfileId?: string;
+}
+
+/** Convert a File to base64 string (without the data:... prefix) */
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Strip the data:...;base64, prefix
+      resolve(result.split(",")[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfileProps): JSX.Element {
+  const { user, getToken } = useClerkAuth();
   const supabase = useClerkSupabase();
   const queryClient = useQueryClient();
+  const isAdminMode = !!vendorProfileId;
 
   // Form state
   const [tagline, setTagline] = useState("");
@@ -52,26 +75,66 @@ export function DashboardEditProfile(): JSX.Element {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const screenshotInputRef = useRef<HTMLInputElement>(null);
 
+  // ---------- Admin edge function helper ----------
+  async function adminOp(body: Record<string, unknown>) {
+    const token = await getToken();
+    const res = await fetch(
+      `${SUPABASE_URL}/functions/v1/admin-vendor-profile-update`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ ...body, _auth_token: token }),
+      }
+    );
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || "Admin operation failed");
+    }
+    return res.json();
+  }
+
   // ---------- Fetch profile ----------
+  const profileQueryKey = isAdminMode
+    ? ["vendor-edit-profile-admin", vendorProfileId]
+    : ["vendor-edit-profile", user?.id];
+
   const { data: profile, isLoading } = useQuery({
-    queryKey: ["vendor-edit-profile", user?.id],
+    queryKey: profileQueryKey,
     queryFn: async () => {
+      if (isAdminMode) {
+        return (await adminOp({
+          action: "get-profile",
+          profile_id: vendorProfileId,
+        })) as VendorProfile | null;
+      }
+
       const { data, error } = await supabase
         .from("vendor_profiles" as never)
         .select("*")
         .eq("user_id", user!.id)
         .eq("is_approved", true)
-        .single();
+        .maybeSingle();
       if (error) throw error;
-      return data as unknown as VendorProfile;
+      return data as unknown as VendorProfile | null;
     },
-    enabled: !!user?.id,
+    enabled: isAdminMode ? true : !!user?.id,
   });
 
   // ---------- Fetch screenshots ----------
   const { data: screenshots = [] } = useQuery({
     queryKey: ["vendor-screenshots", profile?.id],
     queryFn: async () => {
+      if (isAdminMode) {
+        return (await adminOp({
+          action: "list-files",
+          bucket: "vendor-screenshots",
+          folder: profile!.id,
+        })) as ScreenshotFile[];
+      }
+
       const { data: files, error } = await supabase.storage
         .from("vendor-screenshots")
         .list(profile!.id);
@@ -113,7 +176,7 @@ export function DashboardEditProfile(): JSX.Element {
       headquarters !== (profile.headquarters ?? "") ||
       email !== (profile.contact_email ?? ""));
 
-  // ---------- Upload helper ----------
+  // ---------- Upload helper (owner mode) ----------
   const handleUpload = async (file: File, bucket: string, path: string) => {
     const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
     if (error) throw error;
@@ -123,21 +186,45 @@ export function DashboardEditProfile(): JSX.Element {
     return publicUrl;
   };
 
+  // ---------- Admin upload helper ----------
+  const handleAdminUpload = async (file: File, bucket: string, path: string) => {
+    const file_base64 = await fileToBase64(file);
+    const result = await adminOp({
+      action: "upload-file",
+      bucket,
+      path,
+      file_base64,
+      content_type: file.type,
+    });
+    return result.publicUrl as string;
+  };
+
   // ---------- Banner upload mutation ----------
   const bannerMutation = useMutation({
     mutationFn: async (file: File) => {
       const path = `${profile!.id}/banner`;
-      const publicUrl = await handleUpload(file, "vendor-logos", path);
-      const { error } = await supabase
-        .from("vendor_profiles" as never)
-        .update({ banner_url: publicUrl } as never)
-        .eq("id", profile!.id);
-      if (error) throw error;
+      const publicUrl = isAdminMode
+        ? await handleAdminUpload(file, "vendor-logos", path)
+        : await handleUpload(file, "vendor-logos", path);
+
+      if (isAdminMode) {
+        await adminOp({
+          action: "update-profile",
+          profile_id: profile!.id,
+          updates: { banner_url: publicUrl },
+        });
+      } else {
+        const { error } = await supabase
+          .from("vendor_profiles" as never)
+          .update({ banner_url: publicUrl } as never)
+          .eq("id", profile!.id);
+        if (error) throw error;
+      }
       return publicUrl;
     },
     onSuccess: () => {
       toast.success("Banner updated.");
-      queryClient.invalidateQueries({ queryKey: ["vendor-edit-profile", user?.id] });
+      queryClient.invalidateQueries({ queryKey: profileQueryKey });
     },
     onError: (err: Error) => toast.error(`Banner upload failed: ${err.message}`),
   });
@@ -146,17 +233,28 @@ export function DashboardEditProfile(): JSX.Element {
   const logoMutation = useMutation({
     mutationFn: async (file: File) => {
       const path = `${profile!.id}/logo`;
-      const publicUrl = await handleUpload(file, "vendor-logos", path);
-      const { error } = await supabase
-        .from("vendor_profiles" as never)
-        .update({ company_logo_url: publicUrl } as never)
-        .eq("id", profile!.id);
-      if (error) throw error;
+      const publicUrl = isAdminMode
+        ? await handleAdminUpload(file, "vendor-logos", path)
+        : await handleUpload(file, "vendor-logos", path);
+
+      if (isAdminMode) {
+        await adminOp({
+          action: "update-profile",
+          profile_id: profile!.id,
+          updates: { company_logo_url: publicUrl },
+        });
+      } else {
+        const { error } = await supabase
+          .from("vendor_profiles" as never)
+          .update({ company_logo_url: publicUrl } as never)
+          .eq("id", profile!.id);
+        if (error) throw error;
+      }
       return publicUrl;
     },
     onSuccess: () => {
       toast.success("Logo updated.");
-      queryClient.invalidateQueries({ queryKey: ["vendor-edit-profile", user?.id] });
+      queryClient.invalidateQueries({ queryKey: profileQueryKey });
     },
     onError: (err: Error) => toast.error(`Logo upload failed: ${err.message}`),
   });
@@ -166,7 +264,11 @@ export function DashboardEditProfile(): JSX.Element {
     mutationFn: async (file: File) => {
       const timestamp = Date.now();
       const path = `${profile!.id}/${timestamp}-${file.name}`;
-      await handleUpload(file, "vendor-screenshots", path);
+      if (isAdminMode) {
+        await handleAdminUpload(file, "vendor-screenshots", path);
+      } else {
+        await handleUpload(file, "vendor-screenshots", path);
+      }
     },
     onSuccess: () => {
       toast.success("Screenshot added.");
@@ -178,10 +280,18 @@ export function DashboardEditProfile(): JSX.Element {
   // ---------- Screenshot delete mutation ----------
   const screenshotDeleteMutation = useMutation({
     mutationFn: async (fileName: string) => {
-      const { error } = await supabase.storage
-        .from("vendor-screenshots")
-        .remove([`${profile!.id}/${fileName}`]);
-      if (error) throw error;
+      if (isAdminMode) {
+        await adminOp({
+          action: "delete-file",
+          bucket: "vendor-screenshots",
+          paths: [`${profile!.id}/${fileName}`],
+        });
+      } else {
+        const { error } = await supabase.storage
+          .from("vendor-screenshots")
+          .remove([`${profile!.id}/${fileName}`]);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       toast.success("Screenshot removed.");
@@ -193,22 +303,32 @@ export function DashboardEditProfile(): JSX.Element {
   // ---------- Save profile details mutation ----------
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from("vendor_profiles" as never)
-        .update({
-          tagline,
-          company_description: description,
-          company_website: website,
-          linkedin_url: linkedin,
-          headquarters,
-          contact_email: email,
-        } as never)
-        .eq("id", profile!.id);
-      if (error) throw error;
+      const updates = {
+        tagline,
+        company_description: description,
+        company_website: website,
+        linkedin_url: linkedin,
+        headquarters,
+        contact_email: email,
+      };
+
+      if (isAdminMode) {
+        await adminOp({
+          action: "update-profile",
+          profile_id: profile!.id,
+          updates,
+        });
+      } else {
+        const { error } = await supabase
+          .from("vendor_profiles" as never)
+          .update(updates as never)
+          .eq("id", profile!.id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       toast.success("Profile saved.");
-      queryClient.invalidateQueries({ queryKey: ["vendor-edit-profile", user?.id] });
+      queryClient.invalidateQueries({ queryKey: profileQueryKey });
       setFormInitialized(false); // allow re-sync with fresh data
     },
     onError: (err: Error) => toast.error(`Failed to save profile: ${err.message}`),

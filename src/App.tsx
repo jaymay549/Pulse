@@ -11,6 +11,7 @@ import VendorProfile from "./pages/VendorProfile";
 import VendorBeta from "./pages/VendorBeta";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import { ProfileProgressBar } from "./components/tech-stack/ProfileProgressBar";
 
 // Admin pages (lazy loaded)
 const AdminGuard = lazy(() => import("./components/admin/AdminGuard"));
@@ -30,6 +31,7 @@ const TrendsPage = lazy(() => import("./pages/admin/TrendsPage"));
 const DebugPage = lazy(() => import("./pages/admin/DebugPage"));
 const ClaimsPage = lazy(() => import("./pages/admin/ClaimsPage"));
 const VendorDashboardPage = lazy(() => import("./pages/VendorDashboardPage"));
+const MarketIntelReport = lazy(() => import("./components/tech-stack/MarketIntelReport"));
 
 const queryClient = new QueryClient();
 
@@ -46,6 +48,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ProfileProgressBar />
           <Routes>
             <Route path="/" element={<Navigate to="/vendors" replace />} />
             <Route path="/vendors" element={<VendorsV2 />} />
@@ -57,6 +60,7 @@ const App = () => (
             <Route path="/vendor-beta" element={<VendorBeta />} />
             <Route path="/vendor-portal/*" element={<Navigate to="/vendors" replace />} />
             <Route path="/vendor-dashboard" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}><VendorDashboardPage /></Suspense>} />
+            <Route path="/tech-stack-report" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}><MarketIntelReport /></Suspense>} />
 
             {/* Admin routes */}
             <Route

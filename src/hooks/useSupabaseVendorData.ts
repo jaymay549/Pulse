@@ -167,16 +167,42 @@ export async function fetchVendorsList(): Promise<
 export async function fetchVendorProfile(
   vendorName: string
 ): Promise<VendorProfileResult> {
-  const { data, error } = await supabase.rpc("get_vendor_profile", {
-    p_vendor_name: vendorName,
-  });
+  // Run RPC and vendor_profiles query in parallel.
+  // The RPC may not return newer columns (banner_url, tagline, etc.),
+  // so we supplement with a direct read from vendor_profiles (public for approved vendors).
+  const [rpcResult, vpResult] = await Promise.all([
+    supabase.rpc("get_vendor_profile", { p_vendor_name: vendorName }),
+    supabase
+      .from("vendor_profiles" as never)
+      .select("company_website, company_logo_url, company_description, linkedin_url, banner_url, tagline, headquarters" as never)
+      .eq("vendor_name" as never, vendorName)
+      .eq("is_approved" as never, true)
+      .maybeSingle(),
+  ]);
 
-  if (error) {
-    console.error("[Supabase] get_vendor_profile error:", error);
-    throw error;
+  if (rpcResult.error) {
+    console.error("[Supabase] get_vendor_profile error:", rpcResult.error);
+    throw rpcResult.error;
   }
 
-  const result = data as any;
+  const result = rpcResult.data as any;
+  const vp = vpResult.data as Record<string, any> | null;
+
+  // Merge: RPC metadata first, then fill gaps from vendor_profiles
+  const rpcMeta = result.metadata || {};
+  const mergedMetadata = vp
+    ? {
+        website_url: rpcMeta.website_url || vp.company_website || null,
+        logo_url: rpcMeta.logo_url || vp.company_logo_url || null,
+        description: rpcMeta.description || vp.company_description || null,
+        category: rpcMeta.category || null,
+        linkedin_url: rpcMeta.linkedin_url || vp.linkedin_url || null,
+        banner_url: rpcMeta.banner_url || vp.banner_url || null,
+        tagline: rpcMeta.tagline || vp.tagline || null,
+        headquarters: rpcMeta.headquarters || vp.headquarters || null,
+      }
+    : rpcMeta;
+
   return {
     vendorName: result.vendorName,
     stats: result.stats || {
@@ -187,7 +213,7 @@ export async function fetchVendorProfile(
       warningPercent: 0,
     },
     categories: result.categories || [],
-    metadata: result.metadata || null,
+    metadata: mergedMetadata,
     insight: result.insight || null,
     mentions: (result.mentions || []).map((m: any) => ({
       id: m.id,

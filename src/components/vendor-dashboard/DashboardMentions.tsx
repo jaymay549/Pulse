@@ -2,6 +2,13 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Flag } from "lucide-react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useFlagMention, useVendorFlags } from "@/hooks/useMentionFlags";
 import { FlagMentionModal } from "./FlagMentionModal";
@@ -178,8 +185,58 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
       <h1 className="text-2xl font-semibold text-slate-900">Mentions</h1>
       <p className="mt-1 text-sm text-slate-500">See what the community is saying and respond</p>
 
+      {/* Sentiment breakdown donut */}
+      {mentions.length > 0 && (
+        <div className="mt-6 rounded-xl border bg-white p-5">
+          <div className="flex items-center gap-6">
+            <div style={{ width: 120, height: 120 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: "Positive", value: positiveCount },
+                      { name: "Concerns", value: warningCount },
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={35}
+                    outerRadius={52}
+                    paddingAngle={3}
+                    dataKey="value"
+                    strokeWidth={0}
+                  >
+                    <Cell fill="#10b981" />
+                    <Cell fill="#f59e0b" />
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ borderRadius: 6, border: "1px solid #e2e8f0", fontSize: 12 }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-sm text-slate-600">
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Positive
+                </span>
+                <span className="text-sm font-semibold text-slate-900">{positiveCount} ({mentions.length > 0 ? Math.round((positiveCount / mentions.length) * 100) : 0}%)</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-sm text-slate-600">
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500" /> Concerns
+                </span>
+                <span className="text-sm font-semibold text-slate-900">{warningCount} ({mentions.length > 0 ? Math.round((warningCount / mentions.length) * 100) : 0}%)</span>
+              </div>
+              <div className="border-t pt-2 mt-2">
+                <span className="text-xs text-slate-400">Total: {mentions.length} mentions</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Filter bar */}
-      <div className="mt-6 flex gap-2">
+      <div className="mt-4 flex gap-2">
         <FilterButton label="All" count={mentions.length} active={filter === "all"} onClick={() => setFilter("all")} />
         <FilterButton
           label="Positive"

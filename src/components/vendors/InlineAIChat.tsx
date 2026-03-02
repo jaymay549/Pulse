@@ -9,11 +9,25 @@ interface Message {
   content: string;
 }
 
+interface ChatVendorData {
+  name: string;
+  category: string;
+  positiveCount: number;
+  warningCount: number;
+  mentions: Array<{
+    title: string;
+    type: "positive" | "warning";
+    quote: string;
+  }>;
+}
+
 interface InlineAIChatProps {
   /** The initial query that triggered the chat (set externally). */
   initialQuery: string | null;
   /** Monotonically increasing ID to distinguish repeated queries. */
   queryId: number;
+  /** Optional vendor context to improve recommendation quality. */
+  vendorData?: ChatVendorData[];
   /** Called when the user dismisses the chat. */
   onClose: () => void;
   className?: string;
@@ -21,7 +35,13 @@ interface InlineAIChatProps {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vendor-ai-chat`;
 
-export function InlineAIChat({ initialQuery, queryId, onClose, className }: InlineAIChatProps) {
+export function InlineAIChat({
+  initialQuery,
+  queryId,
+  vendorData = [],
+  onClose,
+  className,
+}: InlineAIChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -99,7 +119,7 @@ export function InlineAIChat({ initialQuery, queryId, onClose, className }: Inli
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({ messages: updatedMessages }),
+        body: JSON.stringify({ messages: updatedMessages, vendorData }),
         signal: controller.signal,
       });
 

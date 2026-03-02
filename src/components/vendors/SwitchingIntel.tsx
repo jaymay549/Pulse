@@ -33,7 +33,7 @@ function NetTrendBadge({
 
   if (net > 0) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700">
         <TrendingUp className="h-3 w-3" />
         Net positive ({`+${net}`})
       </span>
@@ -42,7 +42,7 @@ function NetTrendBadge({
 
   if (net < 0) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2.5 py-0.5 text-[11px] font-medium text-red-400">
+      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-medium text-red-600">
         <TrendingDown className="h-3 w-3" />
         Net negative ({net})
       </span>
@@ -50,7 +50,7 @@ function NetTrendBadge({
   }
 
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-zinc-800 px-2.5 py-0.5 text-[11px] font-medium text-zinc-400">
+    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-500">
       <Minus className="h-3 w-3" />
       Neutral
     </span>
@@ -80,13 +80,13 @@ export function SwitchingIntel({
   if (!data || (data.switched_to + data.switched_from) === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 sm:p-6">
+    <div className="rounded-2xl border border-border/50 bg-white p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <ArrowRightLeft className="h-4 w-4 text-blue-400" />
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-zinc-400">
-            Switching Intelligence
+          <ArrowRightLeft className="h-4 w-4 text-amber-500" />
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">
+            Competitive Movement
           </h3>
         </div>
         <NetTrendBadge
@@ -97,13 +97,13 @@ export function SwitchingIntel({
 
       {/* Two-column grid */}
       <div className="grid grid-cols-2 gap-4">
-        {/* Switched TO this vendor */}
+        {/* Gained from — dealers who left other vendors and came here */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-[12px] font-semibold text-emerald-400">
-              Switched to
+            <span className="text-[12px] font-semibold text-emerald-600">
+              Gained from
             </span>
-            <span className="text-[11px] text-zinc-500 tabular-nums">
+            <span className="text-[11px] text-slate-400 tabular-nums">
               ({data.switched_to})
             </span>
           </div>
@@ -113,29 +113,29 @@ export function SwitchingIntel({
               {data.to_sources.map((source) => (
                 <div
                   key={source.vendor}
-                  className="flex items-center justify-between rounded-lg bg-zinc-800/50 px-3 py-1.5"
+                  className="flex items-center justify-between rounded-lg bg-emerald-50/50 border border-emerald-100 px-3 py-1.5"
                 >
-                  <span className="text-[13px] text-zinc-200 truncate mr-2">
+                  <span className="text-[13px] text-slate-700 truncate mr-2">
                     {source.vendor}
                   </span>
-                  <span className="text-[11px] text-zinc-500 tabular-nums shrink-0">
+                  <span className="text-[11px] text-slate-400 tabular-nums shrink-0">
                     {source.count}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-[12px] text-zinc-600">No data</p>
+            <p className="text-[12px] text-slate-400">No data</p>
           )}
         </div>
 
-        {/* Switched FROM this vendor */}
+        {/* Lost to — dealers who left here and went to other vendors */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-[12px] font-semibold text-red-400">
-              Switched from
+            <span className="text-[12px] font-semibold text-red-500">
+              Lost to
             </span>
-            <span className="text-[11px] text-zinc-500 tabular-nums">
+            <span className="text-[11px] text-slate-400 tabular-nums">
               ({data.switched_from})
             </span>
           </div>
@@ -145,19 +145,19 @@ export function SwitchingIntel({
               {data.from_destinations.map((dest) => (
                 <div
                   key={dest.vendor}
-                  className="flex items-center justify-between rounded-lg bg-zinc-800/50 px-3 py-1.5"
+                  className="flex items-center justify-between rounded-lg bg-red-50/50 border border-red-100 px-3 py-1.5"
                 >
-                  <span className="text-[13px] text-zinc-200 truncate mr-2">
+                  <span className="text-[13px] text-slate-700 truncate mr-2">
                     {dest.vendor}
                   </span>
-                  <span className="text-[11px] text-zinc-500 tabular-nums shrink-0">
+                  <span className="text-[11px] text-slate-400 tabular-nums shrink-0">
                     {dest.count}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-[12px] text-zinc-600">No data</p>
+            <p className="text-[12px] text-slate-400">No data</p>
           )}
         </div>
       </div>
