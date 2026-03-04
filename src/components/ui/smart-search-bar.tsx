@@ -8,18 +8,24 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 interface VendorSuggestion {
   name: string
   logoUrl?: string | null
+  vendorName?: string
+  productLineSlug?: string | null
+  keywords?: string[]
 }
 
 interface SmartSearchBarProps {
   placeholder?: string
   suggestions: VendorSuggestion[]
-  onVendorSelect: (vendorName: string) => void
+  onVendorSelect: (vendorName: string, options?: { productLineSlug?: string | null }) => void
   onAISubmit: (query: string) => void
   onSearchChange?: (query: string) => void
   isPro: boolean
   isLoading?: boolean
   className?: string
 }
+
+const normalizeSearchText = (value: string) =>
+  value.toLowerCase().replace(/[^a-z0-9]/g, "")
 
 export function SmartSearchBar({
   placeholder = "Search vendors or ask a question...",
@@ -41,9 +47,21 @@ export function SmartSearchBar({
   const filteredSuggestions =
     searchQuery.trim().length >= 2
       ? suggestions
-          .filter((item) =>
-            item.name.toLowerCase().includes(searchQuery.toLowerCase())
-          )
+          .filter((item) => {
+            const rawQuery = searchQuery.toLowerCase().trim()
+            const rawName = item.name.toLowerCase()
+            const keywordBlob = (item.keywords || []).join(" ").toLowerCase()
+            if (rawName.includes(rawQuery) || keywordBlob.includes(rawQuery)) return true
+
+            const normalizedQuery = normalizeSearchText(rawQuery)
+            if (!normalizedQuery) return false
+            const normalizedName = normalizeSearchText(rawName)
+            const normalizedKeywords = normalizeSearchText(keywordBlob)
+            return (
+              normalizedName.includes(normalizedQuery) ||
+              normalizedKeywords.includes(normalizedQuery)
+            )
+          })
           .slice(0, 8)
       : []
 
@@ -61,10 +79,12 @@ export function SmartSearchBar({
     inputRef.current?.focus()
   }
 
-  const handleSuggestionClick = (vendorName: string) => {
+  const handleSuggestionClick = (suggestion: VendorSuggestion) => {
     setSearchQuery("")
     setShowDropdown(false)
-    onVendorSelect(vendorName)
+    onVendorSelect(suggestion.vendorName || suggestion.name, {
+      productLineSlug: suggestion.productLineSlug || null,
+    })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -222,7 +242,7 @@ export function SmartSearchBar({
                   initial="hidden"
                   animate="visible"
                   exit="exit"
-                  onClick={() => handleSuggestionClick(suggestion.name)}
+                  onClick={() => handleSuggestionClick(suggestion)}
                   className="flex items-center gap-3 w-full px-3 py-2.5 cursor-pointer rounded-lg hover:bg-primary/5 group transition-colors text-left"
                 >
                   <Avatar className="h-8 w-8 border border-border/50 shrink-0">

@@ -4,8 +4,15 @@ import { useState } from "react";
 export interface VendorEntry {
   id: number | string;
   vendorName?: string;
+  rawVendorName?: string;
   title: string;
   quote: string;
+  rawQuote?: string;
+  displayMode?: "raw" | "rewritten_negative";
+  qualityScore?: number | null;
+  evidenceLevel?: "none" | "weak" | "moderate" | "strong" | null;
+  isOpinionHeavy?: boolean | null;
+  rewriteConfidence?: number | null;
   explanation: string;
   member?: string;
   type: "positive" | "warning";

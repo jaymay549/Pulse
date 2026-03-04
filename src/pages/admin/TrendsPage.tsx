@@ -35,9 +35,11 @@ const TrendsPage = () => {
     report?.date_range_end || null
   );
 
-  const topics = report?.topics?.filter(
+  const safeTopics = Array.isArray(report?.topics) ? report.topics : [];
+
+  const topics = safeTopics.filter(
     (t) => category === "All Topics" || t.category === category
-  ) || [];
+  );
 
   const handleTopicClick = (topic: TrendTopic) => {
     setSelectedTopic(topic);
@@ -80,9 +82,9 @@ const TrendsPage = () => {
             }`}
           >
             {cat}
-            {cat !== "All Topics" && report?.topics && (
+            {cat !== "All Topics" && safeTopics.length > 0 && (
               <span className="ml-1 text-zinc-500">
-                ({report.topics.filter((t) => t.category === cat).length})
+                ({safeTopics.filter((t) => t.category === cat).length})
               </span>
             )}
           </button>

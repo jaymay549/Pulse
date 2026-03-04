@@ -314,6 +314,14 @@ export const VendorCard: React.FC<VendorCardProps> = ({
     >
       <div className="px-5 py-4 flex flex-col flex-1 min-h-0">
         <div className="flex-1 min-h-0 flex flex-col">
+          {entry.type === "warning" && entry.displayMode === "rewritten_negative" && (
+            <div className="mb-2 inline-flex items-center">
+              <span className="text-[10px] font-semibold tracking-[0.08em] uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">
+                AI-normalized feedback
+              </span>
+            </div>
+          )}
+
           {/* Vendor Name - Editorial style with logo */}
           {entry.vendorName && showVendorNames && (
             <div className="mb-2 flex items-center gap-3">

@@ -75,14 +75,44 @@ async function callGemini(apiKey: string, prompt: string): Promise<string> {
 interface MentionRow {
   id: string;
   vendor_name: string;
+  title: string | null;
   quote: string;
+  explanation: string | null;
   type: string;
   category: string;
 }
 
+interface PreviewChange {
+  mention_id: string;
+  vendor_name: string;
+  display_mode: "raw" | "rewritten_negative";
+  quality_score: number | null;
+  evidence_level: string | null;
+  original_quote: string;
+  display_text: string;
+}
+
+async function resolveVendorEntityId(
+  supabase: ReturnType<typeof createClient>,
+  vendorName: string
+): Promise<string | null> {
+  try {
+    const { data } = await supabase.rpc("resolve_vendor_family", {
+      p_vendor_name: vendorName,
+      p_title: null,
+      p_quote: null,
+      p_explanation: null,
+    });
+    const first = Array.isArray(data) ? data[0] : null;
+    return (first?.vendor_entity_id as string | undefined) || null;
+  } catch {
+    return null;
+  }
+}
+
 function buildEnrichmentPrompt(mentions: MentionRow[]): string {
   const mentionList = mentions.map((m, i) =>
-    `${i}. [${m.type}] Vendor: ${m.vendor_name} | Current category: ${m.category}\n   Quote: "${m.quote}"`
+    `${i}. [${m.type}] Vendor: ${m.vendor_name} | Current category: ${m.category}\n   Title: "${m.title ?? ""}"\n   Quote: "${m.quote}"\n   Explanation: "${m.explanation ?? ""}"`
   ).join("\n\n");
 
   return `You are an automotive dealership technology analyst. For each dealer mention below, extract structured intelligence.
@@ -124,6 +154,32 @@ For EACH mention, return:
    {"direction": "to" or "from", "other_vendor": "name of the other vendor", "reason": "why they switched"}
    Return null if no switching is mentioned.
 
+7. "quality_score": Integer 0-100 indicating information quality/actionability.
+   - 0-30: mostly opinion/rant, low signal
+   - 31-59: mixed quality, partial signal
+   - 60-79: useful and fairly specific
+   - 80-100: specific, actionable, evidence-backed
+
+8. "evidence_level": one of "none", "weak", "moderate", "strong"
+
+9. "is_opinion_heavy": true if mostly subjective language with limited concrete details.
+
+10. "rewritten_negative_text": only for warning mentions that are low/medium quality or opinion-heavy.
+    - Write concise normalized output:
+      Concern: ...
+      Dealer impact: ...
+      Action signal: ...
+    - Keep neutral tone.
+    - No invented facts.
+    - Do NOT use loaded or defamatory wording (e.g., "vaporware", "scam", "fraud", "garbage", "trash").
+    - Do NOT include imperative recommendations like "avoid adopting" or "do not use".
+    - If evidence_level is "none" or "weak", DO NOT include "Action signal". Use this 2-line format instead:
+      Concern: General negative sentiment noted.
+      Dealer impact: Limited concrete detail provided.
+    - Null when mention should remain raw.
+
+11. "rewrite_confidence": number between 0 and 1 (null when rewritten_negative_text is null).
+
 Return a JSON array with one object per mention, in the same order. Each object:
 {
   "index": 0,
@@ -132,7 +188,12 @@ Return a JSON array with one object per mention, in the same order. Each object:
   "headline": "Outstanding account manager responsiveness",
   "category": "crm",
   "pricing_signal": null,
-  "switching_signal": null
+  "switching_signal": null,
+  "quality_score": 72,
+  "evidence_level": "moderate",
+  "is_opinion_heavy": false,
+  "rewritten_negative_text": null,
+  "rewrite_confidence": null
 }`;
 }
 
@@ -146,9 +207,26 @@ interface EnrichmentResult {
   category: string;
   pricing_signal: { amount: string; context: string } | null;
   switching_signal: { direction: string; other_vendor: string; reason: string } | null;
+  quality_score?: number;
+  evidence_level?: "none" | "weak" | "moderate" | "strong";
+  is_opinion_heavy?: boolean;
+  rewritten_negative_text?: string | null;
+  rewrite_confidence?: number | null;
 }
 
 function validateResult(r: EnrichmentResult): EnrichmentResult {
+  const evidenceLevel = ["none", "weak", "moderate", "strong"].includes(r.evidence_level || "")
+    ? r.evidence_level
+    : "weak";
+
+  const qualityScore = Number.isFinite(r.quality_score as number)
+    ? Math.max(0, Math.min(100, Math.round(r.quality_score as number)))
+    : 55;
+
+  const rewriteConfidence = Number.isFinite(r.rewrite_confidence as number)
+    ? Math.max(0, Math.min(1, Number(r.rewrite_confidence)))
+    : null;
+
   return {
     index: r.index,
     sentiment: VALID_SENTIMENTS.includes(r.sentiment) ? r.sentiment : "neutral",
@@ -157,7 +235,44 @@ function validateResult(r: EnrichmentResult): EnrichmentResult {
     category: VALID_CATEGORIES.includes(r.category) ? r.category : "other",
     pricing_signal: r.pricing_signal && r.pricing_signal.amount ? r.pricing_signal : null,
     switching_signal: r.switching_signal && r.switching_signal.other_vendor ? r.switching_signal : null,
+    quality_score: qualityScore,
+    evidence_level: evidenceLevel,
+    is_opinion_heavy: !!r.is_opinion_heavy,
+    rewritten_negative_text: r.rewritten_negative_text ? r.rewritten_negative_text.slice(0, 500) : null,
+    rewrite_confidence: rewriteConfidence,
   };
+}
+
+function sanitizeRewrittenText(
+  rewritten: string | null | undefined,
+  evidenceLevel: "none" | "weak" | "moderate" | "strong"
+): string | null {
+  if (!rewritten) return null;
+
+  let text = rewritten;
+
+  // Remove loaded wording and strong imperatives.
+  const replacements: Array<[RegExp, string]> = [
+    [/\bvaporware\b/gi, "immature offering"],
+    [/\bscam\b/gi, "questionable fit"],
+    [/\bfraud\b/gi, "trust concern"],
+    [/\bgarbage\b/gi, "low satisfaction"],
+    [/\btrash\b/gi, "low satisfaction"],
+    [/\bavoid adopting\b/gi, "evaluate carefully"],
+    [/\bdo not use\b/gi, "consider alternatives carefully"],
+    [/\bstay away\b/gi, "proceed with caution"],
+  ];
+
+  for (const [pattern, replacement] of replacements) {
+    text = text.replace(pattern, replacement);
+  }
+
+  // For weak/none evidence, enforce non-prescriptive two-line format.
+  if (evidenceLevel === "none" || evidenceLevel === "weak") {
+    return "Concern: General negative sentiment noted.\nDealer impact: Limited concrete detail provided.";
+  }
+
+  return text.slice(0, 500);
 }
 
 // ── Process a batch ──────────────────────────────────────────
@@ -166,9 +281,10 @@ async function processBatch(
   supabase: ReturnType<typeof createClient>,
   geminiKey: string,
   mentions: MentionRow[]
-): Promise<{ updated: number; errors: number }> {
+): Promise<{ updated: number; errors: number; preview_changes: PreviewChange[] }> {
   let updated = 0;
   let errors = 0;
+  const previewChanges: PreviewChange[] = [];
 
   try {
     const prompt = buildEnrichmentPrompt(mentions);
@@ -188,6 +304,11 @@ async function processBatch(
         sentiment: result.sentiment,
         dimension: result.dimension,
         headline: result.headline,
+        quality_score: result.quality_score ?? 55,
+        evidence_level: result.evidence_level ?? "weak",
+        is_opinion_heavy: result.is_opinion_heavy ?? false,
+        rewrite_model_version: "gemini-2.0-flash:negative-policy-v1",
+        rewrite_updated_at: new Date().toISOString(),
       };
 
       // Update category on the mention if it changed
@@ -203,6 +324,30 @@ async function processBatch(
         updateData.switching_signal = result.switching_signal;
       }
 
+      // Display policy:
+      // - non-warning mentions always raw
+      // - warning mentions are raw if strong evidence OR quality>=60 and not opinion-heavy
+      // - otherwise show rewritten_negative when rewrite text exists
+      const isWarning = mention.type === "warning";
+      const evidenceStrong = result.evidence_level === "strong";
+      const qualityHighEnough = (result.quality_score ?? 0) >= 60;
+      const opinionHeavy = !!result.is_opinion_heavy;
+      const keepRawWarning = evidenceStrong || (qualityHighEnough && !opinionHeavy);
+      const sanitizedRewrite = sanitizeRewrittenText(
+        result.rewritten_negative_text,
+        result.evidence_level ?? "weak"
+      );
+
+      if (!isWarning || keepRawWarning || !sanitizedRewrite) {
+        updateData.display_mode = "raw";
+        updateData.display_text = null;
+      } else {
+        updateData.display_mode = "rewritten_negative";
+        updateData.display_text = sanitizedRewrite;
+      }
+      updateData.rewrite_confidence = result.rewrite_confidence;
+      updateData.rewrite_status = "done";
+
       const { error } = await supabase
         .from("vendor_mentions")
         .update(updateData)
@@ -213,6 +358,21 @@ async function processBatch(
         errors++;
       } else {
         updated++;
+        if (
+          updateData.display_mode === "rewritten_negative" &&
+          typeof updateData.display_text === "string" &&
+          previewChanges.length < 4
+        ) {
+          previewChanges.push({
+            mention_id: mention.id,
+            vendor_name: mention.vendor_name,
+            display_mode: "rewritten_negative",
+            quality_score: (result.quality_score ?? null),
+            evidence_level: (result.evidence_level ?? null),
+            original_quote: mention.quote,
+            display_text: updateData.display_text,
+          });
+        }
       }
     }
   } catch (e) {
@@ -220,7 +380,7 @@ async function processBatch(
     errors += mentions.length;
   }
 
-  return { updated, errors };
+  return { updated, errors, preview_changes: previewChanges };
 }
 
 // ── Backfill vendor_metadata.category ────────────────────────
@@ -284,14 +444,16 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json().catch(() => ({}));
-    const mode = body.mode || "unenriched"; // "unenriched" | "all" | "vendor"
+    const mode = body.mode || "unenriched"; // "unenriched" | "all" | "vendor" | "display_policy"
     const vendorName = body.vendor_name as string | undefined;
+    const vendorNameTrimmed = vendorName?.trim() || "";
     const limit = body.limit || 2000;
+    const force = !!body.force;
 
     // Build query for mentions to enrich
     let query = supabase
       .from("vendor_mentions")
-      .select("id, vendor_name, quote, type, category")
+      .select("id, vendor_name, title, quote, explanation, type, category")
       .eq("is_hidden", false)
       .order("created_at", { ascending: true })
       .limit(limit);
@@ -299,8 +461,23 @@ serve(async (req) => {
     if (mode === "unenriched") {
       // Only mentions that haven't been enriched yet
       query = query.is("dimension", null);
-    } else if (mode === "vendor" && vendorName) {
-      query = query.eq("vendor_name", vendorName);
+    } else if (mode === "vendor" && vendorNameTrimmed) {
+      query = query.eq("vendor_name", vendorNameTrimmed);
+    } else if (mode === "display_policy") {
+      query = query.eq("type", "warning");
+      if (!force) {
+        query = query.neq("rewrite_status", "done");
+      }
+      if (vendorNameTrimmed) {
+        const entityId = await resolveVendorEntityId(supabase, vendorNameTrimmed);
+        if (entityId) {
+          // Family-aware filter (CDK parent + mapped product lines).
+          query = query.eq("vendor_entity_id", entityId);
+        } else {
+          // Fallback fuzzy name match for unmapped data.
+          query = query.ilike("vendor_name", `%${vendorNameTrimmed}%`);
+        }
+      }
     }
     // mode === "all" uses no additional filters
 
@@ -318,6 +495,7 @@ serve(async (req) => {
 
     let totalUpdated = 0;
     let totalErrors = 0;
+    const previewChanges: PreviewChange[] = [];
 
     // Process in batches
     for (let i = 0; i < mentions.length; i += BATCH_SIZE) {
@@ -330,6 +508,10 @@ serve(async (req) => {
       const result = await processBatch(supabase, GEMINI_API_KEY, batch);
       totalUpdated += result.updated;
       totalErrors += result.errors;
+      for (const sample of result.preview_changes) {
+        if (previewChanges.length >= 4) break;
+        previewChanges.push(sample);
+      }
 
       // Small delay between batches to avoid rate limits
       if (i + BATCH_SIZE < mentions.length) {
@@ -348,6 +530,7 @@ serve(async (req) => {
         errors: totalErrors,
         batches: Math.ceil(mentions.length / BATCH_SIZE),
         vendor_categories_updated: categoriesUpdated,
+        preview_changes: previewChanges,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

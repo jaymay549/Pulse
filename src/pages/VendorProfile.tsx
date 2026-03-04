@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Globe, TrendingUp, TrendingDown, ThumbsUp, AlertTriangle, Loader2, Crown, Share2, CreditCard, MessageCircle, Linkedin, MapPin, CalendarCheck, MessagesSquare, ExternalLink, BotMessageSquare, Send, ArrowLeftIcon, Lock } from "lucide-react";
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
@@ -48,6 +48,13 @@ interface VendorProfileData {
   } | null;
   insight: any;
   mentions: VendorEntry[];
+  productLines?: {
+    id: string;
+    name: string;
+    slug: string;
+    mentionCount: number;
+  }[];
+  selectedProductLine?: string | null;
 }
 
 function ExpandableDescription({ text }: { text: string }) {
@@ -93,6 +100,7 @@ function ExpandableDescription({ text }: { text: string }) {
 
 const VendorProfile = () => {
   const { vendorSlug } = useParams<{ vendorSlug: string }>();
+  const [urlSearchParams, setUrlSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { signOut } = useClerk();
   
@@ -119,6 +127,7 @@ const VendorProfile = () => {
   const [themes, setThemes] = useState<VendorThemesResult | null>(null);
   const [comparedVendors, setComparedVendors] = useState<ComparedVendor[]>([]);
   const [mentionFilter, setMentionFilter] = useState<"all" | "positive" | "warning">("all");
+  const [selectedProductLine, setSelectedProductLine] = useState<string | null>(null);
   const [claimModalOpen, setClaimModalOpen] = useState(false);
 
   // Inline vendor chat state
@@ -130,6 +139,22 @@ const VendorProfile = () => {
   const ctaChatInputRef = useRef<HTMLTextAreaElement>(null);
 
   const vendorName = vendorSlug ? decodeURIComponent(vendorSlug) : "";
+  const requestedProductLine = urlSearchParams.get("productLine");
+
+  useEffect(() => {
+    setSelectedProductLine(requestedProductLine || null);
+  }, [vendorName, requestedProductLine]);
+
+  const handleProductLineSelect = useCallback(
+    (slug: string | null) => {
+      setSelectedProductLine(slug);
+      const nextParams = new URLSearchParams(urlSearchParams);
+      if (slug) nextParams.set("productLine", slug);
+      else nextParams.delete("productLine");
+      setUrlSearchParams(nextParams, { replace: true });
+    },
+    [urlSearchParams, setUrlSearchParams]
+  );
 
   const isProUserValue = useMemo(() => isProUser(tier), [tier]);
 
@@ -183,11 +208,43 @@ const VendorProfile = () => {
       setError(null);
 
       try {
-        const data = await fetchVendorProfile(vendorName);
+        const data = await fetchVendorProfile(vendorName, selectedProductLine);
+        const aggregatedMentions: VendorEntry[] = [
+          ...((data.mentions || []) as unknown as VendorEntry[]),
+        ];
+        const seenMentionIds = new Set(aggregatedMentions.map((m) => String(m.id)));
+
+        // Always load the complete mention set so profiles can display all mentions,
+        // even when the profile RPC returns an initial capped window.
+        if ((data.stats?.totalMentions || 0) > aggregatedMentions.length) {
+          let nextPage = 2;
+          let hasMorePages = true;
+
+          while (hasMorePages) {
+            const nextBatch = await fetchVendorPulseFeed({
+              vendorName,
+              productLineSlug: selectedProductLine,
+              page: nextPage,
+              pageSize: 200,
+            });
+
+            for (const mention of nextBatch.mentions || []) {
+              const mentionId = String(mention.id);
+              if (seenMentionIds.has(mentionId)) continue;
+              seenMentionIds.add(mentionId);
+              aggregatedMentions.push(mention as unknown as VendorEntry);
+            }
+
+            hasMorePages = !!nextBatch.hasMore;
+            nextPage += 1;
+            if ((nextBatch.mentions || []).length === 0) break;
+          }
+        }
 
         setProfileData(data);
-        setAllMentions(data.mentions || []);
-        setHasMore((data.mentions || []).length >= 40);
+        setAllMentions(aggregatedMentions);
+        setPage(1);
+        setHasMore(false);
         setIsLoading(false);
       } catch (err) {
         console.error("[VendorProfile] Failed to fetch vendor profile:", err);
@@ -197,7 +254,7 @@ const VendorProfile = () => {
     };
 
     fetchProfile();
-  }, [vendorName]);
+  }, [vendorName, selectedProductLine]);
 
   // Load more mentions
   const loadMoreMentions = useCallback(async () => {
@@ -208,6 +265,7 @@ const VendorProfile = () => {
       const nextPage = page + 1;
       const data = await fetchVendorPulseFeed({
         vendorName,
+        productLineSlug: selectedProductLine,
         page: nextPage,
         pageSize: 40,
       });
@@ -220,7 +278,7 @@ const VendorProfile = () => {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [hasMore, isLoadingMore, vendorName, page]);
+  }, [hasMore, isLoadingMore, vendorName, selectedProductLine, page]);
 
   // Infinite scroll observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -1174,6 +1232,43 @@ const VendorProfile = () => {
                 );
               })}
             </div>
+
+            {/* Product-line filters (vendor family aware) */}
+            {!!profileData.productLines?.length && (
+              <div className="flex items-center gap-2 mb-4 flex-wrap">
+                <button
+                  onClick={() => handleProductLineSelect(null)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                    selectedProductLine === null
+                      ? "bg-primary text-white"
+                      : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                  )}
+                >
+                  All Products
+                </button>
+                {profileData.productLines.map((line) => (
+                  <button
+                    key={line.id}
+                    onClick={() => handleProductLineSelect(line.slug)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                      selectedProductLine === line.slug
+                        ? "bg-primary text-white"
+                        : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                    )}
+                  >
+                    {line.name}
+                    <span className={cn(
+                      "ml-1.5 tabular-nums",
+                      selectedProductLine === line.slug ? "text-white/70" : "text-slate-400"
+                    )}>
+                      {line.mentionCount}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
 
             {filteredMentions.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-sm border border-border/50 p-6 sm:p-8 text-center">

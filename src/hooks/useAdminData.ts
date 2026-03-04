@@ -35,7 +35,38 @@ export function useTrendReport(type: "daily" | "weekly") {
         { p_type: type }
       );
       if (error) throw error;
-      return (data as any) as TrendReport | null;
+
+      const raw = data as any;
+      if (!raw) return null;
+
+      const report = (raw.report ?? raw) as Record<string, unknown>;
+      const rawTopics = report?.topics as unknown;
+
+      let normalizedTopics: unknown[] = [];
+      if (Array.isArray(rawTopics)) {
+        normalizedTopics = rawTopics;
+      } else if (typeof rawTopics === "string") {
+        try {
+          const parsed = JSON.parse(rawTopics);
+          normalizedTopics = Array.isArray(parsed)
+            ? parsed
+            : Array.isArray(parsed?.topics)
+              ? parsed.topics
+              : [];
+        } catch {
+          normalizedTopics = [];
+        }
+      } else if (rawTopics && typeof rawTopics === "object") {
+        const topicObject = rawTopics as Record<string, unknown>;
+        normalizedTopics = Array.isArray(topicObject.topics)
+          ? (topicObject.topics as unknown[])
+          : Object.values(topicObject).filter((v) => !!v && typeof v === "object");
+      }
+
+      return {
+        ...(report as object),
+        topics: normalizedTopics,
+      } as TrendReport;
     },
   });
 }

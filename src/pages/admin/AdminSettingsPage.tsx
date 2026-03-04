@@ -25,6 +25,8 @@ const AdminSettingsPage = () => {
       <VendorMetadataSection />
       <Separator className="bg-zinc-800" />
       <AIThemesSection />
+      <Separator className="bg-zinc-800" />
+      <MentionDisplayPolicySection />
     </div>
   );
 };
@@ -178,6 +180,7 @@ function VendorIgnoresSection() {
 
 // Vendor Metadata
 const ENRICHMENT_FUNCTION_URL = "https://nsfrxtpxzdmqlezvvjgg.supabase.co/functions/v1/vendor-enrich";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; icon: typeof Clock }> = {
   pending: { bg: "bg-zinc-700/50", text: "text-zinc-400", icon: Clock },
@@ -262,7 +265,15 @@ function VendorMetadataSection() {
   const callEnrichFunction = async (body: Record<string, unknown>) => {
     const res = await fetch(ENRICHMENT_FUNCTION_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(SUPABASE_ANON_KEY
+          ? {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            }
+          : {}),
+      },
       body: JSON.stringify(body),
     });
     return res.json();
@@ -482,6 +493,7 @@ function VendorMetadataSection() {
 
 // AI Theme Summaries
 const THEMES_FUNCTION_URL = "https://nsfrxtpxzdmqlezvvjgg.supabase.co/functions/v1/generate-vendor-themes";
+const ENRICH_MENTIONS_FUNCTION_URL = "https://nsfrxtpxzdmqlezvvjgg.supabase.co/functions/v1/enrich-mentions";
 
 function AIThemesSection() {
   const [generating, setGenerating] = useState(false);
@@ -567,6 +579,295 @@ function AIThemesSection() {
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-900/20 border border-violet-800/30">
           <Loader2 className="h-3 w-3 animate-spin text-violet-400" />
           <span className="text-xs text-violet-300">{progress}</span>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MentionDisplayPolicySection() {
+  const [running, setRunning] = useState(false);
+  const [vendorName, setVendorName] = useState("");
+  const [vendorOptions, setVendorOptions] = useState<string[]>([]);
+  const [limit, setLimit] = useState("500");
+  const [progress, setProgress] = useState("");
+  const [lastResult, setLastResult] = useState<{
+    total_mentions?: number;
+    updated?: number;
+    errors?: number;
+    batches?: number;
+    preview_changes?: Array<{
+      mention_id: string;
+      vendor_name: string;
+      quality_score: number | null;
+      evidence_level: string | null;
+      original_quote: string;
+      display_text: string;
+    }>;
+  } | null>(null);
+
+  const callDisplayPolicy = async (force: boolean) => {
+    setRunning(true);
+    setLastResult(null);
+    setProgress("");
+    try {
+      const maxLimit = Number(limit) > 0 ? Number(limit) : 500;
+      const perBatch = Math.min(maxLimit, 200);
+      const runStartedAt = Date.now();
+
+      const basePayload: Record<string, unknown> = {
+        mode: "display_policy",
+        force,
+      };
+      if (vendorName.trim()) basePayload.vendor_name = vendorName.trim();
+
+      const callBatch = async (batchLimit: number) => {
+        const payload = { ...basePayload, limit: batchLimit };
+        const res = await fetch(ENRICH_MENTIONS_FUNCTION_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(SUPABASE_ANON_KEY
+              ? {
+                  apikey: SUPABASE_ANON_KEY,
+                  Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+                }
+              : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error || "Display policy batch failed");
+        return data as {
+          total_mentions?: number;
+          updated?: number;
+          errors?: number;
+          batches?: number;
+          preview_changes?: Array<{
+            mention_id: string;
+            vendor_name: string;
+            quality_score: number | null;
+            evidence_level: string | null;
+            original_quote: string;
+            display_text: string;
+          }>;
+        };
+      };
+
+      // Force mode: one explicit pass over given limit.
+      if (force) {
+        setProgress("Running force reprocess...");
+        const data = await callBatch(maxLimit);
+        setLastResult(data);
+        const elapsedSec = Math.max(1, Math.round((Date.now() - runStartedAt) / 1000));
+        setProgress(`Done in ${elapsedSec}s`);
+        toast.success(
+          `Force reprocess finished: ${data.updated ?? 0} updated, ${data.errors ?? 0} errors`
+        );
+        return;
+      }
+
+      // Pending mode: loop in chunks so UI shows progress.
+      let batch = 0;
+      let totalSeen = 0;
+      let totalUpdated = 0;
+      let totalErrors = 0;
+      let lastBatchMentions = 0;
+      const previewChanges: Array<{
+        mention_id: string;
+        vendor_name: string;
+        quality_score: number | null;
+        evidence_level: string | null;
+        original_quote: string;
+        display_text: string;
+      }> = [];
+
+      while (true) {
+        batch += 1;
+        setProgress(
+          `Batch ${batch}: processing... (updated ${totalUpdated}, errors ${totalErrors})`
+        );
+
+        const data = await callBatch(perBatch);
+        const seen = data.total_mentions ?? 0;
+        const updated = data.updated ?? 0;
+        const errors = data.errors ?? 0;
+        const changes = data.preview_changes || [];
+
+        totalSeen += seen;
+        totalUpdated += updated;
+        totalErrors += errors;
+        lastBatchMentions = seen;
+        for (const item of changes) {
+          if (previewChanges.length >= 4) break;
+          previewChanges.push(item);
+        }
+
+        setProgress(
+          `Batch ${batch} complete: ${seen} scanned, ${updated} updated (total updated ${totalUpdated})`
+        );
+
+        // Done when no rows returned, or a pass produces no updates.
+        if (seen === 0 || updated === 0) break;
+      }
+
+      const elapsedSec = Math.max(1, Math.round((Date.now() - runStartedAt) / 1000));
+      const summary = {
+        total_mentions: totalSeen,
+        updated: totalUpdated,
+        errors: totalErrors,
+        batches: batch,
+        preview_changes: previewChanges,
+      };
+      setLastResult(summary);
+      setProgress(
+        `Finished in ${elapsedSec}s · ${batch} batches · ${totalUpdated} updated`
+      );
+      if (lastBatchMentions === 0) {
+        toast.info("No pending warning mentions matched this scope.");
+      } else {
+        toast.success(
+          `Display policy run complete: ${totalUpdated} updated across ${batch} batches`
+        );
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Display policy run failed";
+      toast.error(message);
+      setProgress("Run failed");
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  useEffect(() => {
+    const loadVendorOptions = async () => {
+      const v2 = await supabase.rpc("get_vendor_pulse_vendors_list_v2" as never);
+      if (!v2.error) {
+        const names = ((v2.data as any)?.vendors || [])
+          .map((v: any) => String(v?.name || "").trim())
+          .filter(Boolean);
+        setVendorOptions(names);
+        return;
+      }
+
+      const legacy = await supabase.rpc("get_vendor_pulse_vendors_list" as never);
+      if (!legacy.error) {
+        const names = ((legacy.data as any)?.vendors || [])
+          .map((v: any) => String(v?.name || "").trim())
+          .filter(Boolean);
+        setVendorOptions(names);
+      }
+    };
+
+    loadVendorOptions().catch(() => {});
+  }, []);
+
+  return (
+    <section className="space-y-3">
+      <div>
+        <h2 className="text-sm font-semibold text-zinc-300 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4" />
+          Negative Mention Display Policy
+        </h2>
+        <p className="text-xs text-zinc-600 mt-1">
+          Runs warning mention quality scoring + rewrite policy. High-quality negatives remain raw; low-signal negatives are AI-normalized.
+        </p>
+      </div>
+
+      <div className="flex items-end gap-2">
+        <div className="space-y-1 flex-1">
+          <Label className="text-[10px] text-zinc-500">Vendor (optional)</Label>
+          <Input
+            value={vendorName}
+            onChange={(e) => setVendorName(e.target.value)}
+            placeholder="e.g. CDK"
+            list="display-policy-vendors"
+            className="h-7 text-xs bg-zinc-900 border-zinc-700 text-zinc-300"
+          />
+          <datalist id="display-policy-vendors">
+            {vendorOptions.map((v) => (
+              <option key={v} value={v} />
+            ))}
+          </datalist>
+        </div>
+        <div className="space-y-1 w-28">
+          <Label className="text-[10px] text-zinc-500">Limit</Label>
+          <Input
+            type="number"
+            min={1}
+            value={limit}
+            onChange={(e) => setLimit(e.target.value)}
+            className="h-7 text-xs bg-zinc-900 border-zinc-700 text-zinc-300"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          className="h-7 text-xs bg-violet-600 hover:bg-violet-700"
+          onClick={() => callDisplayPolicy(false)}
+          disabled={running}
+        >
+          {running ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <BotMessageSquare className="h-3 w-3 mr-1" />}
+          Process Pending
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 text-xs border-zinc-700 text-zinc-300 hover:bg-zinc-900"
+          onClick={() => callDisplayPolicy(true)}
+          disabled={running}
+        >
+          <RefreshCw className="h-3 w-3 mr-1" />
+          Force Reprocess
+        </Button>
+      </div>
+
+      <p className="text-[11px] text-zinc-500">
+        Tip: pick a vendor from suggestions. Family names like CDK now include mapped product-line mentions.
+      </p>
+
+      {lastResult && (
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs text-zinc-300">
+          Updated: {lastResult.updated ?? 0} · Errors: {lastResult.errors ?? 0} · Total mentions: {lastResult.total_mentions ?? 0} · Batches: {lastResult.batches ?? 0}
+        </div>
+      )}
+
+      {!!lastResult?.preview_changes?.length && (
+        <div className="rounded-lg border border-amber-900/40 bg-amber-950/20 px-3 py-3 space-y-2">
+          <p className="text-xs font-semibold text-amber-300">
+            Preview of rewritten negatives
+          </p>
+          {lastResult.preview_changes.slice(0, 4).map((change) => (
+            <div
+              key={`${change.mention_id}-${change.vendor_name}`}
+              className="rounded border border-zinc-800 bg-zinc-900/70 p-2 space-y-1"
+            >
+              <p className="text-[11px] text-zinc-400">
+                {change.vendor_name} · score {change.quality_score ?? "n/a"} · evidence {change.evidence_level ?? "n/a"}
+              </p>
+              <p className="text-[11px] text-zinc-500 line-clamp-2">
+                Before: {change.original_quote}
+              </p>
+              <p className="text-[11px] text-zinc-200 line-clamp-3">
+                After: {change.display_text}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {progress && (
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs text-zinc-400">
+          {running ? (
+            <span className="inline-flex items-center gap-2">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              {progress}
+            </span>
+          ) : (
+            progress
+          )}
         </div>
       )}
     </section>

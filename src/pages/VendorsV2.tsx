@@ -51,6 +51,32 @@ const SUGGESTED_PROMPTS = [
   "Best CRM for customer follow-up?",
 ];
 
+const normalizeSearchText = (value: string) =>
+  value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+type ChatVendorContext = {
+  name: string;
+  category: string;
+  positiveCount: number;
+  warningCount: number;
+  mentions: Array<{ title: string; type: "positive" | "warning"; quote: string }>;
+};
+
+type VendorSearchSuggestion = {
+  name: string;
+  vendorName?: string;
+  productLineSlug?: string | null;
+  logoUrl?: string | null;
+  keywords?: string[];
+};
+
+const toSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
 const VendorsV2 = () => {
   // URL params
   const [searchParams, setSearchParams] = useSearchParams();
@@ -69,6 +95,7 @@ const VendorsV2 = () => {
   const [aiQuery, setAiQuery] = useState<{ text: string; id: number } | null>(null);
   const aiQueryIdRef = useRef(0);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [fullAiVendorContext, setFullAiVendorContext] = useState<ChatVendorContext[]>([]);
 
   // Clerk Auth
   const {
@@ -102,8 +129,17 @@ const VendorsV2 = () => {
   type VendorCounts = { total: number; positive: number; warning: number };
   const [searchVendorCounts, setSearchVendorCounts] = useState<Record<string, VendorCounts>>({});
   const [searchVendorNames, setSearchVendorNames] = useState<Record<string, string>>({});
+  const [searchProductSuggestions, setSearchProductSuggestions] = useState<
+    Array<{ displayName: string; vendorName: string; productLineSlug: string; rawName: string }>
+  >([]);
   const [categoryVendorCounts, setCategoryVendorCounts] = useState<Record<string, VendorCounts>>({});
   const [categoryVendorNames, setCategoryVendorNames] = useState<Record<string, string>>({});
+  const [allCategoryVendorCounts, setAllCategoryVendorCounts] = useState<
+    Record<string, Record<string, VendorCounts>>
+  >({});
+  const [allCategoryVendorNames, setAllCategoryVendorNames] = useState<
+    Record<string, Record<string, string>>
+  >({});
 
   // All vendor names for search autocomplete (fetched from vendors-list endpoint)
   const [allVendorsList, setAllVendorsList] = useState<string[]>([]);
@@ -112,6 +148,11 @@ const VendorsV2 = () => {
   const categoryVendorIndexCacheRef = useRef<
     Record<string, { counts: Record<string, VendorCounts>; names: Record<string, string> }>
   >({});
+  const aiVendorContextCacheRef = useRef<Record<string, ChatVendorContext[]>>({});
+  const allCategoryVendorIndexCacheRef = useRef<{
+    countsByCategory: Record<string, Record<string, VendorCounts>>;
+    namesByCategory: Record<string, Record<string, string>>;
+  } | null>(null);
 
   const fetchVendorCountsIndex = useCallback(
     async (opts: { category?: string; search?: string }) => {
@@ -153,6 +194,50 @@ const VendorsV2 = () => {
     },
     [],
   );
+
+  const fetchAllCategoryVendorIndex = useCallback(async () => {
+    const countsByCategory: Record<string, Record<string, VendorCounts>> = {};
+    const namesByCategory: Record<string, Record<string, string>> = {};
+
+    let offset = 0;
+    const pageSize = 500;
+    let hasMore = true;
+
+    while (hasMore) {
+      const data = await fetchVendorPulseFeed({
+        page: Math.floor(offset / pageSize) + 1,
+        pageSize,
+      });
+
+      for (const mention of data.mentions) {
+        const vendorNameRaw = mention.vendorName;
+        const categoryRaw = mention.category;
+        if (!vendorNameRaw || !categoryRaw) continue;
+
+        const categoryKey = categoryRaw;
+        const vendorKey = vendorNameRaw.toLowerCase();
+
+        if (!countsByCategory[categoryKey]) countsByCategory[categoryKey] = {};
+        if (!namesByCategory[categoryKey]) namesByCategory[categoryKey] = {};
+        if (!countsByCategory[categoryKey][vendorKey]) {
+          countsByCategory[categoryKey][vendorKey] = { total: 0, positive: 0, warning: 0 };
+        }
+        if (!namesByCategory[categoryKey][vendorKey]) {
+          namesByCategory[categoryKey][vendorKey] = vendorNameRaw;
+        }
+
+        countsByCategory[categoryKey][vendorKey].total += 1;
+        if (mention.type === "positive") countsByCategory[categoryKey][vendorKey].positive += 1;
+        else if (mention.type === "warning") countsByCategory[categoryKey][vendorKey].warning += 1;
+      }
+
+      hasMore = data.hasMore;
+      offset += pageSize;
+      if (data.mentions.length === 0) break;
+    }
+
+    return { countsByCategory, namesByCategory };
+  }, []);
 
   // Fallback vendor data from backend table (keeps /vendors usable if WAM is flaky)
   const { reviews: dbReviews, isLoading: isDbLoading } = useVendorReviews();
@@ -201,33 +286,40 @@ const VendorsV2 = () => {
   // Derive top vendors per category from loaded mentions (for CategoryGrid)
   const topVendorsByCategory = useMemo(() => {
     const result: Record<string, { name: string; logoUrl: string | null; reviewCount: number; positiveCount: number; warningCount: number }[]> = {};
-    const categoryVendorMap: Record<string, Record<string, { total: number; positive: number; warning: number }>> = {};
+    const categoryVendorMap: Record<string, Record<string, { total: number; positive: number; warning: number }>> =
+      Object.keys(allCategoryVendorCounts).length > 0 ? allCategoryVendorCounts : {};
     const vendorOriginalName: Record<string, string> = {};
 
-    for (const mention of mentions) {
-      if (!mention.category || !mention.vendorName) continue;
-      if (!categoryVendorMap[mention.category]) {
-        categoryVendorMap[mention.category] = {};
-      }
-      const vendorKey = mention.vendorName.toLowerCase();
-      if (!categoryVendorMap[mention.category][vendorKey]) {
-        categoryVendorMap[mention.category][vendorKey] = { total: 0, positive: 0, warning: 0 };
-      }
-      categoryVendorMap[mention.category][vendorKey].total += 1;
-      if (mention.type === "positive") categoryVendorMap[mention.category][vendorKey].positive += 1;
-      else if (mention.type === "warning") categoryVendorMap[mention.category][vendorKey].warning += 1;
-      if (!vendorOriginalName[vendorKey]) {
-        vendorOriginalName[vendorKey] = mention.vendorName;
+    // Fallback path while full-dataset index loads: derive from currently loaded mentions.
+    if (Object.keys(categoryVendorMap).length === 0) {
+      for (const mention of mentions) {
+        if (!mention.category || !mention.vendorName) continue;
+        if (!categoryVendorMap[mention.category]) {
+          categoryVendorMap[mention.category] = {};
+        }
+        const vendorKey = mention.vendorName.toLowerCase();
+        if (!categoryVendorMap[mention.category][vendorKey]) {
+          categoryVendorMap[mention.category][vendorKey] = { total: 0, positive: 0, warning: 0 };
+        }
+        categoryVendorMap[mention.category][vendorKey].total += 1;
+        if (mention.type === "positive") categoryVendorMap[mention.category][vendorKey].positive += 1;
+        else if (mention.type === "warning") categoryVendorMap[mention.category][vendorKey].warning += 1;
+        if (!vendorOriginalName[vendorKey]) {
+          vendorOriginalName[vendorKey] = mention.vendorName;
+        }
       }
     }
 
     for (const [categoryId, vendors] of Object.entries(categoryVendorMap)) {
       const sorted = Object.entries(vendors)
         .sort(([, a], [, b]) => b.total - a.total)
-        .slice(0, 9);
+        .slice(0, 12);
 
       result[categoryId] = sorted.map(([vendorKey, counts]) => {
-        const name = vendorOriginalName[vendorKey] || vendorKey;
+        const name =
+          allCategoryVendorNames[categoryId]?.[vendorKey] ||
+          vendorOriginalName[vendorKey] ||
+          vendorKey;
         const websiteUrl = getWebsiteForVendor(name);
         const logoUrl = getVendorLogoUrl(name, websiteUrl);
         return { name, logoUrl, reviewCount: counts.total, positiveCount: counts.positive, warningCount: counts.warning };
@@ -235,7 +327,7 @@ const VendorsV2 = () => {
     }
 
     return result;
-  }, [mentions, getWebsiteForVendor, getVendorLogoUrl]);
+  }, [mentions, allCategoryVendorCounts, allCategoryVendorNames, getWebsiteForVendor, getVendorLogoUrl]);
 
   // Access level - simplified 2-tier system
   const accessLevel = getAccessLevel(tier);
@@ -266,7 +358,7 @@ const VendorsV2 = () => {
     externalTotalCount: paginationInfo?.totalSystemCount,
   });
 
-  const aiVendorContext = useMemo(() => {
+  const aiVendorContextFromVisibleData = useMemo(() => {
     const byVendor = new Map<
       string,
       {
@@ -304,6 +396,12 @@ const VendorsV2 = () => {
 
     return Array.from(byVendor.values()).slice(0, 40);
   }, [filteredData]);
+
+  const aiVendorContext = useMemo(() => {
+    return fullAiVendorContext.length > 0
+      ? fullAiVendorContext
+      : aiVendorContextFromVisibleData;
+  }, [fullAiVendorContext, aiVendorContextFromVisibleData]);
 
   // Landing state = no category/vendor/AI selected
   const isLandingState = selectedCategory === "all" && selectedVendor === null && !aiQuery;
@@ -468,6 +566,39 @@ const VendorsV2 = () => {
     };
   }, [selectedCategory, fetchVendorCountsIndex]);
 
+  // Landing page category cards need complete counts (not just current page/recent rows).
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadAllCategoryVendorIndex = async () => {
+      if (allCategoryVendorIndexCacheRef.current) {
+        const cached = allCategoryVendorIndexCacheRef.current;
+        setAllCategoryVendorCounts(cached.countsByCategory);
+        setAllCategoryVendorNames(cached.namesByCategory);
+        return;
+      }
+
+      const index = await fetchAllCategoryVendorIndex();
+      if (cancelled) return;
+
+      allCategoryVendorIndexCacheRef.current = index;
+      setAllCategoryVendorCounts(index.countsByCategory);
+      setAllCategoryVendorNames(index.namesByCategory);
+    };
+
+    (async () => {
+      try {
+        await loadAllCategoryVendorIndex();
+      } catch (err) {
+        if (!cancelled) console.error("Failed to fetch all-category vendor index:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchAllCategoryVendorIndex]);
+
   // Fetch all vendor names on mount for search autocomplete
   useEffect(() => {
     const loadAllVendors = async () => {
@@ -482,12 +613,100 @@ const VendorsV2 = () => {
     loadAllVendors();
   }, []);
 
+  // Build complete AI context from all matching mentions (not just current page).
+  useEffect(() => {
+    let cancelled = false;
+
+    const cacheKey = JSON.stringify({
+      category: selectedCategory !== "all" ? selectedCategory : null,
+      vendorName: selectedVendor || null,
+      type: typeFilter !== "all" ? typeFilter : null,
+    });
+
+    const loadFullAiContext = async () => {
+      const cached = aiVendorContextCacheRef.current[cacheKey];
+      if (cached) {
+        setFullAiVendorContext(cached);
+        return;
+      }
+
+      const allMentions: VendorEntry[] = [];
+      let page = 1;
+      const pageSize = 500;
+      let hasMore = true;
+
+      while (hasMore) {
+        const data = await fetchVendorPulseFeed({
+          category: selectedCategory !== "all" ? selectedCategory : null,
+          vendorName: selectedVendor || null,
+          type: typeFilter !== "all" ? typeFilter : null,
+          page,
+          pageSize,
+        });
+
+        allMentions.push(...(data.mentions as unknown as VendorEntry[]));
+        hasMore = data.hasMore;
+        page += 1;
+        if (data.mentions.length === 0) break;
+      }
+
+      const byVendor = new Map<string, ChatVendorContext>();
+      for (const mention of allMentions) {
+        if (!mention.vendorName) continue;
+        const key = mention.vendorName.toLowerCase();
+        const existing = byVendor.get(key) || {
+          name: mention.vendorName,
+          category: mention.category || "",
+          positiveCount: 0,
+          warningCount: 0,
+          mentions: [],
+        };
+
+        if (mention.type === "positive") existing.positiveCount += 1;
+        if (mention.type === "warning") existing.warningCount += 1;
+        if (existing.mentions.length < 8) {
+          existing.mentions.push({
+            title: mention.title,
+            type: mention.type,
+            quote: mention.quote || mention.explanation || "",
+          });
+        }
+
+        byVendor.set(key, existing);
+      }
+
+      const context = Array.from(byVendor.values()).sort(
+        (a, b) => b.positiveCount + b.warningCount - (a.positiveCount + a.warningCount),
+      );
+
+      if (cancelled) return;
+      aiVendorContextCacheRef.current[cacheKey] = context;
+      setFullAiVendorContext(context);
+    };
+
+    (async () => {
+      try {
+        await loadFullAiContext();
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Failed to build full AI vendor context:", err);
+          setFullAiVendorContext([]);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCategory, selectedVendor, typeFilter]);
+
   // Fetch vendor names for search autocomplete (quick, single RPC call)
   useEffect(() => {
     const fetchSearchVendors = async () => {
       if (!searchQuery || searchQuery.trim().length < 2) {
         setSearchVendorCounts({});
         setSearchVendorNames({});
+        setSearchProductSuggestions([]);
         return;
       }
 
@@ -499,6 +718,10 @@ const VendorsV2 = () => {
 
         const counts: Record<string, { total: number; positive: number; warning: number }> = {};
         const names: Record<string, string> = {};
+        const productSuggestionMap = new Map<
+          string,
+          { displayName: string; vendorName: string; productLineSlug: string; rawName: string; count: number }
+        >();
 
         for (const mention of data.mentions) {
           const vendorNameRaw = mention.vendorName;
@@ -511,12 +734,48 @@ const VendorsV2 = () => {
           counts[key].total += 1;
           if (mention.type === "positive") counts[key].positive += 1;
           else if (mention.type === "warning") counts[key].warning += 1;
+
+          const rawName = (mention as any).rawVendorName || (mention as any).raw_vendor_name;
+          if (
+            rawName &&
+            vendorNameRaw &&
+            String(rawName).toLowerCase() !== vendorNameRaw.toLowerCase()
+          ) {
+            const productLineSlug = toSlug(String(rawName));
+            if (productLineSlug) {
+              const mapKey = `${vendorNameRaw.toLowerCase()}::${productLineSlug}`;
+              const existing = productSuggestionMap.get(mapKey);
+              if (existing) {
+                existing.count += 1;
+              } else {
+                productSuggestionMap.set(mapKey, {
+                  displayName: `${vendorNameRaw} - ${rawName}`,
+                  vendorName: vendorNameRaw,
+                  productLineSlug,
+                  rawName: String(rawName),
+                  count: 1,
+                });
+              }
+            }
+          }
         }
 
         setSearchVendorCounts(counts);
         setSearchVendorNames(names);
+        setSearchProductSuggestions(
+          Array.from(productSuggestionMap.values())
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 8)
+            .map(({ displayName, vendorName, productLineSlug, rawName }) => ({
+              displayName,
+              vendorName,
+              productLineSlug,
+              rawName,
+            }))
+        );
       } catch (err) {
         console.error("Failed to fetch search vendors:", err);
+        setSearchProductSuggestions([]);
       }
     };
 
@@ -675,6 +934,20 @@ const VendorsV2 = () => {
     navigate(`/vendors/${encodeURIComponent(vendorName)}`);
   };
 
+  const handleVendorSelectWithOptions = (
+    vendorName: string,
+    options?: { productLineSlug?: string | null }
+  ) => {
+    const productLineSlug = options?.productLineSlug || null;
+    if (productLineSlug) {
+      navigate(
+        `/vendors/${encodeURIComponent(vendorName)}?productLine=${encodeURIComponent(productLineSlug)}`
+      );
+      return;
+    }
+    navigate(`/vendors/${encodeURIComponent(vendorName)}`);
+  };
+
   // Handle AI query from smart search bar
   const handleAISubmit = (query: string) => {
     if (isProUserValue) {
@@ -693,30 +966,71 @@ const VendorsV2 = () => {
     setShowUpgradePrompt(false);
   };
 
-  // Get all unique vendor names for autocomplete
+  // Get all unique vendor names for autocomplete.
+  // Include live search hits so vendors missing from vendors-list RPC still appear.
   const allVendorNames = useMemo(() => {
-    // Use the complete vendors list from the API
-    // Already sorted by mention count from the backend
-    return allVendorsList;
-  }, [allVendorsList]);
+    const deduped = new Map<string, string>();
+
+    for (const name of allVendorsList) {
+      deduped.set(name.toLowerCase(), name);
+    }
+
+    for (const name of Object.values(searchVendorNames)) {
+      const key = name.toLowerCase();
+      if (!deduped.has(key)) deduped.set(key, name);
+    }
+
+    return Array.from(deduped.values());
+  }, [allVendorsList, searchVendorNames]);
 
   // Create suggestions with logos for the search bar
-  const vendorSuggestionsWithLogos = useMemo(() => {
-    return allVendorNames.map((name) => {
+  const vendorSuggestionsWithLogos = useMemo<VendorSearchSuggestion[]>(() => {
+    const baseSuggestions: VendorSearchSuggestion[] = allVendorNames.map((name) => {
       const websiteUrl = getWebsiteForVendor(name);
       const logoUrl = getVendorLogoUrl(name, websiteUrl);
-      return { name, logoUrl };
+      return {
+        name,
+        vendorName: name,
+        logoUrl,
+        keywords: [name],
+      };
     });
-  }, [allVendorNames, getWebsiteForVendor, getVendorLogoUrl]);
+
+    const productSuggestions: VendorSearchSuggestion[] = searchProductSuggestions.map((item) => {
+      const websiteUrl = getWebsiteForVendor(item.vendorName);
+      const logoUrl = getVendorLogoUrl(item.vendorName, websiteUrl);
+      return {
+        name: item.displayName,
+        vendorName: item.vendorName,
+        productLineSlug: item.productLineSlug,
+        logoUrl,
+        keywords: [item.vendorName, item.rawName, item.displayName],
+      };
+    });
+
+    const deduped = new Map<string, VendorSearchSuggestion>();
+    for (const suggestion of [...productSuggestions, ...baseSuggestions]) {
+      const key = `${(suggestion.vendorName || suggestion.name).toLowerCase()}::${suggestion.productLineSlug || ""}`;
+      if (!deduped.has(key)) deduped.set(key, suggestion);
+    }
+
+    return Array.from(deduped.values());
+  }, [allVendorNames, searchProductSuggestions, getWebsiteForVendor, getVendorLogoUrl]);
 
   // Get matching vendors for search results (with review counts)
   const matchingVendors = useMemo(() => {
     if (!searchQuery || searchQuery.trim().length < 2) return [];
     const query = searchQuery.toLowerCase().trim();
+    const normalizedQuery = normalizeSearchText(query);
     
     // Get vendors that match the search query
     const matching = allVendorNames
-      .filter((name) => name.toLowerCase().includes(query))
+      .filter((name) => {
+        const lowerName = name.toLowerCase();
+        if (lowerName.includes(query)) return true;
+        if (!normalizedQuery) return false;
+        return normalizeSearchText(lowerName).includes(normalizedQuery);
+      })
       .map((name) => {
         // Use vendor counts from separate fetch if available, otherwise fall back to paginated data
         const vendorNameLower = name.toLowerCase();
@@ -928,7 +1242,7 @@ const VendorsV2 = () => {
             <SmartSearchBar
               placeholder="Search vendors or ask a question..."
               suggestions={vendorSuggestionsWithLogos}
-              onVendorSelect={handleVendorSelect}
+              onVendorSelect={handleVendorSelectWithOptions}
               onAISubmit={handleAISubmit}
               onSearchChange={setSearchQuery}
               isPro={isProUserValue}

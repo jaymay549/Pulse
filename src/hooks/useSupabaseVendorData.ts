@@ -4,8 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 export interface VendorPulseMention {
   id: string;
   vendorName: string;
+  rawVendorName?: string;
   title: string;
   quote: string;
+  rawQuote?: string;
+  displayMode?: "raw" | "rewritten_negative";
+  qualityScore?: number | null;
+  evidenceLevel?: "none" | "weak" | "moderate" | "strong" | null;
+  isOpinionHeavy?: boolean | null;
+  rewriteConfidence?: number | null;
   explanation: string;
   type: "positive" | "warning";
   category: string;
@@ -71,6 +78,15 @@ export interface VendorProfileResult {
   } | null;
   insight: any;
   mentions: VendorPulseMention[];
+  productLines?: VendorProductLine[];
+  selectedProductLine?: string | null;
+}
+
+export interface VendorProductLine {
+  id: string;
+  name: string;
+  slug: string;
+  mentionCount: number;
 }
 
 /**
@@ -81,6 +97,7 @@ export async function fetchVendorPulseFeed(params: {
   vendorName?: string | null;
   type?: string | null;
   search?: string | null;
+  productLineSlug?: string | null;
   page?: number;
   pageSize?: number;
 }): Promise<VendorPulseFeedResult> {
@@ -88,18 +105,51 @@ export async function fetchVendorPulseFeed(params: {
   const page = params.page || 1;
   const offset = (page - 1) * pageSize;
 
-  const { data, error } = await supabase.rpc("get_vendor_pulse_feed", {
-    p_category: params.category || null,
-    p_vendor_name: params.vendorName || null,
-    p_type: params.type || null,
-    p_search: params.search || null,
-    p_limit: pageSize,
-    p_offset: offset,
-  });
+  // Prefer v2 family-aware RPC, but gracefully fall back to legacy RPC.
+  let data: any = null;
+  {
+    const v3 = await supabase.rpc("get_vendor_pulse_feed_v3" as never, {
+      p_category: params.category || null,
+      p_vendor_name: params.vendorName || null,
+      p_type: params.type || null,
+      p_search: params.search || null,
+      p_product_line_slug: params.productLineSlug || null,
+      p_limit: pageSize,
+      p_offset: offset,
+    } as never);
 
-  if (error) {
-    console.error("[Supabase] get_vendor_pulse_feed error:", error);
-    throw error;
+    if (!v3.error) {
+      data = v3.data;
+    } else {
+      const v2 = await supabase.rpc("get_vendor_pulse_feed_v2" as never, {
+        p_category: params.category || null,
+        p_vendor_name: params.vendorName || null,
+        p_type: params.type || null,
+        p_search: params.search || null,
+        p_product_line_slug: params.productLineSlug || null,
+        p_limit: pageSize,
+        p_offset: offset,
+      } as never);
+
+      if (!v2.error) {
+        data = v2.data;
+      } else {
+        const legacy = await supabase.rpc("get_vendor_pulse_feed" as never, {
+          p_category: params.category || null,
+          p_vendor_name: params.vendorName || null,
+          p_type: params.type || null,
+          p_search: params.search || null,
+          p_limit: pageSize,
+          p_offset: offset,
+        } as never);
+
+        if (legacy.error) {
+          console.error("[Supabase] get_vendor_pulse_feed_v3/v2 + legacy fallback error:", legacy.error);
+          throw legacy.error;
+        }
+        data = legacy.data;
+      }
+    }
   }
 
   const result = data as any;
@@ -107,8 +157,15 @@ export async function fetchVendorPulseFeed(params: {
     mentions: (result.mentions || []).map((m: any) => ({
       id: m.id,
       vendorName: m.vendorName,
+      rawVendorName: m.rawVendorName || m.raw_vendor_name,
       title: m.title,
       quote: m.quote,
+      rawQuote: m.rawQuote || m.raw_quote,
+      displayMode: m.displayMode || m.display_mode,
+      qualityScore: m.qualityScore ?? m.quality_score ?? null,
+      evidenceLevel: m.evidenceLevel || m.evidence_level || null,
+      isOpinionHeavy: m.isOpinionHeavy ?? m.is_opinion_heavy ?? null,
+      rewriteConfidence: m.rewriteConfidence ?? m.rewrite_confidence ?? null,
       explanation: m.explanation,
       type: m.type,
       category: m.category,
@@ -149,29 +206,35 @@ export async function fetchTrendingVendors(
 export async function fetchVendorsList(): Promise<
   { name: string; count: number }[]
 > {
-  const { data, error } = await supabase.rpc(
-    "get_vendor_pulse_vendors_list"
-  );
-
-  if (error) {
-    console.error("[Supabase] get_vendor_pulse_vendors_list error:", error);
-    throw error;
+  const v2 = await supabase.rpc("get_vendor_pulse_vendors_list_v2" as never);
+  if (!v2.error) {
+    return (v2.data as any)?.vendors || [];
   }
 
-  return (data as any)?.vendors || [];
+  const legacy = await supabase.rpc("get_vendor_pulse_vendors_list" as never);
+  if (legacy.error) {
+    console.error("[Supabase] get_vendor_pulse_vendors_list_v2 + legacy fallback error:", legacy.error);
+    throw legacy.error;
+  }
+
+  return (legacy.data as any)?.vendors || [];
 }
 
 /**
  * Fetch vendor profile (replaces WAM /api/public/vendor-pulse/vendors/:name/profile)
  */
 export async function fetchVendorProfile(
-  vendorName: string
+  vendorName: string,
+  productLineSlug?: string | null
 ): Promise<VendorProfileResult> {
   // Run RPC and vendor_profiles query in parallel.
   // The RPC may not return newer columns (banner_url, tagline, etc.),
   // so we supplement with a direct read from vendor_profiles (public for approved vendors).
   const [rpcResult, vpResult] = await Promise.all([
-    supabase.rpc("get_vendor_profile", { p_vendor_name: vendorName }),
+    supabase.rpc("get_vendor_profile_v3" as never, {
+      p_vendor_name: vendorName,
+      p_product_line_slug: productLineSlug || null,
+    } as never),
     supabase
       .from("vendor_profiles" as never)
       .select("company_website, company_logo_url, company_description, linkedin_url, banner_url, tagline, headquarters" as never)
@@ -180,12 +243,26 @@ export async function fetchVendorProfile(
       .maybeSingle(),
   ]);
 
-  if (rpcResult.error) {
-    console.error("[Supabase] get_vendor_profile error:", rpcResult.error);
-    throw rpcResult.error;
-  }
+  let result: any = null;
+  if (!rpcResult.error) {
+    result = rpcResult.data as any;
+  } else {
+    const v2 = await supabase.rpc("get_vendor_profile_v2" as never, {
+      p_vendor_name: vendorName,
+      p_product_line_slug: productLineSlug || null,
+    } as never);
 
-  const result = rpcResult.data as any;
+    if (!v2.error) {
+      result = v2.data as any;
+    } else {
+      const legacy = await supabase.rpc("get_vendor_profile" as never, { p_vendor_name: vendorName } as never);
+      if (legacy.error) {
+        console.error("[Supabase] get_vendor_profile_v3/v2 + legacy fallback error:", legacy.error);
+        throw legacy.error;
+      }
+      result = legacy.data as any;
+    }
+  }
   const vp = vpResult.data as Record<string, any> | null;
 
   // Merge: RPC metadata first, then fill gaps from vendor_profiles
@@ -218,13 +295,27 @@ export async function fetchVendorProfile(
     mentions: (result.mentions || []).map((m: any) => ({
       id: m.id,
       vendorName: m.vendorName || m.vendor_name,
+      rawVendorName: m.rawVendorName || m.raw_vendor_name,
       title: m.title,
       quote: m.quote,
+      rawQuote: m.rawQuote || m.raw_quote,
+      displayMode: m.displayMode || m.display_mode,
+      qualityScore: m.qualityScore ?? m.quality_score ?? null,
+      evidenceLevel: m.evidenceLevel || m.evidence_level || null,
+      isOpinionHeavy: m.isOpinionHeavy ?? m.is_opinion_heavy ?? null,
+      rewriteConfidence: m.rewriteConfidence ?? m.rewrite_confidence ?? null,
       explanation: m.explanation,
       type: m.type,
       category: m.category,
       conversationTime: m.conversationTime || m.conversation_time,
     })),
+    productLines: (result.productLines || []).map((pl: any) => ({
+      id: pl.id,
+      name: pl.name,
+      slug: pl.slug,
+      mentionCount: pl.mentionCount ?? pl.mention_count ?? 0,
+    })),
+    selectedProductLine: result.selectedProductLine || null,
   };
 }
 
