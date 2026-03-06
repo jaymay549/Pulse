@@ -28,6 +28,10 @@ interface VendorClaimLink {
   created_at: string;
 }
 
+interface VendorCandidateRow {
+  vendor_name: string;
+}
+
 export default function ClaimsPage() {
   const supabase = useClerkSupabase();
   const queryClient = useQueryClient();
@@ -41,6 +45,19 @@ export default function ClaimsPage() {
       const { data, error } = await supabase.rpc("admin_list_vendor_claim_links" as never);
       if (error) throw error;
       return (data ?? []) as VendorClaimLink[];
+    },
+  });
+
+  const { data: vendorCandidates = [], isLoading: candidatesLoading } = useQuery<string[]>({
+    queryKey: ["admin-unclaimed-vendor-candidates"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_list_unclaimed_vendor_candidates" as never, {
+        p_query: null,
+        p_limit: 250,
+      } as never);
+      if (error) throw error;
+      const rows = (data ?? []) as VendorCandidateRow[];
+      return rows.map((row) => row.vendor_name);
     },
   });
 
@@ -139,10 +156,21 @@ export default function ClaimsPage() {
             <Label htmlFor="vendor-name">Vendor name</Label>
             <Input
               id="vendor-name"
+              list="unclaimed-vendor-candidates"
               value={vendorName}
               onChange={(e) => setVendorName(e.target.value)}
-              placeholder="e.g. CDK"
+              placeholder="Select existing unclaimed vendor or type a new one"
             />
+            <datalist id="unclaimed-vendor-candidates">
+              {vendorCandidates.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
+            <p className="text-[11px] text-zinc-500">
+              {candidatesLoading
+                ? "Loading unclaimed vendor suggestions..."
+                : `Showing ${vendorCandidates.length} unclaimed vendor suggestions. You can also type a new vendor name.`}
+            </p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="admin-email">Admin notification email</Label>

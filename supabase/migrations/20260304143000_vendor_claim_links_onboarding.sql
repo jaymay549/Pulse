@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS public.vendor_claim_links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   vendor_name TEXT NOT NULL,
-  claim_token TEXT NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(24), 'hex'),
+  claim_token TEXT NOT NULL UNIQUE DEFAULT lower(replace(gen_random_uuid()::text, '-', '')),
   admin_email TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'created'
     CHECK (status IN ('created', 'started', 'submitted', 'activated', 'archived')),
