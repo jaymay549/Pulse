@@ -123,7 +123,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
           bg: "bg-transparent hover:bg-red-500/5",
           badge: "text-red-700",
           icon: <AlertTriangle className="h-3.5 w-3.5" />,
-          label: "WARNING",
+          label: "CONCERN",
         };
       case "positive":
         return {

@@ -73,7 +73,7 @@ export const DealerCirclesPricing: React.FC<DealerCirclesPricingProps> = ({
                 </span>
                 <span className="flex items-center gap-1">
                   <Check className="h-3 w-3 text-green-500" />
-                  {totalWarnings}+ warnings
+                  {totalWarnings}+ concerns
                 </span>
                 <span className="flex items-center gap-1">
                   <Check className="h-3 w-3 text-green-500" />

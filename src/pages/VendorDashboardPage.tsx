@@ -15,6 +15,7 @@ import { DashboardEditProfile } from "@/components/vendor-dashboard/DashboardEdi
 import { DashboardIntel } from "@/components/vendor-dashboard/DashboardIntel";
 import { DashboardDimensions } from "@/components/vendor-dashboard/DashboardDimensions";
 import { DashboardAIChat } from "@/components/vendor-dashboard/DashboardAIChat";
+import { DashboardSegments } from "@/components/vendor-dashboard/DashboardSegments";
 import { DashboardWebinarResults } from "@/components/vendor-dashboard/DashboardWebinarResults";
 import { VendorDashboardLayout, type DashboardSection } from "@/components/vendor-dashboard/VendorDashboardLayout";
 import { useVendorIntelligenceDashboard } from "@/hooks/useVendorIntelligenceDashboard";
@@ -144,6 +145,7 @@ export default function VendorDashboardPage() {
           )}
           {activeSection === "intelligence" && <VendorCommandCenter vendorName={vendorName} />}
           {activeSection === "overview" && <DashboardOverview vendorName={vendorName} onNavigate={setActiveSection} />}
+          {activeSection === "segments" && <DashboardSegments vendorName={vendorName} />}
           {activeSection === "mentions" && <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfile.id} />}
           {activeSection === "profile" && <DashboardEditProfile vendorProfileId={isAdminMode ? vendorProfile.id : undefined} />}
           {activeSection === "intel" && <DashboardIntel vendorName={vendorName} />}

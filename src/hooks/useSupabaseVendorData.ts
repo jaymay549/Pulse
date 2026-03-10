@@ -227,6 +227,35 @@ export async function fetchVendorProfile(
   vendorName: string,
   productLineSlug?: string | null
 ): Promise<VendorProfileResult> {
+  const profileSelect =
+    "vendor_name, company_website, company_logo_url, company_description, linkedin_url, banner_url, tagline, headquarters";
+
+  const pickBestProfileRow = (
+    rows: Array<Record<string, any>> | null
+  ): Record<string, any> | null => {
+    if (!rows || rows.length === 0) return null;
+
+    const score = (row: Record<string, any>) => {
+      // Prefer richer approved profiles when duplicate vendor_name variants exist
+      // (e.g. BKD.ai vs bkd.ai).
+      const fields = [
+        row.company_website,
+        row.company_logo_url,
+        row.company_description,
+        row.linkedin_url,
+        row.banner_url,
+        row.tagline,
+        row.headquarters,
+      ];
+      return fields.reduce(
+        (acc, value) => acc + (value && String(value).trim() ? 1 : 0),
+        0
+      );
+    };
+
+    return [...rows].sort((a, b) => score(b) - score(a))[0] ?? null;
+  };
+
   // Run RPC and vendor_profiles query in parallel.
   // The RPC may not return newer columns (banner_url, tagline, etc.),
   // so we supplement with a direct read from vendor_profiles (public for approved vendors).
@@ -237,10 +266,10 @@ export async function fetchVendorProfile(
     } as never),
     supabase
       .from("vendor_profiles" as never)
-      .select("company_website, company_logo_url, company_description, linkedin_url, banner_url, tagline, headquarters" as never)
-      .eq("vendor_name" as never, vendorName)
+      .select(profileSelect as never)
+      .ilike("vendor_name" as never, vendorName)
       .eq("is_approved" as never, true)
-      .maybeSingle(),
+      .limit(10),
   ]);
 
   let result: any = null;
@@ -263,7 +292,8 @@ export async function fetchVendorProfile(
       result = legacy.data as any;
     }
   }
-  const vp = vpResult.data as Record<string, any> | null;
+  const vpRows = (vpResult.data as Array<Record<string, any>> | null) ?? null;
+  const vp = pickBestProfileRow(vpRows);
 
   // Merge: RPC metadata first, then fill gaps from vendor_profiles
   const rpcMeta = result.metadata || {};

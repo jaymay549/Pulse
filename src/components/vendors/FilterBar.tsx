@@ -54,7 +54,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         <CountBadge count={positiveCount} isActive={typeFilter === "positive"} />
       </FilterButton>
 
-      {/* Warnings Filter */}
+      {/* Concerns Filter */}
       <FilterButton
         isActive={typeFilter === "warning"}
         onClick={handleWarningsClick}
@@ -62,7 +62,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         disabled={!canAccessWarnings && warningCount === 0}
       >
         <AlertTriangle className="h-3.5 w-3.5" />
-        Warnings
+        Concerns
         <CountBadge count={warningCount} isActive={typeFilter === "warning"} />
         {!canAccessWarnings && warningCount > 0 && (
           <Lock className="h-3 w-3 opacity-60" />

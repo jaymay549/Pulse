@@ -234,7 +234,7 @@ export const AIInsightBanner: React.FC<AIInsightBannerProps> = ({
                         </span>
                         <span className="text-red-500/90 flex items-center gap-1">
                           <div className="h-1 w-1 rounded-full bg-red-500" />
-                          {insight.stats.warnings} Warnings
+                          {insight.stats.warnings} Concerns
                         </span>
                       </div>
                     </motion.div>

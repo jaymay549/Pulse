@@ -126,7 +126,7 @@ const Pricing = () => {
               </li>
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span className="text-foreground/80"><strong>Raw vendor intel:</strong> Real reviews and warnings from dealers who've used the tools</span>
+                <span className="text-foreground/80"><strong>Raw vendor intel:</strong> Real reviews and concerns from dealers who've used the tools</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />

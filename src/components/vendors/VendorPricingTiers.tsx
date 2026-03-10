@@ -70,7 +70,7 @@ export const VendorPricingTiers: React.FC<VendorPricingTiersProps> = ({
             Choose Your Access Level
           </h3>
           <p className="text-muted-foreground">
-            Unlock {totalReviews}+ dealer excerpts and {totalWarnings}+ warnings
+            Unlock {totalReviews}+ dealer excerpts and {totalWarnings}+ concerns
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export const VendorPricingTiers: React.FC<VendorPricingTiersProps> = ({
               <span className="font-bold text-foreground">Viewer</span>
             </div>
             <p className="text-xs text-muted-foreground mb-3">
-              View all vendor excerpts & warnings
+              View all vendor excerpts & concerns
             </p>
 
             {/* Price + Toggle on same line */}

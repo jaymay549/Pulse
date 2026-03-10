@@ -21,7 +21,7 @@ const VALUE_PROPS: { icon: LucideIcon; title: string; description: string; gradi
   {
     icon: BarChart3,
     title: "Track Vendor Sentiment",
-    description: "See recommendations and warnings at a glance. Know what dealers really think before you buy.",
+    description: "See recommendations and concerns at a glance. Know what dealers really think before you buy.",
     gradient: "from-emerald-500/90 to-teal-600/90",
   },
 ];

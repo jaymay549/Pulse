@@ -12,6 +12,7 @@ import VendorBeta from "./pages/VendorBeta";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { ProfileProgressBar } from "./components/tech-stack/ProfileProgressBar";
+import { MemberLinker } from "./components/MemberLinker";
 
 // Admin pages (lazy loaded)
 const AdminGuard = lazy(() => import("./components/admin/AdminGuard"));
@@ -50,6 +51,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <ProfileProgressBar />
+          <MemberLinker />
           <Routes>
             <Route path="/" element={<Navigate to="/vendors" replace />} />
             <Route path="/vendors" element={<VendorsV2 />} />

@@ -938,7 +938,7 @@ const VendorProfile = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-red-400" />
-                  <span className="text-xs text-slate-500">Warnings</span>
+                  <span className="text-xs text-slate-500">Concerns</span>
                   <span className="text-xs font-bold text-slate-800">{profileData.stats.warningPercent}%</span>
                   <span className="text-[10px] text-slate-400">({profileData.stats.warningCount})</span>
                 </div>
@@ -1001,12 +1001,6 @@ const VendorProfile = () => {
               mentionCount={profileData.stats.totalMentions}
             />
           </div>
-
-          {/* Pricing Intelligence */}
-          <PricingIntelligence
-            vendorName={profileData.vendorName}
-            mentionCount={profileData.stats.totalMentions}
-          />
 
           {/* ══════════════════════════════════════════
               FREQUENTLY COMPARED WITH

@@ -47,7 +47,7 @@ import { cn } from "@/lib/utils";
 const SUGGESTED_PROMPTS = [
   "What DMS should I use for a mid-size dealership?",
   "Compare Cox Automotive vs CDK",
-  "Which vendors have the most warnings?",
+  "Which vendors have the most concerns?",
   "Best CRM for customer follow-up?",
 ];
 
@@ -1270,7 +1270,7 @@ const VendorsV2 = () => {
               <div className="flex justify-center gap-4 mt-6 text-sm text-muted-foreground">
                 <span><strong className="text-foreground">{totalVerifiedCount}+</strong> recommendations</span>
                 <span className="text-border">&#8226;</span>
-                <span><strong className="text-foreground">{totalWarningCountValue}+</strong> warnings</span>
+                <span><strong className="text-foreground">{totalWarningCountValue}+</strong> concerns</span>
                 <span className="text-border">&#8226;</span>
                 <span><strong className="text-foreground">{categories.length - 1}</strong> categories</span>
               </div>
@@ -1347,7 +1347,7 @@ const VendorsV2 = () => {
                       </h3>
                       <p className="text-muted-foreground text-sm">
                         Unlock all {paginationInfo?.totalSystemCount ?? wamMentions.length} reviews including{" "}
-                        {totalWarningCountValue} warnings.
+                        {totalWarningCountValue} concerns.
                       </p>
                     </div>
                   </div>
@@ -1539,7 +1539,7 @@ const VendorsV2 = () => {
                         </h3>
                         <p className="text-muted-foreground text-sm">
                           Unlock all {paginationInfo?.totalSystemCount ?? wamMentions.length} reviews including{" "}
-                          {totalWarningCountValue} warnings.
+                          {totalWarningCountValue} concerns.
                         </p>
                       </div>
                     </div>

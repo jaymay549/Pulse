@@ -29,7 +29,7 @@ const TrendingSection = ({ entries, onEntryClick }: TrendingSectionProps) => {
   const getTypeLabel = (type: string) => {
     switch (type) {
       case "positive": return "WIN";
-      case "warning": return "WARNING";
+      case "warning": return "CONCERN";
       default: return "";
     }
   };

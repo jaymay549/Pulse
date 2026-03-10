@@ -84,7 +84,7 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
         return {
           badge: "bg-red-100 text-red-700 border-red-200",
           icon: <AlertTriangle className="h-4 w-4" />,
-          label: "WARNING",
+          label: "CONCERN",
           accentColor: "text-red-600",
         };
       case "positive":

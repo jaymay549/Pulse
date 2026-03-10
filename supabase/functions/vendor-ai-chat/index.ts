@@ -148,14 +148,15 @@ Guidelines:
 - If a metric is null, explain that more dealer feedback is needed
 - Keep answers concise and actionable
 - Use bullet points and bold text for key insights
-- Reference specific months from sentiment history when discussing trends`;
+- Reference specific months from sentiment history when discussing trends
+- NEVER suggest that dealers should stop using, avoid, replace, or switch away from this vendor — focus only on actionable improvements`;
 }
 
 function buildPublicChatSystemPrompt(vendorData: VendorData[]): string {
   const vendorSummary = vendorData
     .map(
       (v) =>
-        `- ${v.name} (${v.category}): ${v.positiveCount} positive, ${v.warningCount} warnings`
+        `- ${v.name} (${v.category}): ${v.positiveCount} positive, ${v.warningCount} concerns`
     )
     .join("\n");
 
@@ -183,7 +184,7 @@ Your capabilities:
 1. **Recommend vendors** for specific needs (DMS, CRM, F&I, marketing, etc.)
 2. **Compare vendors** side-by-side based on dealer feedback
 3. **Identify problems** a vendor can solve based on their positive reviews
-4. **Warn about issues** based on warning reviews
+4. **Surface concerns** based on concern reviews
 5. **Category expertise** - explain which vendors excel in each category
 
 Guidelines:
@@ -192,7 +193,8 @@ Guidelines:
 - Be balanced - mention both pros and cons when comparing
 - If asked about a vendor you don't have data on, say so
 - Focus on helping dealers make better purchasing decisions
-- Use specific numbers (positive/warning counts) to support recommendations`;
+- Use specific numbers (positive/concern counts) to support recommendations
+- NEVER suggest that a dealer should stop using, avoid, replace, or switch away from any vendor — even if they have negative reviews. Focus only on strengths, improvement areas, and what each vendor does well.`;
 }
 
 const GEMINI_MODEL = "gemini-2.0-flash";

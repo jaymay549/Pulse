@@ -47,7 +47,7 @@ const VendorCard = ({ item }: { item: typeof sampleItems[0] }) => (
       ) : (
         <ThumbsUp className="h-3.5 w-3.5" />
       )}
-      {item.type === 'warning' ? 'WARNING' : 'RECOMMENDED'}
+      {item.type === 'warning' ? 'CONCERN' : 'RECOMMENDED'}
     </div>
     
     {/* Category */}
@@ -98,7 +98,7 @@ const VendorIntelSection = () => {
             Avoid Costly Vendor Mistakes
           </h2>
           <p className="text-xl text-foreground/70 max-w-xl mx-auto">
-            Real warnings and wins from dealers who've already been there.
+            Real concerns and wins from dealers who've already been there.
           </p>
         </div>
 
@@ -147,7 +147,7 @@ const VendorIntelSection = () => {
         <div className="flex justify-center items-center gap-3 sm:gap-6 mb-8 sm:mb-10 text-sm sm:text-base">
           <span className="text-foreground"><strong className="text-base sm:text-2xl">1,300+</strong> reviews</span>
           <span className="text-muted-foreground">•</span>
-          <span className="text-red-600"><strong className="text-base sm:text-2xl">435+</strong> warnings</span>
+          <span className="text-red-600"><strong className="text-base sm:text-2xl">435+</strong> concerns</span>
           <span className="text-muted-foreground">•</span>
           <span className="text-green-600"><strong className="text-base sm:text-2xl">865+</strong> wins</span>
         </div>

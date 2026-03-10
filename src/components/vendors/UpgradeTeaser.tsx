@@ -125,12 +125,12 @@ export const SearchLockedPaywall: React.FC<SearchLockedPaywallProps> = ({
             )}
             {warningCount > 0 && (
               <span className="text-orange-600 font-medium">
-                {warningCount} warnings
+                {warningCount} concerns
               </span>
             )}
           </div>
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            Search results are a member feature. Join to unlock full access to all vendor conversation excerpts, warnings, and dealer insights.
+            Search results are a member feature. Join to unlock full access to all vendor conversation excerpts, concerns, and dealer insights.
           </p>
           <button
             onClick={handleClick}

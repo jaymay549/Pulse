@@ -153,7 +153,7 @@ export function CategoryGrid({
                       )}
                       {vendor.warningCount !== undefined && vendor.warningCount > 0 && (
                         <span className="px-1.5 py-0.5 rounded bg-red-50 text-red-700 font-medium text-[10px]">
-                          {vendor.warningCount} warn
+                          {vendor.warningCount} concern
                         </span>
                       )}
                     </div>

@@ -22,7 +22,7 @@ const ShareButtons = ({ quote, type, onDownloadCard }: ShareButtonsProps) => {
   // Create shareable text (anonymized - no vendor names)
   const getShareText = () => {
     const emoji = type === "positive" ? "✅" : type === "warning" ? "⚠️" : "💡";
-    const typeLabel = type === "positive" ? "Win" : type === "warning" ? "Warning" : "Strategy";
+    const typeLabel = type === "positive" ? "Win" : type === "warning" ? "Concern" : "Strategy";
     return `${emoji} ${typeLabel} from CDG Circles:\n\n"${quote.slice(0, 200)}${quote.length > 200 ? "..." : ""}"\n\nSee more dealer insights →`;
   };
 
