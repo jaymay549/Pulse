@@ -1,10 +1,12 @@
 import { useState, useMemo } from "react";
-import { Users, Activity, MessageSquare, TrendingUp, Search, ArrowUpDown, Loader2 } from "lucide-react";
+import { Users, Activity, MessageSquare, TrendingUp, Search, ArrowUpDown, Loader2, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useMembers } from "@/hooks/useAdminData";
+import { toast } from "sonner";
+import { useClerkAuth } from "@/hooks/useClerkAuth";
 import type { Member, MemberActivity } from "@/types/admin";
 
 const TIME_RANGES = [
@@ -73,6 +75,27 @@ const MembersPage = () => {
   const [sort, setSort] = useState("most_active");
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const { data: members = [], isLoading: loading } = useMembers(days);
+  const { fetchWithAuth, isAdmin } = useClerkAuth();
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetchWithAuth(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-airtable-members`
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Sync failed");
+      toast.success(
+        `Sync complete: ${data.inserted} new, ${data.updated} updated, ${data.skipped} skipped` +
+          (data.errors?.length ? `. ${data.errors.length} errors.` : "")
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     let list = members;
@@ -104,7 +127,21 @@ const MembersPage = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-xl font-bold text-zinc-100">Members</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-zinc-100">Members</h1>
+        {isAdmin && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSync}
+            disabled={syncing}
+            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 mr-2 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Syncing..." : "Sync from Airtable"}
+          </Button>
+        )}
+      </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
