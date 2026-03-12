@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, TrendingUp, TrendingDown, Loader2, Package, Users, Network } from "lucide-react";
+import { Sparkles, TrendingUp, TrendingDown, Loader2, Package, Users, Network, Lock } from "lucide-react";
 import {
   fetchVendorIntelligence,
   fetchVendorBootstrapMetadata,
@@ -10,11 +10,15 @@ import { cn } from "@/lib/utils";
 interface VendorIntelligenceCardProps {
   vendorName: string;
   className?: string;
+  isAuthenticated?: boolean;
+  onSignIn?: () => void;
 }
 
 export function VendorIntelligenceCard({
   vendorName,
   className,
+  isAuthenticated = false,
+  onSignIn,
 }: VendorIntelligenceCardProps) {
   const { data: intelligence, isLoading: intelLoading } = useQuery({
     queryKey: ["vendor-intelligence", vendorName],
@@ -55,6 +59,54 @@ export function VendorIntelligenceCard({
   // ── STATE 1: RICH (5+ mentions) ──────────────────────────
 
   if (state === "rich" && intelligence) {
+    if (!isAuthenticated) {
+      return (
+        <div
+          className={cn(
+            "relative rounded-xl border border-border/50 bg-gradient-to-b from-slate-50/80 to-white p-4 overflow-hidden",
+            className
+          )}
+        >
+          {/* Blurred preview */}
+          <div className="blur-[6px] select-none pointer-events-none">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">
+                CDG Intelligence
+              </h3>
+            </div>
+            <p className="text-[13px] leading-relaxed text-slate-600 mb-2.5">
+              {intelligence.summary_text}
+            </p>
+            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold tracking-wide">
+              <span className="text-slate-400">
+                <span className="text-slate-600">{stats.total}</span> mentions
+              </span>
+              <span className="text-emerald-600 flex items-center gap-1">
+                <span className="h-1 w-1 rounded-full bg-emerald-500" />
+                {stats.positive} positive
+              </span>
+              <span className="text-red-400 flex items-center gap-1">
+                <span className="h-1 w-1 rounded-full bg-red-400" />
+                {stats.warnings} concerns
+              </span>
+            </div>
+          </div>
+          {/* Lock overlay */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded-xl">
+            <Lock className="h-4 w-4 text-slate-400 mb-1.5" />
+            <p className="text-[11px] font-semibold text-slate-600 mb-1">Member-only intelligence</p>
+            <button
+              onClick={onSignIn}
+              className="text-[11px] font-medium text-primary hover:underline"
+            >
+              Sign in to unlock
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         className={cn(
@@ -104,6 +156,42 @@ export function VendorIntelligenceCard({
   // ── STATE 2: THIN (1-4 mentions) ─────────────────────────
 
   if (state === "thin" && intelligence) {
+    if (!isAuthenticated) {
+      return (
+        <div
+          className={cn(
+            "relative rounded-xl border border-border/50 bg-white p-4 overflow-hidden",
+            className
+          )}
+        >
+          <div className="blur-[6px] select-none pointer-events-none">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">
+                Early Feedback
+              </h3>
+            </div>
+            <p className="text-[13px] leading-relaxed text-slate-600 mb-1.5">
+              {intelligence.summary_text}
+            </p>
+            <p className="text-[10px] text-slate-400">
+              Based on {stats.total} early mention{stats.total !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded-xl">
+            <Lock className="h-4 w-4 text-slate-400 mb-1.5" />
+            <p className="text-[11px] font-semibold text-slate-600 mb-1">Member-only intelligence</p>
+            <button
+              onClick={onSignIn}
+              className="text-[11px] font-medium text-primary hover:underline"
+            >
+              Sign in to unlock
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         className={cn(
