@@ -580,7 +580,7 @@ const VendorProfile = () => {
                 <img
                   src={profileData.metadata.banner_url}
                   alt={`${profileData.vendorName} banner`}
-                  className="w-full h-full object-cover object-center"
+                  className="w-full h-full object-cover object-top"
                 />
               ) : (
                 <div

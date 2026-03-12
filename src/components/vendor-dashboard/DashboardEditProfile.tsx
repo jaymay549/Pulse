@@ -386,7 +386,7 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
         {/* Banner */}
         <div className="relative">
           <div
-            className="h-[200px] w-full rounded-t-xl bg-slate-200 bg-cover bg-center"
+            className="h-[200px] w-full rounded-t-xl bg-slate-200 bg-cover bg-top"
             style={
               profile.banner_url
                 ? { backgroundImage: `url(${profile.banner_url})` }
