@@ -1,4 +1,4 @@
-import { ArrowLeft, TrendingUp, BarChart3, MessageSquare, ExternalLink } from "lucide-react";
+import { ArrowLeft, TrendingUp, Users, MessageSquare, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +33,7 @@ export default function MarketIntelReport() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center space-y-3">
           <p className="text-slate-600 font-medium">
-            Complete your Tech Stack Profile to unlock this report
+            Complete your stack to see how dealers like you compare
           </p>
           <p className="text-sm text-slate-400">
             {completion.percentage}% complete — {completion.missing[0]}
@@ -55,7 +55,7 @@ export default function MarketIntelReport() {
         <div className="text-center space-y-3">
           <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-sm text-slate-500">
-            Generating your Market Intelligence Report...
+            Finding dealers like you...
           </p>
         </div>
       </div>
@@ -79,10 +79,10 @@ export default function MarketIntelReport() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-slate-900">
-              Market Intelligence Report
+              Dealers Like You
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              Personalized insights based on your tech stack
+              See what dealers with similar stacks are using and how you compare
             </p>
           </div>
           <Link to="/vendors">
@@ -96,11 +96,14 @@ export default function MarketIntelReport() {
         {/* Section A: Your Stack vs. Peers */}
         <section className="space-y-4">
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
+            <Users className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold text-slate-900">
-              Your Stack vs. Peers
+              How Your Stack Compares
             </h2>
           </div>
+          <p className="text-sm text-slate-500">
+            Here's how the community rates each vendor you use, with your personal score alongside.
+          </p>
 
           <div className="grid gap-3">
             {report.current_vendors.map((vendor) => (
@@ -117,7 +120,7 @@ export default function MarketIntelReport() {
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-emerald-600" />
               <h2 className="text-lg font-semibold text-slate-900">
-                Alternatives Worth Exploring
+                What Others Are Switching To
               </h2>
             </div>
 
@@ -128,8 +131,9 @@ export default function MarketIntelReport() {
               .map((vendor) => (
                 <div key={vendor.vendor_name} className="space-y-2">
                   <p className="text-sm text-slate-600">
-                    Based on your reasons for exploring away from{" "}
-                    <span className="font-medium">{vendor.vendor_name}</span>:
+                    Dealers who left{" "}
+                    <span className="font-medium">{vendor.vendor_name}</span>{" "}
+                    for similar reasons switched to:
                   </p>
                   <div className="grid gap-2">
                     {vendor.alternatives.map((alt) => (

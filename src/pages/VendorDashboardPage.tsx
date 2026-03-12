@@ -16,7 +16,8 @@ import { DashboardIntel } from "@/components/vendor-dashboard/DashboardIntel";
 import { DashboardDimensions } from "@/components/vendor-dashboard/DashboardDimensions";
 import { DashboardAIChat } from "@/components/vendor-dashboard/DashboardAIChat";
 import { DashboardSegments } from "@/components/vendor-dashboard/DashboardSegments";
-import { DashboardWebinarResults } from "@/components/vendor-dashboard/DashboardWebinarResults";
+import { DashboardDemoRequests } from "@/components/vendor-dashboard/DashboardDemoRequests";
+import { DashboardScreenshots } from "@/components/vendor-dashboard/DashboardScreenshots";
 import { VendorDashboardLayout, type DashboardSection } from "@/components/vendor-dashboard/VendorDashboardLayout";
 import { useVendorIntelligenceDashboard } from "@/hooks/useVendorIntelligenceDashboard";
 
@@ -150,7 +151,8 @@ export default function VendorDashboardPage() {
           {activeSection === "profile" && <DashboardEditProfile vendorProfileId={isAdminMode ? vendorProfile.id : undefined} />}
           {activeSection === "intel" && <DashboardIntel vendorName={vendorName} />}
           {activeSection === "dimensions" && <DashboardDimensions vendorName={vendorName} />}
-          {activeSection === "webinar-results" && <DashboardWebinarResults vendorName={vendorName} />}
+          {activeSection === "demo-requests" && <DashboardDemoRequests vendorName={vendorName} supabase={supabase} />}
+          {activeSection === "screenshots" && <DashboardScreenshots vendorName={vendorName} />}
         </div>
       </VendorDashboardLayout>
 

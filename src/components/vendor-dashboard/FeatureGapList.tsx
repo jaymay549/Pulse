@@ -1,19 +1,9 @@
-import { ArrowUp, ArrowDown, Minus, AlertCircle } from "lucide-react";
-import {
-  type DashboardFeatureGap,
-  type MetricKey,
-  METRIC_CONFIG,
-} from "@/hooks/useVendorIntelligenceDashboard";
+import { ArrowUp, ArrowDown, Minus, Lightbulb } from "lucide-react";
+import { type DashboardFeatureGap } from "@/hooks/useVendorIntelligenceDashboard";
 
 interface FeatureGapListProps {
   gaps: DashboardFeatureGap[];
 }
-
-const METRIC_BADGE_COLORS: Record<string, string> = {
-  product_stability: "text-blue-600 bg-blue-50",
-  customer_experience: "text-violet-600 bg-violet-50",
-  value_perception: "text-amber-600 bg-amber-50",
-};
 
 function formatRelative(dateString: string): string {
   const now = new Date();
@@ -31,12 +21,12 @@ export function FeatureGapList({ gaps }: FeatureGapListProps) {
     return (
       <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-6">
         <div className="flex items-center gap-2 text-slate-400">
-          <AlertCircle className="h-4 w-4" />
-          <h3 className="text-sm font-medium">Feature Gaps</h3>
+          <Lightbulb className="h-4 w-4" />
+          <h3 className="text-sm font-medium">Action Plan</h3>
         </div>
         <p className="mt-2 text-xs text-slate-400">
-          No recurring feature gaps detected. Gaps appear when 2+ mentions reference
-          the same concern within 90 days.
+          No recurring concerns detected yet. Recommendations appear when 2+ dealers
+          mention the same issue within 90 days.
         </p>
       </div>
     );
@@ -45,67 +35,52 @@ export function FeatureGapList({ gaps }: FeatureGapListProps) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
-        <AlertCircle className="h-4 w-4 text-slate-500" />
-        <h3 className="text-sm font-semibold text-slate-900">Feature Gaps</h3>
+        <Lightbulb className="h-4 w-4 text-slate-500" />
+        <h3 className="text-sm font-semibold text-slate-900">Action Plan</h3>
         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
           {gaps.length}
         </span>
       </div>
 
-      <div className="rounded-xl border bg-white divide-y">
-        {gaps.map((gap, i) => {
-          const metricLabel = gap.mapped_metric
-            ? METRIC_CONFIG[gap.mapped_metric as MetricKey]?.label
-            : null;
-          const metricColor = gap.mapped_metric
-            ? METRIC_BADGE_COLORS[gap.mapped_metric] || "text-slate-600 bg-slate-50"
-            : "text-slate-600 bg-slate-50";
-
-          return (
-            <div key={gap.id} className="flex items-center gap-3 px-4 py-3">
-              {/* Rank */}
-              <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-500">
-                {i + 1}
+      <div className="space-y-2">
+        {gaps.map((gap) => (
+          <div key={gap.id} className="rounded-lg border bg-white p-4">
+            {/* Category + meta row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                {gap.gap_label}
               </span>
-
-              {/* Gap details */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-800 truncate">
-                  {gap.gap_label}
-                </p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[11px] text-slate-400">
-                    {gap.mention_count} mentions
-                  </span>
-                  <span className="text-slate-200">·</span>
-                  <span className="text-[11px] text-slate-400">
-                    Last {formatRelative(gap.last_seen)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Metric badge */}
-              {metricLabel && (
-                <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${metricColor}`}>
-                  {metricLabel}
+              <span className="text-[11px] text-slate-400">
+                {gap.mention_count} {gap.mention_count === 1 ? "mention" : "mentions"}
+              </span>
+              <span className="text-slate-200">·</span>
+              <span className="text-[11px] text-slate-400">
+                Last {formatRelative(gap.last_seen)}
+              </span>
+              {gap.is_emerging && (
+                <span className="rounded-full px-2 py-0.5 text-[10px] font-medium text-amber-600 bg-amber-50">
+                  Emerging
                 </span>
               )}
-
-              {/* Trend */}
-              <div className="flex-shrink-0">
+              <div className="ml-auto flex-shrink-0">
                 {gap.trend_direction === "up" && (
-                  <ArrowUp className="h-4 w-4 text-red-500" title="Increasing" />
+                  <ArrowUp className="h-3.5 w-3.5 text-red-500" />
                 )}
                 {gap.trend_direction === "down" && (
-                  <ArrowDown className="h-4 w-4 text-emerald-500" title="Decreasing" />
+                  <ArrowDown className="h-3.5 w-3.5 text-emerald-500" />
                 )}
                 {gap.trend_direction === "stable" && (
-                  <Minus className="h-4 w-4 text-slate-300" title="Stable" />
+                  <Minus className="h-3.5 w-3.5 text-slate-300" />
                 )}
               </div>
             </div>
-          );
-        })}
+
+            {/* Action text — the main content */}
+            <p className="mt-2 text-sm text-slate-700 leading-relaxed">
+              {gap.ai_insight || "Review recent mentions to identify patterns in this area."}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { categories } from "@/hooks/useVendorFilters";
 import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -27,6 +29,8 @@ interface ClaimLinkData {
   tagline: string | null;
   linkedin_url: string | null;
   headquarters: string | null;
+  category: string | null;
+  contact_phone: string | null;
 }
 
 interface FormState {
@@ -36,7 +40,12 @@ interface FormState {
   contactEmail: string;
   linkedinUrl: string;
   headquarters: string;
+  category: string;
+  contactPhone: string;
 }
+
+// Category options (exclude "all")
+const categoryOptions = categories.filter((c) => c.id !== "all");
 
 export default function VendorClaimPage() {
   const { token } = useParams<{ token: string }>();
@@ -66,6 +75,8 @@ export default function VendorClaimPage() {
       contactEmail: data?.contact_email ?? "",
       linkedinUrl: data?.linkedin_url ?? "",
       headquarters: data?.headquarters ?? "",
+      category: data?.category ?? "",
+      contactPhone: data?.contact_phone ?? "",
     };
   }, [claimQuery.data]);
 
@@ -82,10 +93,11 @@ export default function VendorClaimPage() {
         p_company_website: form.companyWebsite,
         p_company_description: form.companyDescription,
         p_contact_email: form.contactEmail,
-        p_company_logo_url: claimQuery.data?.company_logo_url ?? null,
         p_tagline: form.tagline,
         p_linkedin_url: form.linkedinUrl,
         p_headquarters: form.headquarters,
+        p_category: form.category || null,
+        p_contact_phone: form.contactPhone || null,
       } as never);
       if (error) throw error;
       return ((data ?? [])[0] ?? null) as {
@@ -203,14 +215,35 @@ export default function VendorClaimPage() {
                 submitMutation.mutate();
               }}
             >
-              <div>
-                <Label htmlFor="tagline">Tagline</Label>
-                <Input
-                  id="tagline"
-                  value={form.tagline}
-                  onChange={(e) => setForm((prev) => ({ ...prev, tagline: e.target.value }))}
-                  placeholder="A short one-line summary"
-                />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="category">Category *</Label>
+                  <Select
+                    value={form.category}
+                    onValueChange={(val) => setForm((prev) => ({ ...prev, category: val }))}
+                    required
+                  >
+                    <SelectTrigger id="category">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categoryOptions.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.icon} {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="tagline">Tagline</Label>
+                  <Input
+                    id="tagline"
+                    value={form.tagline}
+                    onChange={(e) => setForm((prev) => ({ ...prev, tagline: e.target.value }))}
+                    placeholder="A short one-line summary"
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="description">Company description *</Label>
@@ -247,6 +280,16 @@ export default function VendorClaimPage() {
                 </div>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="contact-phone">Phone</Label>
+                  <Input
+                    id="contact-phone"
+                    type="tel"
+                    value={form.contactPhone}
+                    onChange={(e) => setForm((prev) => ({ ...prev, contactPhone: e.target.value }))}
+                    placeholder="+1 (555) 000-0000"
+                  />
+                </div>
                 <div>
                   <Label htmlFor="linkedin-url">LinkedIn URL</Label>
                   <Input

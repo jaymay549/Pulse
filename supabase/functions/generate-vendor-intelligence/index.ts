@@ -26,6 +26,21 @@ interface Mention {
   is_hidden: boolean;
 }
 
+interface FeatureGap {
+  id: string;
+  gap_label: string;
+  mention_count: number;
+}
+
+// Maps the human-readable dimension label back to DB dimension keys
+const LABEL_TO_DIMENSIONS: Record<string, string[]> = {
+  "Product reliability":  ["reliable"],
+  "Integration quality":  ["integrates"],
+  "Support & training":   ["support"],
+  "Adoption & onboarding": ["adopted"],
+  "Pricing & value":      ["worth_it"],
+};
+
 // ── Gemini helper ──────────────────────────────────────────
 
 async function callGemini(apiKey: string, prompt: string): Promise<string> {
@@ -53,7 +68,7 @@ async function callGemini(apiKey: string, prompt: string): Promise<string> {
   return data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
 }
 
-// ── Prompt builders per state ──────────────────────────────
+// ── Prompt builders ────────────────────────────────────────
 
 function buildPrompt(
   vendorName: string,
@@ -135,6 +150,102 @@ ${mentions.length} dealer mentions (${positive.length} positive, ${warning.lengt
   return prompt;
 }
 
+function buildGapInsightPrompt(
+  vendorName: string,
+  dimensionLabel: string,
+  quotes: string[]
+): string {
+  const count = quotes.length;
+  return `You are an automotive technology consultant reviewing dealer concerns about ${vendorName}.
+
+AREA OF CONCERN: ${dimensionLabel} (${count} dealer concern${count !== 1 ? "s" : ""})
+
+WHAT DEALERS SAID:
+${quotes.slice(0, 12).map((q) => `- "${q}"`).join("\n")}
+
+Write ONE actionable recommendation for ${vendorName}'s leadership team (1-2 sentences).
+Rules:
+- Identify the specific problem pattern or root cause you see in the feedback
+- Suggest a concrete, practical next step they should take
+- Professional, direct tone — like a consultant briefing a VP
+- Do NOT quote dealers verbatim or start with the vendor name
+- Do NOT mention "CDGPulse", "survey", "poll", or "dealers say"
+
+Return JSON: {"insight": "your 1-2 sentence recommendation"}`;
+}
+
+// ── Generate gap insights for one vendor ───────────────────
+
+async function generateGapInsights(
+  supabase: ReturnType<typeof createClient>,
+  geminiKey: string,
+  canonicalName: string,
+  vendorEntityId: string | null,
+  originalVendorName: string
+): Promise<number> {
+  // Fetch existing feature gaps
+  const { data: gapsData } = await supabase
+    .from("vendor_feature_gaps")
+    .select("id, gap_label, mention_count")
+    .eq("vendor_name", canonicalName);
+
+  const gaps = (gapsData || []) as FeatureGap[];
+  if (gaps.length === 0) return 0;
+
+  let updated = 0;
+
+  for (const gap of gaps) {
+    const dimensions = LABEL_TO_DIMENSIONS[gap.gap_label];
+    if (!dimensions) continue;
+
+    // Fetch warning quotes for this dimension (visible only)
+    let quotesQuery = supabase
+      .from("vendor_mentions")
+      .select("quote, headline")
+      .eq("type", "warning")
+      .eq("is_hidden", false)
+      .in("dimension", dimensions)
+      .not("quote", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(12);
+
+    if (vendorEntityId) {
+      quotesQuery = quotesQuery.eq("vendor_entity_id", vendorEntityId);
+    } else {
+      quotesQuery = quotesQuery.eq("vendor_name", originalVendorName);
+    }
+
+    const { data: mentionData } = await quotesQuery;
+    const quotes = (mentionData || [])
+      .map((m: { quote: string | null; headline: string | null }) =>
+        m.quote || m.headline
+      )
+      .filter(Boolean) as string[];
+
+    if (quotes.length === 0) continue;
+
+    const prompt = buildGapInsightPrompt(canonicalName, gap.gap_label, quotes);
+
+    try {
+      const raw = await callGemini(geminiKey, prompt);
+      const parsed = JSON.parse(raw);
+      const insight = parsed.insight as string | undefined;
+
+      if (insight && insight.length > 10) {
+        await supabase
+          .from("vendor_feature_gaps")
+          .update({ ai_insight: insight })
+          .eq("id", gap.id);
+        updated++;
+      }
+    } catch (e) {
+      console.warn(`[${canonicalName}] Gap insight error for "${gap.gap_label}":`, e);
+    }
+  }
+
+  return updated;
+}
+
 // ── Generate for one vendor ────────────────────────────────
 
 async function generateForVendor(
@@ -142,13 +253,29 @@ async function generateForVendor(
   geminiKey: string,
   vendorName: string,
   force: boolean
-): Promise<{ vendor_name: string; success: boolean; state?: string; error?: string }> {
+): Promise<{ vendor_name: string; success: boolean; state?: string; gaps_generated?: number; error?: string }> {
   try {
+    // Resolve vendor entity ID and canonical name for entity-aware fetching
+    const { data: entityRows } = await supabase.rpc(
+      "resolve_vendor_family_name_only",
+      { p_vendor_name: vendorName }
+    );
+    const entityRow = (entityRows as any[])?.[0] ?? null;
+    const vendorEntityId: string | null = entityRow?.vendor_entity_id ?? null;
+    const canonicalName: string = entityRow?.canonical_name ?? vendorName;
+
     // Fetch ALL mentions including hidden (prevents gaming)
-    const { data: allMentions, error: mentionsError } = await supabase
+    let mentionsQuery = supabase
       .from("vendor_mentions")
-      .select("headline, quote, type, dimension, sentiment, category, source, is_hidden")
-      .eq("vendor_name", vendorName);
+      .select("headline, quote, type, dimension, sentiment, category, source, is_hidden");
+
+    if (vendorEntityId) {
+      mentionsQuery = mentionsQuery.eq("vendor_entity_id", vendorEntityId);
+    } else {
+      mentionsQuery = mentionsQuery.eq("vendor_name", vendorName);
+    }
+
+    const { data: allMentions, error: mentionsError } = await mentionsQuery;
 
     if (mentionsError) throw mentionsError;
 
@@ -161,75 +288,98 @@ async function generateForVendor(
     else if (mentionCount > 0) state = "thin";
     else state = "empty";
 
-    // Skip if no change since last generation
+    // Check if summary needs regeneration
+    let summaryChanged = true;
     if (!force) {
       const { data: existing } = await supabase
         .from("vendor_intelligence_cache")
         .select("mention_count_at_generation")
-        .eq("vendor_name", vendorName)
+        .eq("vendor_name", canonicalName)
         .maybeSingle();
 
       if (existing && existing.mention_count_at_generation === mentionCount) {
-        return { vendor_name: vendorName, success: true, state, error: "Skipped (unchanged)" };
+        summaryChanged = false;
       }
     }
 
-    // For empty state, fetch auto-summary from bootstrapping
-    let autoSummary: string | null = null;
-    if (state === "empty") {
-      const { data: metadata } = await supabase
-        .from("vendor_metadata")
-        .select("auto_summary")
-        .eq("vendor_name", vendorName)
-        .maybeSingle();
-      autoSummary = metadata?.auto_summary || null;
-    }
+    if (summaryChanged) {
+      // For empty state, fetch auto-summary from bootstrapping
+      let autoSummary: string | null = null;
+      if (state === "empty") {
+        const { data: metadata } = await supabase
+          .from("vendor_metadata")
+          .select("auto_summary")
+          .eq("vendor_name", vendorName)
+          .maybeSingle();
+        autoSummary = metadata?.auto_summary || null;
+      }
 
-    // Generate via Gemini
-    const prompt = buildPrompt(vendorName, mentions, state, autoSummary);
-    const raw = await callGemini(geminiKey, prompt);
-    const parsed = JSON.parse(raw);
+      // Generate overall vendor summary via Gemini
+      const prompt = buildPrompt(vendorName, mentions, state, autoSummary);
+      const raw = await callGemini(geminiKey, prompt);
+      const parsed = JSON.parse(raw);
 
-    if (!parsed.summary_text) {
-      throw new Error("Invalid Gemini response: missing summary_text");
-    }
+      if (!parsed.summary_text) {
+        throw new Error("Invalid Gemini response: missing summary_text");
+      }
 
-    // Stats: only count visible mentions for display
-    const visible = mentions.filter((m) => !m.is_hidden);
-    const positiveCount = visible.filter((m) => m.type === "positive").length;
-    const warningCount = visible.filter((m) => m.type === "warning").length;
-    const externalCount = visible.filter((m) => m.source === "external").length;
+      // Stats: only count visible mentions for display
+      const visible = mentions.filter((m) => !m.is_hidden);
+      const positiveCount = visible.filter((m) => m.type === "positive").length;
+      const warningCount = visible.filter((m) => m.type === "warning").length;
+      const externalCount = visible.filter((m) => m.source === "external").length;
 
-    // Upsert cache
-    const { error: upsertError } = await supabase
-      .from("vendor_intelligence_cache")
-      .upsert(
-        {
-          vendor_name: vendorName,
-          state,
-          summary_text: parsed.summary_text,
-          sentiment: parsed.sentiment || "neutral",
-          trend_direction: parsed.trend_direction || null,
-          top_dimension: parsed.top_dimension || null,
-          stats: {
-            total: visible.length,
-            positive: positiveCount,
-            warnings: warningCount,
-            external_count: externalCount,
+      const { error: upsertError } = await supabase
+        .from("vendor_intelligence_cache")
+        .upsert(
+          {
+            vendor_name: canonicalName,
+            state,
+            summary_text: parsed.summary_text,
+            sentiment: parsed.sentiment || "neutral",
+            trend_direction: parsed.trend_direction || null,
+            top_dimension: parsed.top_dimension || null,
+            stats: {
+              total: visible.length,
+              positive: positiveCount,
+              warnings: warningCount,
+              external_count: externalCount,
+            },
+            mention_count_at_generation: mentionCount,
+            generated_at: new Date().toISOString(),
           },
-          mention_count_at_generation: mentionCount,
-          generated_at: new Date().toISOString(),
-        },
-        { onConflict: "vendor_name" }
-      );
+          { onConflict: "vendor_name" }
+        );
 
-    if (upsertError) throw upsertError;
+      if (upsertError) throw upsertError;
+    }
 
-    console.log(`[${vendorName}] Generated intelligence (state=${state}, mentions=${mentionCount})`);
-    return { vendor_name: vendorName, success: true, state };
+    // Always generate/refresh gap insights (gaps recomputed separately by cron)
+    const gapsGenerated = await generateGapInsights(
+      supabase,
+      geminiKey,
+      canonicalName,
+      vendorEntityId,
+      vendorName
+    );
+
+    const logLabel = summaryChanged ? "Generated" : "Refreshed gaps only";
+    console.log(
+      `[${canonicalName}] ${logLabel} (state=${state}, mentions=${mentionCount}, gap_insights=${gapsGenerated})`
+    );
+
+    if (!summaryChanged && gapsGenerated === 0) {
+      return { vendor_name: canonicalName, success: true, state, gaps_generated: 0, error: "Skipped (unchanged)" };
+    }
+
+    return { vendor_name: canonicalName, success: true, state, gaps_generated: gapsGenerated };
   } catch (e) {
     console.error(`[${vendorName}] Error:`, e);
-    return { vendor_name: vendorName, success: false, error: (e as Error).message };
+    return {
+      vendor_name: vendorName,
+      success: false,
+      error: String(e instanceof Error ? e.message : e),
+    };
   }
 }
 
@@ -250,7 +400,13 @@ serve(async (req) => {
 
     const body: GenerateRequest = await req.json();
     const force = body.force || false;
-    const results: Array<{ vendor_name: string; success: boolean; state?: string; error?: string }> = [];
+    const results: Array<{
+      vendor_name: string;
+      success: boolean;
+      state?: string;
+      gaps_generated?: number;
+      error?: string;
+    }> = [];
 
     if (body.vendor_name) {
       const result = await generateForVendor(supabase, GEMINI_API_KEY, body.vendor_name, force);

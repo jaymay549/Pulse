@@ -21,10 +21,12 @@ import { cn } from "@/lib/utils";
 import { categories as vendorCategories } from "@/hooks/useVendorFilters";
 import { useVendorOwnership } from "@/hooks/useVendorOwnership";
 import { ClaimProfileModal } from "@/components/vendors/ClaimProfileModal";
+import { RequestDemoModal } from "@/components/vendors/RequestDemoModal";
 import { VendorIntelligenceCard } from "@/components/vendors/VendorIntelligenceCard";
 import { DimensionalInsights } from "@/components/vendors/DimensionalInsights";
 import { PricingIntelligence } from "@/components/vendors/PricingIntelligence";
 import { SwitchingIntel } from "@/components/vendors/SwitchingIntel";
+import { ProductScreenshots } from "@/components/vendors/ProductScreenshots";
 
 interface VendorProfileData {
   vendorName: string;
@@ -129,6 +131,7 @@ const VendorProfile = () => {
   const [mentionFilter, setMentionFilter] = useState<"all" | "positive" | "warning">("all");
   const [selectedProductLine, setSelectedProductLine] = useState<string | null>(null);
   const [claimModalOpen, setClaimModalOpen] = useState(false);
+  const [showDemoModal, setShowDemoModal] = useState(false);
 
   // Inline vendor chat state
   const [ctaChatOpen, setCtaChatOpen] = useState(false);
@@ -699,10 +702,14 @@ const VendorProfile = () => {
                     <ExpandableDescription text={profileData.metadata.description} />
                   )}
 
+                  <ProductScreenshots vendorName={vendorName} />
+
+                  {isAuthenticated && (
                   <div className="flex items-center gap-1.5 mt-3.5 text-[11px] text-slate-400">
                     <MessageCircle className="h-3 w-3" />
                     <span>Based on {profileData.stats.totalMentions} community discussions</span>
                   </div>
+                  )}
 
                   {/* ── CDG Intelligence (consolidated) ── */}
                   <VendorIntelligenceCard
@@ -736,16 +743,15 @@ const VendorProfile = () => {
                       </p>
 
                       <div className="mt-4 flex flex-col gap-2">
-                        <a
-                          href={profileData.metadata?.website_url || "#"}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          onClick={() => setShowDemoModal(true)}
                           className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm hover:bg-slate-800 transition-colors"
                         >
                           <CalendarCheck className="h-3.5 w-3.5" />
                           Request a Demo
-                        </a>
+                        </button>
 
+                        {isAuthenticated && (
                         <button
                           onClick={() => {
                             setCtaChatOpen(true);
@@ -756,7 +762,9 @@ const VendorProfile = () => {
                           <BotMessageSquare className="h-3.5 w-3.5" />
                           Chat with Vendor AI
                         </button>
+                        )}
 
+                        {isAuthenticated && (
                         <button
                           onClick={() => {
                             const mentionsSection = document.getElementById("vendor-mentions");
@@ -767,13 +775,16 @@ const VendorProfile = () => {
                           <MessagesSquare className="h-3.5 w-3.5 text-slate-400" />
                           See Dealer Feedback
                         </button>
+                        )}
                       </div>
 
+                      {isAuthenticated && (
                       <div className="mt-3.5 pt-3 border-t border-black/[0.04]">
                         <p className="text-[10px] text-slate-400 leading-relaxed">
                           Data sourced from <span className="font-medium text-slate-500">{profileData.stats.totalMentions}</span> real dealer conversations across CDG communities.
                         </p>
                       </div>
+                      )}
                     </div>
 
                   {/* ── Chat mode ── */}
@@ -891,9 +902,51 @@ const VendorProfile = () => {
           </section>
 
           {/* ══════════════════════════════════════════
+              PAYWALL — shown only to non-authenticated users
+              ══════════════════════════════════════════ */}
+          {!isAuthenticated && (
+            <div className="mb-6 rounded-2xl border border-border/50 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] px-6 py-8 sm:px-10 sm:py-10 flex flex-col items-center text-center">
+              <div className="h-11 w-11 rounded-xl bg-slate-100 flex items-center justify-center mb-4">
+                <Lock className="h-5 w-5 text-slate-500" />
+              </div>
+              <h2
+                className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 mb-1"
+                style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+              >
+                Sign in for full access
+              </h2>
+              <p className="text-sm text-slate-400 mb-6 max-w-sm">
+                Members get complete intel on every vendor — from sentiment data to competitive positioning.
+              </p>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-left mb-7 text-sm text-slate-600">
+                {[
+                  "Sentiment breakdown & mention trends",
+                  "Dimensional insights (pricing, support, onboarding)",
+                  "Competitive movement & switching data",
+                  "Alternatives & competitors",
+                  "What dealers appreciate",
+                  "Common concerns & red flags",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => setShowSignIn(true)}
+                className="rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
+              >
+                Sign In
+              </button>
+            </div>
+          )}
+
+          {/* ══════════════════════════════════════════
               STATS ROW
               ══════════════════════════════════════════ */}
-          <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          {isAuthenticated && (
+          <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Sentiment Breakdown */}
             <div className="sm:col-span-2 bg-white rounded-2xl border border-border/50 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
               <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 mb-4">
@@ -985,12 +1038,12 @@ const VendorProfile = () => {
               </div>
             </div>
           </section>
+          )}
 
           {/* ══════════════════════════════════════════
               DIMENSIONAL INSIGHTS & INTEL
               ══════════════════════════════════════════ */}
-
-          {/* Dimensional + Switching side by side */}
+          {isAuthenticated && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
             <DimensionalInsights
               vendorName={profileData.vendorName}
@@ -1001,12 +1054,14 @@ const VendorProfile = () => {
               mentionCount={profileData.stats.totalMentions}
             />
           </div>
+          )}
 
           {/* ══════════════════════════════════════════
               FREQUENTLY COMPARED WITH
               ══════════════════════════════════════════ */}
-          {comparedVendors.length >= 2 && (
+          {isAuthenticated && comparedVendors.length >= 2 && (
             <section className="mb-6">
+              <div>
               <h2
                 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 mb-1"
                 style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
@@ -1068,12 +1123,14 @@ const VendorProfile = () => {
                   </Link>
                 </div>
               )}
+              </div>
             </section>
           )}
 
           {/* ══════════════════════════════════════════
               WHAT DEALERS APPRECIATE & COMMON CONCERNS
               ══════════════════════════════════════════ */}
+          {isAuthenticated && (
           <section className="mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* What dealers appreciate */}
@@ -1177,6 +1234,7 @@ const VendorProfile = () => {
               </div>
             </div>
           </section>
+          )}
 
           {/* ══════════════════════════════════════════
               COMMUNITY MENTIONS
@@ -1345,6 +1403,13 @@ const VendorProfile = () => {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         targetTier="pro"
+      />
+
+      {/* Demo Request Modal */}
+      <RequestDemoModal
+        open={showDemoModal}
+        onOpenChange={setShowDemoModal}
+        vendorName={profileData.vendorName}
       />
 
       {/* Claim Profile Modal */}

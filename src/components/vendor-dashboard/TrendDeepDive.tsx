@@ -39,7 +39,7 @@ const BAR_COLORS: Record<string, string> = {
 };
 
 export function TrendDeepDive({ metrics, history }: TrendDeepDiveProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   if (history.length < 2) return null;
 

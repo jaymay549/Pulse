@@ -6,12 +6,37 @@ import {
   getScoreColor,
   getVelocityLabel,
 } from "@/hooks/useVendorIntelligenceDashboard";
+import { InfoTooltip } from "./InfoTooltip";
 
 interface MetricCardProps {
   metricKey: MetricKey;
   metric: MetricScore;
   insightText?: string | null;
 }
+
+const METRIC_TOOLTIP: Record<string, React.ReactNode> = {
+  product_stability: (
+    <div className="space-y-1.5">
+      <p className="font-medium text-slate-900">Product Stability</p>
+      <p>Based on <strong>reliability</strong> and <strong>integration quality</strong> feedback from dealers in the last 90 days.</p>
+      <p className="text-slate-500">Score formula: sentiment (40%) + volume confidence (20%) + recency weight (20%) + 30-day velocity (20%). Requires 5+ mentions.</p>
+    </div>
+  ),
+  customer_experience: (
+    <div className="space-y-1.5">
+      <p className="font-medium text-slate-900">Customer Experience</p>
+      <p>Based on <strong>support responsiveness</strong> and <strong>adoption success</strong> feedback from dealers in the last 90 days.</p>
+      <p className="text-slate-500">Score formula: sentiment (40%) + volume confidence (20%) + recency weight (20%) + 30-day velocity (20%). Requires 5+ mentions.</p>
+    </div>
+  ),
+  value_perception: (
+    <div className="space-y-1.5">
+      <p className="font-medium text-slate-900">Value Perception</p>
+      <p>Based on <strong>pricing fairness</strong> and <strong>ROI sentiment</strong> feedback from dealers in the last 90 days.</p>
+      <p className="text-slate-500">Score formula: sentiment (40%) + volume confidence (20%) + recency weight (20%) + 30-day velocity (20%). Requires 5+ mentions.</p>
+    </div>
+  ),
+};
 
 const COLOR_MAP: Record<string, { bar: string; bg: string; border: string }> = {
   blue: { bar: "bg-blue-500", bg: "bg-blue-50", border: "border-blue-200" },
@@ -32,6 +57,7 @@ export function MetricCard({ metricKey, metric, insightText }: MetricCardProps) 
         <div className="flex items-center gap-2">
           <Lock className="h-3.5 w-3.5 text-slate-300" />
           <h3 className="text-sm font-medium text-slate-400">{config.label}</h3>
+          <InfoTooltip content={METRIC_TOOLTIP[metricKey]} />
         </div>
         <p className="mt-2 text-xs text-slate-400">{config.description}</p>
         <p className="mt-3 text-xs text-slate-400">
@@ -45,7 +71,10 @@ export function MetricCard({ metricKey, metric, insightText }: MetricCardProps) 
     <div className={`rounded-xl border bg-white p-5 ${colors.border}`}>
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="text-sm font-medium text-slate-600">{config.label}</h3>
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-sm font-medium text-slate-600">{config.label}</h3>
+            <InfoTooltip content={METRIC_TOOLTIP[metricKey]} />
+          </div>
           <p className="mt-0.5 text-xs text-slate-400">{config.description}</p>
         </div>
         <div className="flex items-center gap-1.5">

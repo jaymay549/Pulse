@@ -10,6 +10,7 @@ import {
   type SentimentHistoryPoint,
   getScoreColor,
 } from "@/hooks/useVendorIntelligenceDashboard";
+import { InfoTooltip } from "./InfoTooltip";
 
 interface HealthScoreHeroProps {
   score: number | null;
@@ -70,6 +71,20 @@ export function HealthScoreHero({ score, history }: HealthScoreHeroProps) {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold text-slate-900">Health Score</h2>
+              <InfoTooltip
+                content={
+                  <div className="space-y-1.5">
+                    <p className="font-medium text-slate-900">How it&apos;s calculated</p>
+                    <p>A weighted composite of your three performance metrics, based on dealer feedback from the last 90 days.</p>
+                    <ul className="space-y-0.5 text-slate-500">
+                      <li>· Customer Experience — 40%</li>
+                      <li>· Product Stability — 35%</li>
+                      <li>· Value Perception — 25%</li>
+                    </ul>
+                    <p className="text-slate-500">Scores 0–100: 70+ strong · 50–69 improving · below 50 needs attention. Requires 5+ mentions per dimension.</p>
+                  </div>
+                }
+              />
               {trend.direction === "up" && (
                 <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
                   <ArrowUp className="h-3 w-3" />

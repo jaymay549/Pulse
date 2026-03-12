@@ -61,6 +61,8 @@ export interface DashboardFeatureGap {
   last_seen: string;
   trend_direction: "up" | "down" | "stable";
   mapped_metric: string | null;
+  is_emerging?: boolean;
+  ai_insight?: string | null;
 }
 
 export interface SentimentHistoryPoint {

@@ -6,7 +6,7 @@ import {
   RefreshCw,
   CheckCircle2,
   Sparkles,
-  BarChart3,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
@@ -82,7 +82,7 @@ export function ProfileProgressBar() {
             />
           ) : completion.isComplete ? (
             <CompletedPrompt
-              onViewReport={() => navigate("/tech-stack-report")}
+              onViewReport={() => navigate("/dealers-like-me")}
               onEdit={() => setWizardOpen(true)}
             />
           ) : (
@@ -257,7 +257,7 @@ function CompletedPrompt({
 
       <div className="flex-1 min-w-0">
         <span className="text-sm font-medium text-emerald-100/90">
-          Profile complete. Your report is ready.
+          Profile complete. See how your stack compares.
         </span>
       </div>
 
@@ -274,8 +274,8 @@ function CompletedPrompt({
           onClick={onViewReport}
           className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-950 bg-gradient-to-b from-yellow-300 to-yellow-400 hover:from-yellow-200 hover:to-yellow-300 shadow-sm shadow-black/20 transition-all active:scale-[0.97]"
         >
-          <BarChart3 className="h-3.5 w-3.5" />
-          View Report
+          <Users className="h-3.5 w-3.5" />
+          View Dealers Like Me
         </button>
       </div>
     </motion.div>

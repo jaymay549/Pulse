@@ -12,6 +12,7 @@ import {
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useFlagMention, useVendorFlags } from "@/hooks/useMentionFlags";
 import { FlagMentionModal } from "./FlagMentionModal";
+import { fetchVendorPulseFeed } from "@/hooks/useSupabaseVendorData";
 
 interface DashboardMentionsProps {
   vendorName: string;
@@ -20,10 +21,10 @@ interface DashboardMentionsProps {
 
 interface Mention {
   id: string;
-  headline: string | null;
+  title: string | null;
   quote: string;
   type: string;
-  created_at: string;
+  conversationTime: string | null;
 }
 
 interface Response {
@@ -102,14 +103,14 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
   const { data: mentions = [] } = useQuery({
     queryKey: ["vendor-respond-mentions", vendorName],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vendor_mentions")
-        .select("id, headline, quote, type, created_at")
-        .eq("vendor_name", vendorName)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return (data ?? []) as Mention[];
+      const result = await fetchVendorPulseFeed({ vendorName, pageSize: 100 });
+      return result.mentions.map((m) => ({
+        id: String(m.id),
+        title: m.title ?? null,
+        quote: m.quote ?? "",
+        type: m.type,
+        conversationTime: m.conversationTime ?? null,
+      })) as Mention[];
     },
   });
 
@@ -266,8 +267,8 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
               <div key={mention.id} className="rounded-xl border bg-white p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    {mention.headline && (
-                      <p className="text-sm font-medium text-slate-900 mb-1">{mention.headline}</p>
+                    {mention.title && (
+                      <p className="text-sm font-medium text-slate-900 mb-1">{mention.title}</p>
                     )}
                     <p className="text-sm italic text-slate-700">{mention.quote}</p>
                   </div>
@@ -288,7 +289,7 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
                     )}
                   </div>
                 </div>
-                <p className="mt-1 text-xs text-slate-400">{formatRelativeTime(mention.created_at)}</p>
+                <p className="mt-1 text-xs text-slate-400">{mention.conversationTime ? formatRelativeTime(mention.conversationTime) : ""}</p>
 
                 <div className="mt-3">
                   {hasResponded ? (

@@ -30,7 +30,7 @@ interface DimensionMention {
   id: string;
   quote: string;
   type: string;
-  created_at: string;
+  conversation_time: string | null;
 }
 
 function getSentimentLabel(positivePercent: number): {
@@ -106,24 +106,45 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
     },
   });
 
+  // Resolve vendor entity ID for entity-aware mention queries
+  const { data: vendorEntityId = null } = useQuery<string | null>({
+    queryKey: ["vendor-entity-id", vendorName],
+    queryFn: async () => {
+      const { data } = await supabase.rpc(
+        "resolve_vendor_family_name_only" as never,
+        { p_vendor_name: vendorName } as never
+      );
+      return (data as any[])?.[0]?.vendor_entity_id ?? null;
+    },
+  });
+
   // Fetch recent mentions per dimension (all at once, then split client-side)
   const dimensionKeys = dimensions?.map((d) => d.dimension) ?? [];
 
   const { data: mentionsByDimension } = useQuery<Record<string, DimensionMention[]>>({
-    queryKey: ["dashboard-dimension-mentions", vendorName, dimensionKeys],
+    queryKey: ["dashboard-dimension-mentions", vendorName, dimensionKeys, vendorEntityId],
     queryFn: async () => {
       const result: Record<string, DimensionMention[]> = {};
 
-      // Fetch in parallel for each dimension
       await Promise.all(
         dimensionKeys.map(async (dimension) => {
-          const { data, error } = await supabase
-            .from("vendor_mentions")
-            .select("id, quote, type, created_at")
-            .eq("vendor_name", vendorName)
-            .eq("dimension", dimension)
-            .order("created_at", { ascending: false })
-            .limit(3);
+          const { data, error } = await (
+            vendorEntityId
+              ? (supabase as any)
+                  .from("vendor_mentions")
+                  .select("id, quote, type, conversation_time")
+                  .eq("vendor_entity_id", vendorEntityId)
+                  .eq("dimension", dimension)
+                  .order("conversation_time", { ascending: false })
+                  .limit(3)
+              : (supabase as any)
+                  .from("vendor_mentions")
+                  .select("id, quote, type, conversation_time")
+                  .eq("vendor_name", vendorName)
+                  .eq("dimension", dimension)
+                  .order("conversation_time", { ascending: false })
+                  .limit(3)
+          );
 
           if (error) {
             console.error(`Error fetching mentions for dimension ${dimension}:`, error);
@@ -293,7 +314,7 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
                           <TypeBadge type={mention.type} />
                         </div>
                         <p className="mt-1 text-[10px] text-slate-400">
-                          {formatRelativeTime(mention.created_at)}
+                          {mention.conversation_time ? formatRelativeTime(mention.conversation_time) : ""}
                         </p>
                       </div>
                     ))}

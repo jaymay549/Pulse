@@ -6,7 +6,6 @@ import {
 import { HealthScoreHero } from "./HealthScoreHero";
 import { MetricCard } from "./MetricCard";
 import { MetricsBenchmarkChart } from "./MetricsBenchmarkChart";
-import { ActionPlan } from "./ActionPlan";
 import { FeatureGapList } from "./FeatureGapList";
 import { TrendDeepDive } from "./TrendDeepDive";
 
@@ -97,16 +96,13 @@ export function VendorCommandCenter({ vendorName }: VendorCommandCenterProps) {
         />
       )}
 
-      {/* Action Plan */}
-      <ActionPlan recommendations={intel.recommendations} />
+      {/* Action Plan (powered by feature gap insights) */}
+      <FeatureGapList gaps={intel.feature_gaps} />
 
-      {/* Feature Gaps + Trend in a 2-col layout on large screens */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <FeatureGapList gaps={intel.feature_gaps} />
-        {metrics && (
-          <TrendDeepDive metrics={metrics} history={intel.sentiment_history} />
-        )}
-      </div>
+      {/* Trend Deep Dive */}
+      {metrics && (
+        <TrendDeepDive metrics={metrics} history={intel.sentiment_history} />
+      )}
     </div>
   );
 }

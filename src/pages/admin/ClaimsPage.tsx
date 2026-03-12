@@ -239,6 +239,7 @@ export default function ClaimsPage() {
                     <Button
                       size="sm"
                       variant="outline"
+                      className="border-zinc-700 bg-zinc-800 text-zinc-200 hover:bg-zinc-700 hover:text-zinc-100"
                       onClick={() => {
                         const url = `${window.location.origin}/claim/${link.claim_token}`;
                         navigator.clipboard.writeText(url).then(() => toast.success("Claim URL copied."));
@@ -250,6 +251,7 @@ export default function ClaimsPage() {
                     <Button
                       size="sm"
                       variant="outline"
+                      className="border-zinc-700 bg-zinc-800 text-zinc-200 hover:bg-zinc-700 hover:text-zinc-100"
                       onClick={() => archiveMutation.mutate({ linkId: link.id, isActive: false })}
                     >
                       <PowerOff className="h-4 w-4 mr-1" />
@@ -323,6 +325,7 @@ export default function ClaimsPage() {
                 <Button
                   size="sm"
                   variant="outline"
+                  className="border-zinc-700 bg-zinc-800 text-zinc-200 hover:bg-zinc-700 hover:text-zinc-100"
                   onClick={() => archiveMutation.mutate({ linkId: link.id, isActive: true })}
                 >
                   <Power className="h-4 w-4 mr-1" />

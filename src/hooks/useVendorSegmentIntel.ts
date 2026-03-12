@@ -27,6 +27,7 @@ export interface SegmentInsight {
 
 export interface VendorSegmentIntel {
   total_attributed: number;
+  standout: string | null;
   insights: SegmentInsight[];
   axes: {
     size: SegmentBucket[];
@@ -85,6 +86,7 @@ export function useVendorSegmentIntel(vendorName: string) {
 
       return {
         total_attributed: result.total_attributed ?? 0,
+        standout: result.standout ?? null,
         insights: result.insights ?? [],
         axes: {
           size: normalizeBuckets(result.axes?.size),

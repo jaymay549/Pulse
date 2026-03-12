@@ -85,8 +85,8 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
     queryKey: ["intel-own-profile", vendorName],
     queryFn: async () => {
       const { data, error } = await supabase.rpc(
-        "get_vendor_profile" as never,
-        { p_vendor_name: vendorName } as never
+        "get_vendor_profile_v3" as never,
+        { p_vendor_name: vendorName, p_product_line_slug: null } as never
       );
       if (error) throw error;
       return data as OwnProfile | null;

@@ -64,7 +64,7 @@ const App = () => (
             <Route path="/vendor-portal/*" element={<Navigate to="/vendors" replace />} />
             <Route path="/vendor-dashboard" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}><VendorDashboardPage /></Suspense>} />
             <Route path="/claim/:token" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}><VendorClaimPage /></Suspense>} />
-            <Route path="/tech-stack-report" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}><MarketIntelReport /></Suspense>} />
+            <Route path="/dealers-like-me" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}><MarketIntelReport /></Suspense>} />
 
             {/* Admin routes */}
             <Route

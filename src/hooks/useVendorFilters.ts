@@ -11,7 +11,8 @@ export interface Category {
 
 export const categories: Category[] = [
   { id: "all", label: "All", icon: "📊" },
-  { id: "dms-crm", label: "DMS & CRM", icon: "💻" },
+  { id: "dms", label: "DMS", icon: "💻" },
+  { id: "crm", label: "CRM", icon: "👥" },
   { id: "digital-retailing", label: "Digital Retailing", icon: "🛒" },
   { id: "marketing", label: "Marketing & Ads", icon: "📣" },
   { id: "fixed-ops", label: "Fixed Ops", icon: "🔧" },
@@ -102,7 +103,10 @@ export function useVendorFilters({
     counts["all"] = data.length;
     categories.forEach(cat => {
       if (cat.id !== "all") {
-        counts[cat.id] = data.filter(entry => entry.category === cat.id).length;
+        counts[cat.id] = data.filter(entry =>
+          entry.category === cat.id ||
+          ((cat.id === "dms" || cat.id === "crm") && entry.category === "dms-crm")
+        ).length;
       }
     });
     return counts;
@@ -114,7 +118,10 @@ export function useVendorFilters({
   // Category and type filters are applied client-side for UI responsiveness.
   const filteredData = useMemo(() => {
     const filtered = data.filter(entry => {
-      const matchesCategory = selectedCategory === "all" || entry.category === selectedCategory;
+      const matchesCategory =
+        selectedCategory === "all" ||
+        entry.category === selectedCategory ||
+        ((selectedCategory === "dms" || selectedCategory === "crm") && entry.category === "dms-crm");
       const matchesType = typeFilter === "all" || entry.type === typeFilter;
 
       return matchesCategory && matchesType;
@@ -131,7 +138,10 @@ export function useVendorFilters({
     if (selectedCategory === "all") return [];
 
     const vendorCounts: Record<string, number> = {};
-    const categoryData = data.filter(entry => entry.category === selectedCategory);
+    const categoryData = data.filter(entry =>
+      entry.category === selectedCategory ||
+      ((selectedCategory === "dms" || selectedCategory === "crm") && entry.category === "dms-crm")
+    );
 
     categoryData.forEach(entry => {
       if (entry.vendorName) {
@@ -150,7 +160,10 @@ export function useVendorFilters({
   // NOTE: Search filtering is handled server-side, so we only filter by category here
   const dataBeforeTypeFilter = useMemo(() => {
     return data.filter(entry => {
-      const matchesCategory = selectedCategory === "all" || entry.category === selectedCategory;
+      const matchesCategory =
+        selectedCategory === "all" ||
+        entry.category === selectedCategory ||
+        ((selectedCategory === "dms" || selectedCategory === "crm") && entry.category === "dms-crm");
       return matchesCategory;
     });
   }, [data, selectedCategory]);

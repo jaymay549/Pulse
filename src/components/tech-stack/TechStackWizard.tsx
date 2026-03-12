@@ -164,7 +164,7 @@ export function TechStackWizard({ open, onOpenChange }: TechStackWizardProps) {
       })),
     });
     onOpenChange(false);
-    navigate("/tech-stack-report");
+    navigate("/dealers-like-me");
   };
 
   const completionStats = useMemo(() => {
@@ -315,7 +315,7 @@ export function TechStackWizard({ open, onOpenChange }: TechStackWizardProps) {
               ) : (
                 <Check className="h-4 w-4 mr-2" />
               )}
-              {completionStats.isComplete ? "Unlock My Report" : "Complete Profile"}
+              {completionStats.isComplete ? "View Dealers Like Me" : "Complete Profile"}
             </Button>
           </div>
         </div>

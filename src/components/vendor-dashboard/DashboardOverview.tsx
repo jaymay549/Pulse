@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -12,37 +11,19 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
+import { fetchVendorPulseFeed } from "@/hooks/useSupabaseVendorData";
+import { PulseBriefing } from "./PulseBriefing";
 
 interface DashboardOverviewProps {
   vendorName: string;
   onNavigate: (section: string) => void;
 }
 
-interface VendorStats {
-  totalMentions: number;
-  positiveCount: number;
-  warningCount: number;
-  positivePercent: number;
-  warningPercent: number;
-}
-
-interface VendorProfile {
-  vendorName: string;
-  stats: VendorStats;
-}
-
-interface VendorTrend {
-  currentPositivePct: number;
-  previousPositivePct: number;
-  direction: "up" | "down" | "stable";
-  mentionVolumeChangePct: number;
-}
-
 interface VendorMention {
   id: string;
   quote: string;
   type: string;
-  created_at: string;
+  conversationTime: string | null;
 }
 
 interface SentimentMonth {
@@ -75,41 +56,6 @@ function formatRelativeTime(dateString: string): string {
   return date.toLocaleDateString();
 }
 
-function sentimentColor(percent: number): string {
-  if (percent >= 70) return "text-emerald-600";
-  if (percent >= 50) return "text-yellow-600";
-  return "text-red-500";
-}
-
-function TrendBadge({ trend }: { trend: VendorTrend }) {
-  const pct = trend.mentionVolumeChangePct;
-
-  if (trend.direction === "up") {
-    return (
-      <span className="inline-flex items-center gap-0.5 text-xs text-emerald-600">
-        <ArrowUp className="h-3 w-3" />
-        {pct}%
-      </span>
-    );
-  }
-
-  if (trend.direction === "down") {
-    return (
-      <span className="inline-flex items-center gap-0.5 text-xs text-red-500">
-        <ArrowDown className="h-3 w-3" />
-        {pct}%
-      </span>
-    );
-  }
-
-  return (
-    <span className="inline-flex items-center gap-0.5 text-xs text-slate-400">
-      <Minus className="h-3 w-3" />
-      {pct}%
-    </span>
-  );
-}
-
 function TypeBadge({ type }: { type: string }) {
   if (type === "positive") {
     return (
@@ -129,35 +75,16 @@ function TypeBadge({ type }: { type: string }) {
 export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewProps): JSX.Element {
   const supabase = useClerkSupabase();
 
-  const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ["vendor-profile", vendorName],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_vendor_profile" as never, { p_vendor_name: vendorName } as never);
-      if (error) throw error;
-      return data as unknown as VendorProfile;
-    },
-  });
-
-  const { data: trend } = useQuery({
-    queryKey: ["vendor-trend", vendorName],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_vendor_trend" as never, { p_vendor_name: vendorName } as never);
-      if (error) throw error;
-      return data as unknown as VendorTrend;
-    },
-  });
-
   const { data: mentions } = useQuery({
     queryKey: ["vendor-recent-mentions", vendorName],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vendor_mentions")
-        .select("id, quote, type, created_at")
-        .eq("vendor_name", vendorName)
-        .order("created_at", { ascending: false })
-        .limit(5);
-      if (error) throw error;
-      return data as VendorMention[];
+      const result = await fetchVendorPulseFeed({ vendorName, pageSize: 10 });
+      return result.mentions.map((m) => ({
+        id: String(m.id),
+        quote: m.quote ?? "",
+        type: m.type,
+        conversationTime: m.conversationTime ?? null,
+      })) as VendorMention[];
     },
   });
 
@@ -173,37 +100,13 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
     },
   });
 
-  if (profileLoading) {
-    return <p className="text-sm text-slate-500">Loading...</p>;
-  }
-
-  const stats = profile?.stats;
-
   return (
     <div>
       <h1 className="text-2xl font-semibold text-slate-900">Overview</h1>
 
-      {/* Stat cards */}
-      <div className="mt-6 grid grid-cols-3 gap-4">
-        <div className="rounded-xl border bg-white p-5">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-slate-900">{stats?.totalMentions ?? 0}</span>
-            {trend && <TrendBadge trend={trend} />}
-          </div>
-          <p className="mt-1 text-xs text-slate-500">Total Mentions</p>
-        </div>
-
-        <div className="rounded-xl border bg-white p-5">
-          <span className={`text-2xl font-bold ${sentimentColor(stats?.positivePercent ?? 0)}`}>
-            {stats?.positivePercent ?? 0}%
-          </span>
-          <p className="mt-1 text-xs text-slate-500">Positive Sentiment</p>
-        </div>
-
-        <div className="rounded-xl border bg-white p-5">
-          <span className="text-2xl font-bold text-red-500">{stats?.warningCount ?? 0}</span>
-          <p className="mt-1 text-xs text-slate-500">Concerns Flagged</p>
-        </div>
+      {/* Pulse Briefing — health, quotes, signals, competitive, top actions */}
+      <div className="mt-6">
+        <PulseBriefing vendorName={vendorName} onNavigate={onNavigate} />
       </div>
 
       {/* Sentiment over time chart */}
@@ -289,12 +192,12 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
       ) : (
         <>
           <div className="space-y-2">
-            {mentions.map((mention) => (
+            {mentions.slice(0, 5).map((mention) => (
               <div key={mention.id} className="flex items-start justify-between gap-4 rounded-lg border bg-white p-3">
                 <p className="line-clamp-2 text-sm italic text-slate-700">{mention.quote}</p>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   <TypeBadge type={mention.type} />
-                  <span className="text-xs text-slate-400">{formatRelativeTime(mention.created_at)}</span>
+                  <span className="text-xs text-slate-400">{mention.conversationTime ? formatRelativeTime(mention.conversationTime) : ""}</span>
                 </div>
               </div>
             ))}
