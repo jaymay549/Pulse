@@ -1,5 +1,6 @@
 /**
  * Enrich top vendors with website screenshot banner images.
+ * Automatically finds vendor websites via Firecrawl search if not set.
  *
  * Usage:
  *   npx tsx --env-file=.env scripts/enrich-vendor-banners.ts [--top=N] [--dry-run] [--force]
@@ -42,6 +43,16 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 const BUCKET = "vendor-screenshots";
 const TMP_DIR = "/tmp/vendor-banners";
 
+// Domains to skip when searching for vendor websites
+const SKIP_DOMAINS = [
+  "g2.com", "capterra.com", "getapp.com", "trustpilot.com", "softwareadvice.com",
+  "gartner.com", "glassdoor.com", "indeed.com", "crunchbase.com", "bloomberg.com",
+  "businesswire.com", "prnewswire.com", "linkedin.com", "youtube.com", "facebook.com",
+  "twitter.com", "x.com", "instagram.com", "tiktok.com", "reddit.com", "medium.com",
+  "cars.com", "autotrader.com", "cargurus.com", "edmunds.com", "dealerrater.com",
+  "yelp.com", "bbb.org", "wikipedia.org", "news", "techcrunch.com", "forbes.com",
+];
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function ensureTmpDir() {
@@ -53,48 +64,133 @@ function normalizeUrl(url: string): string {
   return url;
 }
 
-function vendorSlug(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+function rootUrl(url: string): string {
+  try {
+    const parsed = new URL(normalizeUrl(url));
+    return `${parsed.protocol}//${parsed.hostname}`;
+  } catch {
+    return normalizeUrl(url);
+  }
 }
+
+function vendorSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+// ── DB helpers ───────────────────────────────────────────────────────────────
 
 async function getTopVendors(): Promise<{ name: string; count: number }[]> {
   const { data, error } = await supabase.rpc(
     "get_vendor_pulse_vendors_list_v2"
   );
   if (error) throw new Error(`RPC error: ${error.message}`);
-  const vendors: { name: string; count: number }[] = data?.vendors ?? [];
-  return vendors.slice(0, TOP_N);
+  return ((data?.vendors ?? []) as { name: string; count: number }[]).slice(
+    0,
+    TOP_N
+  );
 }
 
-async function getVendorProfile(
+async function getKnownWebsite(
   vendorName: string
-): Promise<{ company_website: string | null; banner_url: string | null } | null> {
-  const { data, error } = await supabase
+): Promise<{ website: string | null; hasBanner: boolean }> {
+  // Check vendor_profiles first
+  const { data: profile } = await supabase
     .from("vendor_profiles")
     .select("company_website, banner_url")
     .ilike("vendor_name", vendorName)
     .maybeSingle();
-  if (error) {
-    console.error(`  DB error for ${vendorName}: ${error.message}`);
-    return null;
+
+  if (profile?.banner_url && !FORCE) {
+    return { website: null, hasBanner: true };
   }
-  return data;
+  if (profile?.company_website) {
+    return { website: profile.company_website, hasBanner: false };
+  }
+
+  // Fall back to vendor_metadata
+  const { data: meta } = await supabase
+    .from("vendor_metadata")
+    .select("website_url")
+    .ilike("vendor_name", vendorName)
+    .maybeSingle();
+
+  return { website: meta?.website_url ?? null, hasBanner: false };
+}
+
+async function upsertVendorProfile(
+  vendorName: string,
+  updates: { company_website?: string; banner_url: string }
+): Promise<void> {
+  const { data: existing } = await supabase
+    .from("vendor_profiles")
+    .select("id")
+    .ilike("vendor_name", vendorName)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase
+      .from("vendor_profiles")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .ilike("vendor_name", vendorName);
+    if (error) throw new Error(`Update error: ${error.message}`);
+  } else {
+    const { error } = await supabase.from("vendor_profiles").insert({
+      vendor_name: vendorName,
+      is_approved: false,
+      ...updates,
+    });
+    if (error) throw new Error(`Insert error: ${error.message}`);
+  }
+}
+
+// ── Firecrawl helpers ────────────────────────────────────────────────────────
+
+async function searchVendorWebsite(vendorName: string): Promise<string | null> {
+  const tmpFile = join(TMP_DIR, `search-${Date.now()}.json`);
+  try {
+    const query = `${vendorName} automotive dealer software official site`;
+    execSync(`firecrawl search "${query}" --limit 5 --json -o "${tmpFile}"`, {
+      stdio: "pipe",
+      timeout: 30_000,
+    });
+    const result = JSON.parse(readFileSync(tmpFile, "utf-8"));
+    const hits: Array<{ url: string }> = result?.data?.web ?? [];
+
+    const filtered = hits.filter((r) => {
+      try {
+        const hostname = new URL(r.url).hostname;
+        return !SKIP_DOMAINS.some((skip) => hostname.includes(skip));
+      } catch {
+        return false;
+      }
+    });
+
+    if (filtered.length === 0) return null;
+    return rootUrl(filtered[0].url);
+  } catch (err: any) {
+    console.error(`  Search error: ${err.message ?? err}`);
+    return null;
+  } finally {
+    if (existsSync(tmpFile)) unlinkSync(tmpFile);
+  }
 }
 
 async function screenshotWebsite(url: string): Promise<Buffer | null> {
-  const outFile = join(TMP_DIR, `screenshot-${Date.now()}.json`);
+  const tmpFile = join(TMP_DIR, `screenshot-${Date.now()}.json`);
   try {
     execSync(
-      `firecrawl scrape "${url}" --format screenshot --json -o "${outFile}"`,
+      `firecrawl scrape "${url}" --format screenshot --json -o "${tmpFile}"`,
       { stdio: "pipe", timeout: 60_000 }
     );
-    const result = JSON.parse(readFileSync(outFile, "utf-8"));
+    const result = JSON.parse(readFileSync(tmpFile, "utf-8"));
     const screenshotUrl: string | undefined = result.screenshot;
     if (!screenshotUrl) {
-      console.error("  No screenshot field in firecrawl output");
+      console.error("  No screenshot in firecrawl response");
       return null;
     }
-    // Download the signed URL before it expires
     const res = await fetch(screenshotUrl);
     if (!res.ok) {
       console.error(`  Failed to download screenshot: ${res.status}`);
@@ -105,7 +201,7 @@ async function screenshotWebsite(url: string): Promise<Buffer | null> {
     console.error(`  Screenshot error: ${err.message ?? err}`);
     return null;
   } finally {
-    if (existsSync(outFile)) unlinkSync(outFile);
+    if (existsSync(tmpFile)) unlinkSync(tmpFile);
   }
 }
 
@@ -132,28 +228,19 @@ async function uploadBanner(
   return data.publicUrl;
 }
 
-async function updateBannerUrl(
-  vendorName: string,
-  bannerUrl: string
-): Promise<void> {
-  const { error } = await supabase
-    .from("vendor_profiles")
-    .update({ banner_url: bannerUrl, updated_at: new Date().toISOString() })
-    .ilike("vendor_name", vendorName);
-  if (error) throw new Error(`Update error: ${error.message}`);
-}
-
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
   console.log(
-    `\n🔥 Vendor banner enrichment — top ${TOP_N} vendors${DRY_RUN ? " (DRY RUN)" : ""}${FORCE ? " (--force: overwriting existing)" : ""}\n`
+    `\n🔥 Vendor banner enrichment — top ${TOP_N} vendors` +
+      `${DRY_RUN ? " (DRY RUN)" : ""}` +
+      `${FORCE ? " (--force)" : ""}\n`
   );
 
   ensureTmpDir();
 
   const vendors = await getTopVendors();
-  console.log(`Fetched ${vendors.length} top vendors from mentions.\n`);
+  console.log(`Fetched ${vendors.length} top vendors.\n`);
 
   let updated = 0,
     skipped = 0,
@@ -162,28 +249,39 @@ async function main() {
   for (const vendor of vendors) {
     console.log(`\n📍 ${vendor.name} (${vendor.count} mentions)`);
 
-    const profile = await getVendorProfile(vendor.name);
+    // 1. Check DB for existing website / banner
+    const { website: knownWebsite, hasBanner } = await getKnownWebsite(
+      vendor.name
+    );
 
-    if (!profile) {
-      console.log("  ⏭  No vendor_profiles row — skipping");
+    if (hasBanner) {
+      console.log("  ⏭  Already has banner — skipping (use --force to redo)");
       skipped++;
       continue;
     }
 
-    if (!profile.company_website) {
-      console.log("  ⏭  No company_website set — skipping");
-      skipped++;
+    let website = knownWebsite;
+    let websiteSource = "db";
+
+    // 2. If no website, search for it
+    if (!website) {
+      console.log("  🔍 No website found — searching via Firecrawl...");
+      if (!DRY_RUN) {
+        website = await searchVendorWebsite(vendor.name);
+        websiteSource = "search";
+      }
+    }
+
+    if (!website) {
+      console.log("  ✗ Could not find website");
+      failed++;
       continue;
     }
 
-    if (profile.banner_url && !FORCE) {
-      console.log(`  ⏭  Already has banner: ${profile.banner_url}`);
-      skipped++;
-      continue;
-    }
-
-    const url = normalizeUrl(profile.company_website);
-    console.log(`  🌐 ${url}`);
+    const url = rootUrl(website);
+    console.log(
+      `  🌐 ${url}${websiteSource === "search" ? " (found via search)" : ""}`
+    );
 
     if (DRY_RUN) {
       console.log("  ✓ Would screenshot and upload (dry run)");
@@ -191,33 +289,45 @@ async function main() {
       continue;
     }
 
+    // 3. Screenshot
     const imageBuffer = await screenshotWebsite(url);
     if (!imageBuffer) {
       failed++;
       continue;
     }
-    console.log(`  📸 Screenshot captured (${Math.round(imageBuffer.length / 1024)} KB)`);
+    console.log(
+      `  📸 Screenshot captured (${Math.round(imageBuffer.length / 1024)} KB)`
+    );
 
+    // 4. Upload to storage
     const publicUrl = await uploadBanner(vendor.name, imageBuffer);
     if (!publicUrl) {
       failed++;
       continue;
     }
 
-    await updateBannerUrl(vendor.name, publicUrl);
+    // 5. Upsert vendor_profiles
+    const upsertData: { company_website?: string; banner_url: string } = {
+      banner_url: publicUrl,
+    };
+    if (websiteSource === "search") {
+      upsertData.company_website = url;
+    }
+
+    await upsertVendorProfile(vendor.name, upsertData);
     console.log(`  ✅ Banner saved: ${publicUrl}`);
     updated++;
 
-    // Brief pause between requests
-    await new Promise((r) => setTimeout(r, 500));
+    // Brief pause between vendors
+    await new Promise((r) => setTimeout(r, 750));
   }
 
   console.log(
     `\n─────────────────────────────────────\n` +
-      `✅ Updated:  ${updated}\n` +
-      `⏭  Skipped:  ${skipped}\n` +
-      `❌ Failed:   ${failed}\n` +
-      `Credits used: ~${updated} (1 per screenshot)\n`
+      `✅ Updated:       ${updated}\n` +
+      `⏭  Skipped:       ${skipped}\n` +
+      `❌ Failed:        ${failed}\n` +
+      `Credits used:    ~${updated * 2} (search + screenshot per vendor)\n`
   );
 }
 
