@@ -20,14 +20,12 @@ import {
   InlineAIChat,
   UpgradePromptCard,
   CategoryGrid,
-  ValuePropSection,
-  HowItWorksSection,
   QuickTipsSection,
+  VendorIntelTicker,
 } from "@/components/vendors";
 import { CategoryLandscape } from "@/components/vendors/CategoryLandscape";
 import UpgradeModal from "@/components/UpgradeModal";
 import QuoteCardModal from "@/components/wins/QuoteCardModal";
-import VendorPricingTiers from "@/components/vendors/VendorPricingTiers";
 
 // Hooks
 import { useVendorFilters, categories } from "@/hooks/useVendorFilters";
@@ -1198,12 +1196,14 @@ const VendorsV2 = () => {
                 Updated Daily
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground mb-4 leading-[1.1] tracking-tight">
-                Raw Vendor Intel,{" "}
-                <span className="text-yellow-600">Straight From Dealers</span>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground mb-4 tracking-tight leading-none">
+                <span className="block mb-2">Raw Vendor Intel</span>
+                <span className="bg-secondary text-secondary-foreground px-2 py-1 inline-block">
+                  From Circles Members
+                </span>
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
-                No paid placements. No vendor spin. Just real feedback from verified automotive dealers.
+                No paid placements. No vendor spin. Real warnings and recommendations from verified dealers in CDG Circles.
               </p>
             </div>
           )}
@@ -1276,6 +1276,20 @@ const VendorsV2 = () => {
               </div>
             )}
 
+            {/* Circles CTAs -- unauthenticated landing state */}
+            {isLandingState && !isAuthenticated && (
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6">
+                <Button variant="yellow" size="lg" className="font-bold w-full sm:w-auto" asChild>
+                  <a href="https://cdgcircles.com" target="_blank" rel="noopener noreferrer">
+                    Join CDG Circles
+                  </a>
+                </Button>
+                <Button variant="outline" size="lg" className="w-full sm:w-auto" onClick={() => setShowSignIn(true)}>
+                  Sign In
+                </Button>
+              </div>
+            )}
+
             {/* Inline AI Chat -- shown when pro user submits a query */}
             {aiQuery && (
               <InlineAIChat
@@ -1300,9 +1314,13 @@ const VendorsV2 = () => {
           {/* ===== BRANCH 1: Landing State ===== */}
           {isLandingState && (
             <div className="mt-12 space-y-16 sm:space-y-20">
-              {/* Value Props -- anonymous users only */}
+              {/* Vendor Intel Ticker -- anonymous users only */}
               {!isAuthenticated && (
-                <ValuePropSection />
+                <VendorIntelTicker
+                  totalReviews={paginationInfo?.totalSystemCount ?? wamMentions.length}
+                  totalWarnings={totalWarningCountValue}
+                  totalRecommendations={totalVerifiedCount}
+                />
               )}
 
               {/* Quick Tips -- signed-in free users only */}
@@ -1320,18 +1338,36 @@ const VendorsV2 = () => {
                 maxCategories={8}
               />
 
-              {/* How It Works -- anonymous users only */}
+              {/* Circles Join CTA -- anonymous users only */}
               {!isAuthenticated && (
-                <HowItWorksSection />
-              )}
-
-              {/* Pricing Tiers -- anonymous users only */}
-              {!isAuthenticated && (
-                <VendorPricingTiers
-                  totalReviews={paginationInfo?.totalSystemCount ?? wamMentions.length}
-                  totalWarnings={totalWarningCountValue}
-                  onSignInClick={() => setShowSignIn(true)}
-                />
+                <div className="p-8 sm:p-12 rounded-2xl bg-foreground text-white text-center">
+                  <p className="text-xs font-bold tracking-widest uppercase text-white/50 mb-3">
+                    Exclusive Member Benefit
+                  </p>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold mb-3">
+                    CDG Pulse is included with CDG Circles
+                  </h3>
+                  <p className="text-white/70 max-w-lg mx-auto mb-8">
+                    Get full access to all vendor intel, AI-powered insights, and the dealer community when you join CDG Circles.
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <Button variant="yellow" size="lg" className="font-bold w-full sm:w-auto" asChild>
+                      <a href="https://cdgcircles.com" target="_blank" rel="noopener noreferrer">
+                        Join CDG Circles
+                      </a>
+                    </Button>
+                    <Button
+                      size="lg"
+                      className="w-full sm:w-auto bg-transparent border border-white/20 text-white hover:bg-white/10 hover:text-white"
+                      onClick={() => setShowSignIn(true)}
+                    >
+                      Sign In
+                    </Button>
+                  </div>
+                  <p className="text-xs text-white/40 mt-5">
+                    Already a Circles member? Sign in to unlock full access.
+                  </p>
+                </div>
               )}
 
               {/* Upgrade Banner -- signed-in free users only */}
@@ -1516,13 +1552,30 @@ const VendorsV2 = () => {
                 </div>
               )}
 
-              {/* Upgrade Section for Non-Pro Users */}
+              {/* Circles Join CTA -- unauthenticated users in vendor/category view */}
               {!accessLevel.unlimitedAccess && !isAuthenticated && (
-                <VendorPricingTiers
-                  totalReviews={paginationInfo?.totalSystemCount ?? wamMentions.length}
-                  totalWarnings={totalWarningCountValue}
-                  onSignInClick={() => setShowSignIn(true)}
-                />
+                <div className="mt-8 p-6 rounded-xl bg-foreground text-white text-center">
+                  <p className="font-bold text-white mb-1">
+                    Unlock all {paginationInfo?.totalSystemCount ?? wamMentions.length} reviews
+                  </p>
+                  <p className="text-sm text-white/60 mb-5">
+                    Full vendor intel is exclusive to CDG Circles members.
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <Button variant="yellow" size="lg" className="font-bold w-full sm:w-auto" asChild>
+                      <a href="https://cdgcircles.com" target="_blank" rel="noopener noreferrer">
+                        Join CDG Circles
+                      </a>
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="bg-transparent border border-white/20 text-white hover:bg-white/10 hover:text-white"
+                      onClick={() => setShowSignIn(true)}
+                    >
+                      Sign In
+                    </Button>
+                  </div>
+                </div>
               )}
 
               {/* Authenticated Non-Pro Upgrade Banner */}

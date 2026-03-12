@@ -636,16 +636,6 @@ const VendorProfile = () => {
                       </Button>
                     </Link>
                   )}
-                  {isAuthenticated && !isVendorOwner && !isAdmin && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setClaimModalOpen(true)}
-                      className="mt-2"
-                    >
-                      Claim this profile
-                    </Button>
-                  )}
 
                   {profileData.metadata?.tagline && (
                     <p className="text-[15px] text-slate-500 mt-1.5 max-w-2xl leading-relaxed">
@@ -715,6 +705,8 @@ const VendorProfile = () => {
                   <VendorIntelligenceCard
                     vendorName={vendorName}
                     className="mt-6"
+                    isAuthenticated={isAuthenticated}
+                    onSignIn={() => setShowSignIn(true)}
                   />
                 </div>
 
