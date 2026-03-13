@@ -44,7 +44,6 @@ import { cn } from "@/lib/utils";
 
 const SUGGESTED_PROMPTS = [
   "What DMS should I use for a mid-size dealership?",
-  "Compare Cox Automotive vs CDK",
   "Which vendors have the most concerns?",
   "Best CRM for customer follow-up?",
 ];

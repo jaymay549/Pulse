@@ -297,16 +297,18 @@ export async function fetchVendorProfile(
 
   // Merge: RPC metadata first, then fill gaps from vendor_profiles
   const rpcMeta = result.metadata || {};
+  // vendor_profiles is the source of truth for editable fields (tagline, description, etc.)
+  // so prefer vp.* over rpcMeta.* for those fields.
   const mergedMetadata = vp
     ? {
-        website_url: rpcMeta.website_url || vp.company_website || null,
-        logo_url: rpcMeta.logo_url || vp.company_logo_url || null,
-        description: rpcMeta.description || vp.company_description || null,
+        website_url: vp.company_website || rpcMeta.website_url || null,
+        logo_url: vp.company_logo_url || rpcMeta.logo_url || null,
+        description: vp.company_description || rpcMeta.description || null,
         category: rpcMeta.category || null,
-        linkedin_url: rpcMeta.linkedin_url || vp.linkedin_url || null,
-        banner_url: rpcMeta.banner_url || vp.banner_url || null,
-        tagline: rpcMeta.tagline || vp.tagline || null,
-        headquarters: rpcMeta.headquarters || vp.headquarters || null,
+        linkedin_url: vp.linkedin_url || rpcMeta.linkedin_url || null,
+        banner_url: vp.banner_url || rpcMeta.banner_url || null,
+        tagline: vp.tagline || rpcMeta.tagline || null,
+        headquarters: vp.headquarters || rpcMeta.headquarters || null,
       }
     : rpcMeta;
 

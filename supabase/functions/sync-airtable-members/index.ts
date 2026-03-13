@@ -13,17 +13,8 @@ const AIRTABLE_TABLE_ID = "tblQ9nzGzgc8iOHbc";
 function verifyAdmin(token: string): { isAdmin: boolean; userId: string } {
   const payload = JSON.parse(atob(token.split(".")[1]));
   const userId = payload.sub || "";
-  const adminIds = (Deno.env.get("ADMIN_CLERK_IDS") || "")
-    .split(",")
-    .map((s: string) => s.trim())
-    .filter(Boolean);
-  if (adminIds.length > 0 && adminIds.includes(userId)) {
-    return { isAdmin: true, userId };
-  }
-  if (payload.user_role === "admin") {
-    return { isAdmin: true, userId };
-  }
-  return { isAdmin: false, userId };
+  const isAdmin = payload.user_role === "admin";
+  return { isAdmin, userId };
 }
 
 function normalizePhone(raw: string | number | undefined | null): string | null {

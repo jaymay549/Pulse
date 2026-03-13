@@ -18,22 +18,8 @@ function jsonResponse(body: unknown, status = 200) {
 function verifyAdmin(token: string): { isAdmin: boolean; userId: string } {
   const payload = JSON.parse(atob(token.split(".")[1]));
   const userId = payload.sub || "";
-
-  // Primary: check env-var allowlist of Clerk user IDs
-  const adminIds = (Deno.env.get("ADMIN_CLERK_IDS") || "")
-    .split(",")
-    .map((s: string) => s.trim())
-    .filter(Boolean);
-  if (adminIds.length > 0 && adminIds.includes(userId)) {
-    return { isAdmin: true, userId };
-  }
-
-  // Fallback: check JWT claims (if user_role is ever added to the template)
-  if (payload.user_role === "admin") {
-    return { isAdmin: true, userId };
-  }
-
-  return { isAdmin: false, userId };
+  const isAdmin = payload.user_role === "admin";
+  return { isAdmin, userId };
 }
 
 serve(async (req) => {
