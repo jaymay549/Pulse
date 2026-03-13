@@ -183,20 +183,20 @@ export function TechStackWizard({ open, onOpenChange }: TechStackWizardProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-5xl p-0 gap-0 overflow-hidden max-h-[92vh] flex flex-col bg-white">
+      <DialogContent className="sm:max-w-5xl p-0 gap-0 overflow-hidden max-h-[100dvh] sm:max-h-[92vh] flex flex-col bg-white [&>button.absolute]:text-white [&>button.absolute]:hover:text-yellow-300 [&>button.absolute]:z-10">
         <DialogTitle className="sr-only">Tech Stack Intelligence Builder</DialogTitle>
         <DialogDescription className="sr-only">
           Configure your current and former technology stack to unlock market intelligence reports.
         </DialogDescription>
-        {/* Modern Header */}
-        <div className="bg-slate-900 px-8 py-6 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-yellow-300 to-yellow-500 flex items-center justify-center shadow-lg shadow-yellow-500/20">
-              <LayoutDashboard className="h-6 w-6 text-slate-900" />
+        {/* Header — stacks on mobile */}
+        <div className="bg-slate-900 px-4 py-4 sm:px-8 sm:py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-gradient-to-br from-yellow-300 to-yellow-500 flex items-center justify-center shadow-lg shadow-yellow-500/20 shrink-0">
+              <LayoutDashboard className="h-5 w-5 sm:h-6 sm:w-6 text-slate-900" />
             </div>
-            <div>
-                <div className="flex items-center gap-3 min-w-[120px]">
-                  <h2 className="text-xl font-bold text-white tracking-tight shrink-0">
+            <div className="min-w-0">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <h2 className="text-base sm:text-xl font-bold text-white tracking-tight shrink-0">
                     Tech Stack Intelligence
                   </h2>
                   <AnimatePresence mode="wait">
@@ -209,7 +209,7 @@ export function TechStackWizard({ open, onOpenChange }: TechStackWizardProps) {
                         className="flex items-center gap-1.5 text-slate-400 text-[10px] uppercase tracking-widest font-bold whitespace-nowrap"
                       >
                         <RefreshCw className="h-3 w-3 animate-spin" />
-                        Saving...
+                        <span className="hidden sm:inline">Saving...</span>
                       </motion.div>
                     ) : (
                       <motion.div
@@ -219,12 +219,12 @@ export function TechStackWizard({ open, onOpenChange }: TechStackWizardProps) {
                         className="flex items-center gap-1.5 text-emerald-400 text-[10px] uppercase tracking-widest font-bold whitespace-nowrap"
                       >
                         <Cloud className="h-3 w-3" />
-                        All Changes Saved
+                        <span className="hidden sm:inline">All Changes Saved</span>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
-              <div className="flex items-center gap-3 mt-1">
+              <div className="hidden sm:flex items-center gap-3 mt-1">
                 <p className="text-sm text-slate-400">
                   Build your profile to unlock dealer insights
                 </p>
@@ -237,18 +237,16 @@ export function TechStackWizard({ open, onOpenChange }: TechStackWizardProps) {
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Profile Strength</span>
-              <span className="text-sm font-bold text-white">{completionStats.score}%</span>
-            </div>
-            <div className="w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-              <motion.div 
+          <div className="flex items-center sm:flex-col sm:items-end gap-2">
+            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Profile Strength</span>
+            <div className="flex-1 sm:flex-none w-full sm:w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${completionStats.score}%` }}
+                animate={{ width: `${completionStats.percentage}%` }}
                 className="h-full bg-yellow-400 shadow-[0_0_8px_rgba(253,216,53,0.5)]"
               />
             </div>
+            <span className="text-sm font-bold text-white">{completionStats.percentage}%</span>
           </div>
         </div>
 
@@ -259,7 +257,7 @@ export function TechStackWizard({ open, onOpenChange }: TechStackWizardProps) {
               <p className="text-slate-400 text-sm animate-pulse">Scanning your stack...</p>
             </div>
           ) : (
-            <div className="max-w-4xl mx-auto px-8 py-10">
+            <div className="max-w-4xl mx-auto px-4 py-6 sm:px-8 sm:py-10">
               <TechStackCanvas
                 vendors={vendors}
                 onUpdateVendor={handleUpdateVendor}
@@ -272,8 +270,8 @@ export function TechStackWizard({ open, onOpenChange }: TechStackWizardProps) {
           )}
         </div>
 
-        <div className="px-8 py-5 border-t border-slate-100 bg-white flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-4">
+        <div className="px-4 py-4 sm:px-8 sm:py-5 border-t border-slate-100 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
+          <div className="hidden sm:flex items-center gap-4">
             <div className="flex -space-x-2">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center">
@@ -286,7 +284,7 @@ export function TechStackWizard({ open, onOpenChange }: TechStackWizardProps) {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between sm:justify-end gap-3">
             {!completionStats.isComplete && vendors.length > 0 && (
               <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest bg-amber-50 px-2 py-1 rounded border border-amber-100 animate-pulse">
                 Missing: {completionStats.missing[0]}
@@ -304,9 +302,9 @@ export function TechStackWizard({ open, onOpenChange }: TechStackWizardProps) {
               onClick={handleComplete}
               disabled={saveMutation.isPending || !completionStats.isComplete}
               className={cn(
-                "px-8 font-bold transition-all duration-300",
-                completionStats.isComplete 
-                  ? "bg-yellow-400 hover:bg-yellow-500 text-slate-900 shadow-lg shadow-yellow-500/20 scale-105" 
+                "px-6 sm:px-8 font-bold transition-all duration-300",
+                completionStats.isComplete
+                  ? "bg-yellow-400 hover:bg-yellow-500 text-slate-900 shadow-lg shadow-yellow-500/20 scale-105"
                   : "bg-slate-200 text-slate-400 cursor-not-allowed"
               )}
             >
