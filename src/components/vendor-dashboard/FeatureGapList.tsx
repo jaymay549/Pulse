@@ -53,7 +53,7 @@ export function FeatureGapList({ gaps }: FeatureGapListProps) {
               <span className="text-[11px] text-slate-400">
                 {gap.mention_count} {gap.mention_count === 1 ? "mention" : "mentions"}
               </span>
-              <span className="text-slate-200">·</span>
+              <span className="text-slate-200">&middot;</span>
               <span className="text-[11px] text-slate-400">
                 Last {formatRelative(gap.last_seen)}
               </span>
@@ -75,7 +75,7 @@ export function FeatureGapList({ gaps }: FeatureGapListProps) {
               </div>
             </div>
 
-            {/* Action text — the main content */}
+            {/* Action text */}
             <p className="mt-2 text-sm text-slate-700 leading-relaxed">
               {gap.ai_insight || "Review recent mentions to identify patterns in this area."}
             </p>

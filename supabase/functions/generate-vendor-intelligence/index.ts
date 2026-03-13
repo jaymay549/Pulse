@@ -163,13 +163,15 @@ AREA OF CONCERN: ${dimensionLabel} (${count} dealer concern${count !== 1 ? "s" :
 WHAT DEALERS SAID:
 ${quotes.slice(0, 12).map((q) => `- "${q}"`).join("\n")}
 
-Write ONE actionable recommendation for ${vendorName}'s leadership team (1-2 sentences).
+Write ONE actionable recommendation for ${vendorName}'s leadership team (2 sentences max, keep it punchy).
 Rules:
-- Identify the specific problem pattern or root cause you see in the feedback
-- Suggest a concrete, practical next step they should take
+- Identify the specific problem pattern you see in the feedback
+- Suggest a concrete, practical next step — name a specific action, not "conduct a review" or "conduct an audit"
 - Professional, direct tone — like a consultant briefing a VP
-- Do NOT quote dealers verbatim or start with the vendor name
+- Do NOT start with the vendor name or "The"
+- Do NOT use filler phrases like "comprehensive review", "thorough audit", "address the accumulation"
 - Do NOT mention "CDGPulse", "survey", "poll", or "dealers say"
+- Be specific to what the feedback actually describes — reference specific products, features, or workflows when the data supports it
 
 Return JSON: {"insight": "your 1-2 sentence recommendation"}`;
 }

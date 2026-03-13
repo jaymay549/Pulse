@@ -53,6 +53,12 @@ export interface DashboardRecommendation {
   triggered_at: string;
 }
 
+export interface SupportingQuote {
+  quote: string;
+  headline: string | null;
+  source: string;
+}
+
 export interface DashboardFeatureGap {
   id: string;
   gap_label: string;
@@ -63,6 +69,7 @@ export interface DashboardFeatureGap {
   mapped_metric: string | null;
   is_emerging?: boolean;
   ai_insight?: string | null;
+  supporting_quotes?: SupportingQuote[];
 }
 
 export interface SentimentHistoryPoint {
