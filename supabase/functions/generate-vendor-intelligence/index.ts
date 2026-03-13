@@ -105,7 +105,7 @@ MENTIONS (${mentions.length}):\n`;
     }
     prompt += `\nReturn JSON:
 {
-  "summary_text": "2-3 sentence summary of early dealer feedback. Acknowledge limited data.",
+  "summary_text": "2-3 sentence summary of early dealer feedback. Acknowledge limited data. End with a constructive or encouraging note — highlight a strength, an opportunity, or positive momentum.",
   "sentiment": "positive, negative, or mixed",
   "top_dimension": "${dimensions[0] || ""}"
 }`;
@@ -141,7 +141,7 @@ ${mentions.length} dealer mentions (${positive.length} positive, ${warning.lengt
 
   prompt += `Return JSON:
 {
-  "summary_text": "3-4 sentence intelligence summary. Synthesize patterns — strengths, concerns, trends. Professional analyst tone. Don't quote individuals.",
+  "summary_text": "3-4 sentence intelligence summary. Synthesize patterns — strengths, concerns, trends. Professional analyst tone. Don't quote individuals. End on a positive or forward-looking note — a key strength, improving trend, or competitive advantage.",
   "sentiment": "positive, negative, or mixed",
   "trend_direction": "up, down, or stable",
   "top_dimension": "${dimensions[0] || ""}"
@@ -163,17 +163,18 @@ AREA OF CONCERN: ${dimensionLabel} (${count} dealer concern${count !== 1 ? "s" :
 WHAT DEALERS SAID:
 ${quotes.slice(0, 12).map((q) => `- "${q}"`).join("\n")}
 
-Write ONE actionable recommendation for ${vendorName}'s leadership team (2 sentences max, keep it punchy).
+Write ONE actionable recommendation for ${vendorName}'s leadership team (3 sentences max, keep it punchy).
 Rules:
 - Identify the specific problem pattern you see in the feedback
 - Suggest a concrete, practical next step — name a specific action, not "conduct a review" or "conduct an audit"
+- End with a positive or encouraging closer — acknowledge what's working, note the opportunity this creates, or express confidence that the fix is achievable
 - Professional, direct tone — like a consultant briefing a VP
 - Do NOT start with the vendor name or "The"
 - Do NOT use filler phrases like "comprehensive review", "thorough audit", "address the accumulation"
 - Do NOT mention "CDGPulse", "survey", "poll", or "dealers say"
 - Be specific to what the feedback actually describes — reference specific products, features, or workflows when the data supports it
 
-Return JSON: {"insight": "your 1-2 sentence recommendation"}`;
+Return JSON: {"insight": "your 2-3 sentence recommendation ending on a positive note"}`;
 }
 
 // ── Generate gap insights for one vendor ───────────────────
