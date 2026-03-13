@@ -295,20 +295,19 @@ export async function fetchVendorProfile(
   const vpRows = (vpResult.data as Array<Record<string, any>> | null) ?? null;
   const vp = pickBestProfileRow(vpRows);
 
-  // Merge: RPC metadata first, then fill gaps from vendor_profiles
+  // Merge: vendor_profiles is the source of truth for editable fields.
+  // Use ?? (not ||) so empty strings from vp are respected and don't fall through to stale rpcMeta.
   const rpcMeta = result.metadata || {};
-  // vendor_profiles is the source of truth for editable fields (tagline, description, etc.)
-  // so prefer vp.* over rpcMeta.* for those fields.
   const mergedMetadata = vp
     ? {
-        website_url: vp.company_website || rpcMeta.website_url || null,
-        logo_url: vp.company_logo_url || rpcMeta.logo_url || null,
-        description: vp.company_description || rpcMeta.description || null,
+        website_url: (vp.company_website ?? rpcMeta.website_url) || null,
+        logo_url: (vp.company_logo_url ?? rpcMeta.logo_url) || null,
+        description: (vp.company_description ?? rpcMeta.description) || null,
         category: rpcMeta.category || null,
-        linkedin_url: vp.linkedin_url || rpcMeta.linkedin_url || null,
-        banner_url: vp.banner_url || rpcMeta.banner_url || null,
-        tagline: vp.tagline || rpcMeta.tagline || null,
-        headquarters: vp.headquarters || rpcMeta.headquarters || null,
+        linkedin_url: (vp.linkedin_url ?? rpcMeta.linkedin_url) || null,
+        banner_url: (vp.banner_url ?? rpcMeta.banner_url) || null,
+        tagline: (vp.tagline ?? rpcMeta.tagline) || null,
+        headquarters: (vp.headquarters ?? rpcMeta.headquarters) || null,
       }
     : rpcMeta;
 

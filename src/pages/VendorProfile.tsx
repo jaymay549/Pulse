@@ -666,7 +666,7 @@ const VendorProfile = () => {
                     })()}
                     {profileData.metadata?.website_url && (
                       <a
-                        href={profileData.metadata.website_url}
+                        href={profileData.metadata.website_url.startsWith("http") ? profileData.metadata.website_url : `https://${profileData.metadata.website_url}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-primary hover:bg-primary/5 transition-colors"
