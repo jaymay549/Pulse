@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Image, Loader2, Trash2, ArrowUp, ArrowDown, UploadCloud, AlertCircle } from "lucide-react";
+import { Image, Loader2, Trash2, ArrowUp, ArrowDown, UploadCloud, AlertCircle, Check } from "lucide-react";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useVendorScreenshots, type VendorScreenshot } from "@/hooks/useVendorScreenshots";
 import { cn } from "@/lib/utils";
@@ -56,7 +56,8 @@ export function DashboardScreenshots({ vendorName }: DashboardScreenshotsProps) 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const ext = file.name.split(".").pop() ?? "jpg";
-        const path = `${vendorName}/${crypto.randomUUID()}.${ext}`;
+        const uid = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        const path = `${vendorName}/${uid}.${ext}`;
 
         const { error: uploadError } = await supabase.storage
           .from("vendor-screenshots")
@@ -133,6 +134,31 @@ export function DashboardScreenshots({ vendorName }: DashboardScreenshotsProps) 
       await invalidate();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Reorder failed.");
+    }
+  }
+
+  const [savingField, setSavingField] = useState<string | null>(null);
+
+  async function handleUpdateField(
+    shot: VendorScreenshot,
+    field: "title" | "description",
+    value: string,
+  ) {
+    const trimmed = value.trim() || null;
+    if (trimmed === (shot[field] ?? null)) return;
+    const key = `${shot.id}-${field}`;
+    setSavingField(key);
+    try {
+      const { error: updateError } = await supabase
+        .from("vendor_screenshots" as never)
+        .update({ [field]: trimmed } as never)
+        .eq("id", shot.id as never);
+      if (updateError) throw updateError;
+      await invalidate();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Save failed.");
+    } finally {
+      setSavingField(null);
     }
   }
 
@@ -215,56 +241,88 @@ export function DashboardScreenshots({ vendorName }: DashboardScreenshotsProps) 
           {screenshots.map((shot, index) => (
             <div
               key={shot.id}
-              className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-2"
+              className="rounded-xl border border-slate-200 bg-white p-3"
             >
-              {/* Thumbnail */}
-              <div className="flex-none w-32 aspect-video rounded-lg overflow-hidden border border-slate-100 bg-slate-50">
-                <img
-                  src={shot.url}
-                  alt={`Screenshot ${index + 1}`}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
+              <div className="flex items-center gap-3">
+                {/* Thumbnail */}
+                <div className="flex-none w-32 aspect-video rounded-lg overflow-hidden border border-slate-100 bg-slate-50">
+                  <img
+                    src={shot.url}
+                    alt={`Screenshot ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+
+                {/* Title + hint */}
+                <div className="flex-1 min-w-0">
+                  <input
+                    type="text"
+                    defaultValue={shot.title ?? ""}
+                    placeholder="Screenshot title"
+                    maxLength={80}
+                    onBlur={(e) => handleUpdateField(shot, "title", e.target.value)}
+                    className="w-full text-sm font-medium text-slate-700 placeholder:text-slate-300 bg-transparent border-b border-transparent hover:border-slate-200 focus:border-primary focus:outline-none pb-0.5 transition-colors"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">
+                    {savingField === `${shot.id}-title` ? (
+                      <span className="inline-flex items-center gap-1 text-green-600">
+                        <Check className="h-3 w-3" /> Saved
+                      </span>
+                    ) : (
+                      <>Screenshot {index + 1} · shown on public profile</>
+                    )}
+                  </p>
+                </div>
+
+                {/* Controls */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleMove(index, "up")}
+                    disabled={index === 0 || !!deletingId}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Move up"
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleMove(index, "down")}
+                    disabled={index === screenshots.length - 1 || !!deletingId}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Move down"
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(shot)}
+                    disabled={!!deletingId}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Delete"
+                  >
+                    {deletingId === shot.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="mt-2 pl-[calc(8rem+0.75rem)]">
+                <textarea
+                  defaultValue={shot.description ?? ""}
+                  placeholder="Brief description (2-3 sentences)..."
+                  maxLength={300}
+                  rows={2}
+                  onBlur={(e) => handleUpdateField(shot, "description", e.target.value)}
+                  className="w-full text-sm text-slate-600 placeholder:text-slate-300 bg-transparent border border-transparent rounded-lg px-2 py-1 hover:border-slate-200 focus:border-primary focus:outline-none resize-none transition-colors"
                 />
-              </div>
-
-              {/* Label */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-700 truncate">
-                  Screenshot {index + 1}
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">16:9 · shown on public profile</p>
-              </div>
-
-              {/* Controls */}
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => handleMove(index, "up")}
-                  disabled={index === 0 || !!deletingId}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  title="Move up"
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => handleMove(index, "down")}
-                  disabled={index === screenshots.length - 1 || !!deletingId}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  title="Move down"
-                >
-                  <ArrowDown className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(shot)}
-                  disabled={!!deletingId}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  title="Delete"
-                >
-                  {deletingId === shot.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </button>
+                {savingField === `${shot.id}-description` && (
+                  <p className="text-xs text-green-600 inline-flex items-center gap-1 mt-0.5">
+                    <Check className="h-3 w-3" /> Saved
+                  </p>
+                )}
               </div>
             </div>
           ))}

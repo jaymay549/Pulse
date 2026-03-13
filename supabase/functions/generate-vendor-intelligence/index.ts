@@ -195,10 +195,14 @@ async function generateGapInsights(
   let updated = 0;
 
   for (const gap of gaps) {
+    // gap_label is a dimension label like "Product reliability"
+    // Map it back to DB dimension keys to find matching mentions
     const dimensions = LABEL_TO_DIMENSIONS[gap.gap_label];
-    if (!dimensions) continue;
+    if (!dimensions || dimensions.length === 0) {
+      console.warn(`[${canonicalName}] No dimension mapping for gap "${gap.gap_label}"`);
+      continue;
+    }
 
-    // Fetch warning quotes for this dimension (visible only)
     let quotesQuery = supabase
       .from("vendor_mentions")
       .select("quote, headline")

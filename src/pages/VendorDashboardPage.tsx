@@ -18,6 +18,7 @@ import { DashboardAIChat } from "@/components/vendor-dashboard/DashboardAIChat";
 import { DashboardSegments } from "@/components/vendor-dashboard/DashboardSegments";
 import { DashboardDemoRequests } from "@/components/vendor-dashboard/DashboardDemoRequests";
 import { DashboardScreenshots } from "@/components/vendor-dashboard/DashboardScreenshots";
+import { DashboardCategories } from "@/components/vendor-dashboard/DashboardCategories";
 import { VendorDashboardLayout, type DashboardSection } from "@/components/vendor-dashboard/VendorDashboardLayout";
 import { useVendorIntelligenceDashboard } from "@/hooks/useVendorIntelligenceDashboard";
 
@@ -153,6 +154,7 @@ export default function VendorDashboardPage() {
           {activeSection === "dimensions" && <DashboardDimensions vendorName={vendorName} />}
           {activeSection === "demo-requests" && <DashboardDemoRequests vendorName={vendorName} supabase={supabase} />}
           {activeSection === "screenshots" && <DashboardScreenshots vendorName={vendorName} />}
+          {activeSection === "categories" && <DashboardCategories vendorName={vendorName} />}
         </div>
       </VendorDashboardLayout>
 

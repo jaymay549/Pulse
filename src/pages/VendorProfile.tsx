@@ -651,19 +651,34 @@ const VendorProfile = () => {
                         {profileData.metadata.headquarters}
                       </span>
                     )}
-                    {profileData.metadata?.category && (() => {
-                      const catDef = vendorCategories.find(c => c.id === profileData.metadata!.category);
-                      const label = catDef?.label || profileData.metadata!.category!.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-                      const parts = label.split(" & ");
-                      return parts.map((part) => (
-                        <span
-                          key={part}
-                          className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase tracking-wide bg-slate-900/[0.04] text-slate-600"
-                        >
-                          {part}
-                        </span>
-                      ));
-                    })()}
+                    {profileData.categories && profileData.categories.length > 0
+                      ? profileData.categories.map((catId) => {
+                          const catDef = vendorCategories.find(c => c.id === catId);
+                          const label = catDef?.label || catId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+                          return (
+                            <Link
+                              key={catId}
+                              to={`/vendors?category=${encodeURIComponent(catId)}`}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase tracking-wide bg-slate-900/[0.04] text-slate-600 hover:bg-slate-900/[0.08] transition-colors"
+                            >
+                              {catDef?.icon && <span>{catDef.icon}</span>}
+                              {label}
+                            </Link>
+                          );
+                        })
+                      : profileData.metadata?.category && (() => {
+                          const catDef = vendorCategories.find(c => c.id === profileData.metadata!.category);
+                          const label = catDef?.label || profileData.metadata!.category!.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+                          return (
+                            <Link
+                              to={`/vendors?category=${encodeURIComponent(profileData.metadata!.category!)}`}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase tracking-wide bg-slate-900/[0.04] text-slate-600 hover:bg-slate-900/[0.08] transition-colors"
+                            >
+                              {catDef?.icon && <span>{catDef.icon}</span>}
+                              {label}
+                            </Link>
+                          );
+                        })()}
                     {profileData.metadata?.website_url && (
                       <a
                         href={profileData.metadata.website_url.startsWith("http") ? profileData.metadata.website_url : `https://${profileData.metadata.website_url}`}

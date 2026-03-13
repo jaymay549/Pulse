@@ -320,7 +320,9 @@ export async function fetchVendorProfile(
       positivePercent: 0,
       warningPercent: 0,
     },
-    categories: result.categories || [],
+    categories: (vp?.categories as string[] | undefined)?.length
+      ? (vp.categories as string[])
+      : result.categories || [],
     metadata: mergedMetadata,
     insight: result.insight || null,
     mentions: (result.mentions || []).map((m: any) => ({

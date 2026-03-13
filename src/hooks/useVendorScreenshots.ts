@@ -6,6 +6,8 @@ export interface VendorScreenshot {
   vendor_name: string;
   url: string;
   sort_order: number;
+  title: string | null;
+  description: string | null;
   created_at: string;
 }
 
@@ -15,7 +17,7 @@ export function useVendorScreenshots(vendorName: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vendor_screenshots" as never)
-        .select("id, vendor_name, url, sort_order, created_at")
+        .select("id, vendor_name, url, sort_order, title, description, created_at")
         .eq("vendor_name", vendorName)
         .order("sort_order", { ascending: true });
       if (error) throw error;
