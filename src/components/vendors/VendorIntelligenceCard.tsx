@@ -6,6 +6,7 @@ import {
   fetchVendorCustomContent,
 } from "@/hooks/useSupabaseVendorData";
 import { cn } from "@/lib/utils";
+import { parseMarkdown } from "@/utils/markdown";
 
 interface VendorIntelligenceCardProps {
   vendorName: string;
@@ -76,7 +77,7 @@ export function VendorIntelligenceCard({
               </h3>
             </div>
             <p className="text-[13px] leading-relaxed text-slate-600 mb-2.5">
-              {intelligence.summary_text}
+              {parseMarkdown(intelligence.summary_text)}
             </p>
             <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold tracking-wide">
               <span className="text-slate-400">
@@ -128,7 +129,7 @@ export function VendorIntelligenceCard({
           {intelligence.sentiment === "negative" && (
             <TrendingDown className="inline h-3.5 w-3.5 text-red-400 mr-1.5 mb-0.5" />
           )}
-          {intelligence.summary_text}
+          {parseMarkdown(intelligence.summary_text)}
         </p>
 
         <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold tracking-wide">
@@ -172,7 +173,7 @@ export function VendorIntelligenceCard({
               </h3>
             </div>
             <p className="text-[13px] leading-relaxed text-slate-600 mb-1.5">
-              {intelligence.summary_text}
+              {parseMarkdown(intelligence.summary_text)}
             </p>
             <p className="text-[10px] text-slate-400">
               Based on {stats.total} early mention{stats.total !== 1 ? "s" : ""}
@@ -207,7 +208,7 @@ export function VendorIntelligenceCard({
         </div>
 
         <p className="text-[13px] leading-relaxed text-slate-600 mb-1.5">
-          {intelligence.summary_text}
+          {parseMarkdown(intelligence.summary_text)}
         </p>
 
         <p className="text-[10px] text-slate-400">

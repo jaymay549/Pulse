@@ -1,4 +1,4 @@
-import { BarChart3, MessageSquare, Layers, Pencil, TrendingUp, ExternalLink, ArrowLeft, Activity, PieChart, CalendarCheck, Image, Tags } from "lucide-react";
+import { BarChart3, MessageSquare, Layers, Pencil, TrendingUp, ExternalLink, ArrowLeft, Activity, PieChart, CalendarCheck, Image, Tags, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DashboardSection } from "./VendorDashboardLayout";
 
@@ -14,6 +14,7 @@ const navItems: { id: DashboardSection; icon: typeof BarChart3; label: string }[
   { id: "segments", icon: PieChart, label: "Segments" },
   { id: "mentions", icon: MessageSquare, label: "Mentions" },
   { id: "dimensions", icon: Layers, label: "Dimensions" },
+  { id: "dealer-signals", icon: Users, label: "Dealer Signals" },
   { id: "intel", icon: TrendingUp, label: "Market Intel" },
   { id: "demo-requests", icon: CalendarCheck, label: "Demo Requests" },
   { id: "screenshots", icon: Image, label: "Screenshots" },

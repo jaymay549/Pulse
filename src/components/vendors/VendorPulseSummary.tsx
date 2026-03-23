@@ -2,6 +2,7 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Sparkles } from "lucide-react";
 import { fetchVendorPulseSummary } from "@/hooks/useSupabaseVendorData";
+import { parseMarkdown } from "@/utils/markdown";
 
 const MIN_MENTIONS = 5;
 
@@ -53,7 +54,7 @@ export function VendorPulseSummary({
 
       {/* Summary text */}
       <p className="text-[14px] leading-relaxed text-zinc-200">
-        {summary.summary_text}
+        {parseMarkdown(summary.summary_text)}
       </p>
 
       {/* Category context */}
@@ -61,7 +62,7 @@ export function VendorPulseSummary({
         <>
           <div className="border-t border-zinc-800 my-4" />
           <p className="text-[13px] leading-relaxed text-zinc-500">
-            {summary.category_context}
+            {parseMarkdown(summary.category_context)}
           </p>
         </>
       )}

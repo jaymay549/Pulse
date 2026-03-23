@@ -19,6 +19,7 @@ import { DashboardSegments } from "@/components/vendor-dashboard/DashboardSegmen
 import { DashboardDemoRequests } from "@/components/vendor-dashboard/DashboardDemoRequests";
 import { DashboardScreenshots } from "@/components/vendor-dashboard/DashboardScreenshots";
 import { DashboardCategories } from "@/components/vendor-dashboard/DashboardCategories";
+import { DashboardDealerSignals } from "@/components/vendor-dashboard/DashboardDealerSignals";
 import { VendorDashboardLayout, type DashboardSection } from "@/components/vendor-dashboard/VendorDashboardLayout";
 import { useVendorIntelligenceDashboard } from "@/hooks/useVendorIntelligenceDashboard";
 
@@ -155,6 +156,7 @@ export default function VendorDashboardPage() {
           {activeSection === "demo-requests" && <DashboardDemoRequests vendorName={vendorName} supabase={supabase} />}
           {activeSection === "screenshots" && <DashboardScreenshots vendorName={vendorName} />}
           {activeSection === "categories" && <DashboardCategories vendorName={vendorName} />}
+          {activeSection === "dealer-signals" && <DashboardDealerSignals vendorName={vendorName} />}
         </div>
       </VendorDashboardLayout>
 

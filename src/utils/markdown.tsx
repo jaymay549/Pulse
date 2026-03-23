@@ -109,6 +109,7 @@ function normalizeBracketedVendorMentions(
  * Supports:
  * - **text** for bold
  * - ****text**** for bold (handles four asterisks)
+ * - ***text*** for bold italic (handles three asterisks)
  * - *text* for italic (only if not part of ** or ****)
  * - linkifyVendors: when true, vendor names become clickable chips linking to vendor pages
  */
@@ -161,6 +162,39 @@ export function parseMarkdown(
         continue;
       } else {
         // **** without closing, treat first * as literal and continue
+        parts.push(remainingText[0]);
+        remainingText = remainingText.slice(1);
+        continue;
+      }
+    }
+
+    // Try to match ***text*** (three asterisks - bold italic)
+    if (remainingText.startsWith("***")) {
+      const threeStarMatch = remainingText.match(/^\*\*\*(.+?)\*\*\*/);
+      if (threeStarMatch) {
+        const innerText = threeStarMatch[1];
+        if (linkifyVendors) {
+          const linked = processBoldTextWithVendorMentions(
+            innerText,
+            knownVendors,
+            vendorMentionClassName,
+            vendorMentionShowLogo,
+          );
+          if (linked) {
+            parts.push(<React.Fragment key={keyIndex++}>{linked}</React.Fragment>);
+            remainingText = remainingText.slice(threeStarMatch[0].length);
+            continue;
+          }
+        }
+        parts.push(
+          <strong key={keyIndex++} className="font-semibold italic">
+            {innerText}
+          </strong>,
+        );
+        remainingText = remainingText.slice(threeStarMatch[0].length);
+        continue;
+      } else {
+        // *** without closing, treat first * as literal and continue
         parts.push(remainingText[0]);
         remainingText = remainingText.slice(1);
         continue;

@@ -39,26 +39,11 @@ const VendorMergeDialog = ({
     if (!canonicalName.trim()) return;
     setSaving(true);
     try {
-      // Create vendor group
-      const { data: group, error: groupError } = await supabase
-        .from("vendor_groups")
-        .insert({ canonical_name: canonicalName.trim() })
-        .select()
-        .single();
-      if (groupError) throw groupError;
-
-      // Create aliases
-      if (aliases.length > 0) {
-        const { error: aliasError } = await supabase
-          .from("vendor_aliases")
-          .insert(
-            aliases.map((alias) => ({
-              group_id: group.id,
-              alias,
-            }))
-          );
-        if (aliasError) throw aliasError;
-      }
+      const { error } = await (supabase.rpc as any)("admin_merge_vendors", {
+        p_canonical_name: canonicalName.trim(),
+        p_aliases: aliases,
+      });
+      if (error) throw error;
 
       toast.success(`Merged ${vendorNames.length} vendors as "${canonicalName}"`);
       queryClient.invalidateQueries({ queryKey: ["approved-mentions"] });

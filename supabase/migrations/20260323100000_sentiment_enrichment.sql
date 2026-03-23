@@ -2,12 +2,9 @@
 -- Sentiment Enrichment
 -- Expands binary positive/warning to 4-value sentiment,
 -- adds intensity score (1-5) and NPS tier.
+-- NOTE: Enum expansion + CHECK constraint drop moved to
+--       20260323050000_expand_review_type_enum.sql
 -- ============================================================
-
--- ── Task 1: Expand review_type enum ─────────────────────────
-ALTER TYPE public.review_type ADD VALUE IF NOT EXISTS 'negative';
-ALTER TYPE public.review_type ADD VALUE IF NOT EXISTS 'neutral';
-ALTER TYPE public.review_type ADD VALUE IF NOT EXISTS 'mixed';
 
 -- ── New columns on vendor_mentions ──────────────────────────
 ALTER TABLE public.vendor_mentions

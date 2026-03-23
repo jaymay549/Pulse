@@ -18,6 +18,7 @@ import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { fetchVendorProfile, fetchVendorPulseFeed, fetchVendorTrend, fetchVendorThemes, fetchComparedVendors, type VendorTrendResult, type VendorThemesResult, type ComparedVendor } from "@/hooks/useSupabaseVendorData";
 import { isProUser } from "@/utils/tierUtils";
 import { cn } from "@/lib/utils";
+import { parseMarkdown } from "@/utils/markdown";
 import { categories as vendorCategories } from "@/hooks/useVendorFilters";
 import { useVendorOwnership } from "@/hooks/useVendorOwnership";
 import { ClaimProfileModal } from "@/components/vendors/ClaimProfileModal";
@@ -1172,12 +1173,12 @@ const VendorProfile = () => {
                             <div className="flex items-start gap-2">
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-0.5">
-                                  <span className="text-[13px] font-semibold text-slate-700 leading-snug">{t.label}</span>
+                                  <span className="text-[13px] font-semibold text-slate-700 leading-snug">{parseMarkdown(t.label)}</span>
                                   <span className="flex-shrink-0 text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
                                     {t.mention_count}
                                   </span>
                                 </div>
-                                <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-3">{t.summary}</p>
+                                <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-3">{parseMarkdown(t.summary)}</p>
                               </div>
                             </div>
                           </li>
@@ -1222,12 +1223,12 @@ const VendorProfile = () => {
                             <div className="flex items-start gap-2">
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-0.5">
-                                  <span className="text-[13px] font-semibold text-slate-700 leading-snug">{t.label}</span>
+                                  <span className="text-[13px] font-semibold text-slate-700 leading-snug">{parseMarkdown(t.label)}</span>
                                   <span className="flex-shrink-0 text-[10px] font-medium text-red-600 bg-red-50 px-1.5 py-0.5 rounded-full">
                                     {t.mention_count}
                                   </span>
                                 </div>
-                                <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-3">{t.summary}</p>
+                                <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-3">{parseMarkdown(t.summary)}</p>
                               </div>
                             </div>
                           </li>
