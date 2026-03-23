@@ -181,7 +181,7 @@ const VendorsV2 = () => {
 
           counts[key].total += 1;
           if (mention.type === "positive") counts[key].positive += 1;
-          else if (mention.type === "warning") counts[key].warning += 1;
+          else if ((mention.type === "warning" || mention.type === "negative")) counts[key].warning += 1;
         }
 
         hasMore = data.hasMore;
@@ -227,7 +227,7 @@ const VendorsV2 = () => {
 
         countsByCategory[categoryKey][vendorKey].total += 1;
         if (mention.type === "positive") countsByCategory[categoryKey][vendorKey].positive += 1;
-        else if (mention.type === "warning") countsByCategory[categoryKey][vendorKey].warning += 1;
+        else if ((mention.type === "warning" || mention.type === "negative")) countsByCategory[categoryKey][vendorKey].warning += 1;
       }
 
       hasMore = data.hasMore;
@@ -302,7 +302,7 @@ const VendorsV2 = () => {
         }
         categoryVendorMap[mention.category][vendorKey].total += 1;
         if (mention.type === "positive") categoryVendorMap[mention.category][vendorKey].positive += 1;
-        else if (mention.type === "warning") categoryVendorMap[mention.category][vendorKey].warning += 1;
+        else if ((mention.type === "warning" || mention.type === "negative")) categoryVendorMap[mention.category][vendorKey].warning += 1;
         if (!vendorOriginalName[vendorKey]) {
           vendorOriginalName[vendorKey] = mention.vendorName;
         }
@@ -381,7 +381,7 @@ const VendorsV2 = () => {
       };
 
       if (m.type === "positive") existing.positiveCount += 1;
-      if (m.type === "warning") existing.warningCount += 1;
+      if ((m.type === "warning" || m.type === "negative")) existing.warningCount += 1;
       if (existing.mentions.length < 8) {
         existing.mentions.push({
           title: m.title,
@@ -669,7 +669,7 @@ const VendorsV2 = () => {
         };
 
         if (mention.type === "positive") existing.positiveCount += 1;
-        if (mention.type === "warning") existing.warningCount += 1;
+        if ((mention.type === "warning" || mention.type === "negative")) existing.warningCount += 1;
         if (existing.mentions.length < 8) {
           existing.mentions.push({
             title: mention.title,
@@ -739,7 +739,7 @@ const VendorsV2 = () => {
 
           counts[key].total += 1;
           if (mention.type === "positive") counts[key].positive += 1;
-          else if (mention.type === "warning") counts[key].warning += 1;
+          else if ((mention.type === "warning" || mention.type === "negative")) counts[key].warning += 1;
 
           const rawName = (mention as any).rawVendorName || (mention as any).raw_vendor_name;
           if (
@@ -905,7 +905,7 @@ const VendorsV2 = () => {
 
   // Use total counts from paginationInfo if available, otherwise fall back to mentions length
   const totalVerifiedCount = paginationInfo?.totalPositiveCount ?? mentions.filter(e => e.type === "positive").length;
-  const totalWarningCountValue = paginationInfo?.totalWarningCount ?? mentions.filter((e) => e.type === "warning").length;
+  const totalWarningCountValue = paginationInfo?.totalWarningCount ?? mentions.filter((e) => (e.type === "warning" || e.type === "negative")).length;
 
   // Handle share
   const handleShare = async () => {
@@ -1059,7 +1059,7 @@ const VendorsV2 = () => {
           name,
           reviewCount: vendorReviews.length,
           positiveCount: vendorReviews.filter((r) => r.type === "positive").length,
-          warningCount: vendorReviews.filter((r) => r.type === "warning").length,
+          warningCount: vendorReviews.filter((r) => (r.type === "warning" || r.type === "negative")).length,
         };
       })
       .filter((v) => v.reviewCount > 0) // Only show vendors with reviews
