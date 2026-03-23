@@ -5,7 +5,6 @@ import { Flag } from "lucide-react";
 import {
   PieChart,
   Pie,
-  Cell,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
@@ -33,7 +32,7 @@ interface Response {
   created_at: string;
 }
 
-type FilterType = "all" | "positive" | "warning";
+type FilterType = "all" | "positive" | "negative" | "neutral" | "mixed";
 
 function formatRelativeTime(dateString: string): string {
   const now = new Date();
@@ -50,18 +49,19 @@ function formatRelativeTime(dateString: string): string {
   return date.toLocaleDateString();
 }
 
-function TypeBadge({ type }: { type: string }): JSX.Element {
-  if (type === "positive") {
-    return (
-      <span className="inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-        positive
-      </span>
-    );
-  }
+const TYPE_BADGE_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  positive: { bg: "bg-emerald-100", text: "text-emerald-700", label: "positive" },
+  negative: { bg: "bg-red-100", text: "text-red-700", label: "concern" },
+  warning: { bg: "bg-red-100", text: "text-red-700", label: "concern" },
+  neutral: { bg: "bg-slate-100", text: "text-slate-600", label: "neutral" },
+  mixed: { bg: "bg-amber-100", text: "text-amber-700", label: "mixed" },
+};
 
+function TypeBadge({ type }: { type: string }): JSX.Element {
+  const style = TYPE_BADGE_STYLES[type] ?? TYPE_BADGE_STYLES.neutral;
   return (
-    <span className="inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-      concern
+    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${style.bg} ${style.text}`}>
+      {style.label}
     </span>
   );
 }
@@ -153,9 +153,15 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
   const respondedIds = new Set(existingResponses.map((r) => r.mention_id));
 
   const positiveCount = mentions.filter((m) => m.type === "positive").length;
-  const warningCount = mentions.filter((m) => m.type === "warning").length;
+  const negativeCount = mentions.filter((m) => m.type === "negative" || m.type === "warning").length;
+  const neutralCount = mentions.filter((m) => m.type === "neutral").length;
+  const mixedCount = mentions.filter((m) => m.type === "mixed").length;
 
-  const filteredMentions = filter === "all" ? mentions : mentions.filter((m) => m.type === filter);
+  const filteredMentions = filter === "all"
+    ? mentions
+    : filter === "negative"
+      ? mentions.filter((m) => m.type === "negative" || m.type === "warning")
+      : mentions.filter((m) => m.type === filter);
 
   const handleFlag = (mention: Mention) => {
     setSelectedMention(mention);
@@ -195,9 +201,11 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
                 <PieChart>
                   <Pie
                     data={[
-                      { name: "Positive", value: positiveCount },
-                      { name: "Concerns", value: warningCount },
-                    ]}
+                      { name: "Positive", value: positiveCount, fill: "#10b981" },
+                      { name: "Neutral", value: neutralCount, fill: "#94a3b8" },
+                      { name: "Mixed", value: mixedCount, fill: "#f59e0b" },
+                      { name: "Negative", value: negativeCount, fill: "#ef4444" },
+                    ].filter((d) => d.value > 0)}
                     cx="50%"
                     cy="50%"
                     innerRadius={35}
@@ -205,10 +213,7 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
                     paddingAngle={3}
                     dataKey="value"
                     strokeWidth={0}
-                  >
-                    <Cell fill="#10b981" />
-                    <Cell fill="#f59e0b" />
-                  </Pie>
+                  />
                   <Tooltip
                     contentStyle={{ borderRadius: 6, border: "1px solid #e2e8f0", fontSize: 12 }}
                   />
@@ -216,18 +221,19 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
               </ResponsiveContainer>
             </div>
             <div className="flex-1 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-sm text-slate-600">
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Positive
-                </span>
-                <span className="text-sm font-semibold text-slate-900">{positiveCount} ({mentions.length > 0 ? Math.round((positiveCount / mentions.length) * 100) : 0}%)</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-sm text-slate-600">
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500" /> Concerns
-                </span>
-                <span className="text-sm font-semibold text-slate-900">{warningCount} ({mentions.length > 0 ? Math.round((warningCount / mentions.length) * 100) : 0}%)</span>
-              </div>
+              {[
+                { label: "Positive", count: positiveCount, color: "bg-emerald-500" },
+                { label: "Neutral", count: neutralCount, color: "bg-slate-400" },
+                { label: "Mixed", count: mixedCount, color: "bg-amber-500" },
+                { label: "Negative", count: negativeCount, color: "bg-red-500" },
+              ].filter((r) => r.count > 0).map((r) => (
+                <div key={r.label} className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-sm text-slate-600">
+                    <span className={`h-2.5 w-2.5 rounded-full ${r.color}`} /> {r.label}
+                  </span>
+                  <span className="text-sm font-semibold text-slate-900">{r.count} ({mentions.length > 0 ? Math.round((r.count / mentions.length) * 100) : 0}%)</span>
+                </div>
+              ))}
               <div className="border-t pt-2 mt-2">
                 <span className="text-xs text-slate-400">Total: {mentions.length} mentions</span>
               </div>
@@ -239,18 +245,10 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
       {/* Filter bar */}
       <div className="mt-4 flex gap-2">
         <FilterButton label="All" count={mentions.length} active={filter === "all"} onClick={() => setFilter("all")} />
-        <FilterButton
-          label="Positive"
-          count={positiveCount}
-          active={filter === "positive"}
-          onClick={() => setFilter("positive")}
-        />
-        <FilterButton
-          label="Concerns"
-          count={warningCount}
-          active={filter === "warning"}
-          onClick={() => setFilter("warning")}
-        />
+        <FilterButton label="Positive" count={positiveCount} active={filter === "positive"} onClick={() => setFilter("positive")} />
+        {neutralCount > 0 && <FilterButton label="Neutral" count={neutralCount} active={filter === "neutral"} onClick={() => setFilter("neutral")} />}
+        {mixedCount > 0 && <FilterButton label="Mixed" count={mixedCount} active={filter === "mixed"} onClick={() => setFilter("mixed")} />}
+        <FilterButton label="Concerns" count={negativeCount} active={filter === "negative"} onClick={() => setFilter("negative")} />
       </div>
 
       {/* Mention cards */}

@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { VendorEntry } from "./useVendorReviews";
 
-export type TypeFilter = "all" | "positive" | "warning";
+export type TypeFilter = "all" | "positive" | "warning" | "negative" | "neutral" | "mixed";
 
 export interface Category {
   id: string;
@@ -169,7 +169,7 @@ export function useVendorFilters({
   }, [data, selectedCategory]);
 
   const positiveCount = externalPositiveCount ?? dataBeforeTypeFilter.filter(e => e.type === "positive").length;
-  const warningCount = externalWarningCount ?? dataBeforeTypeFilter.filter(e => e.type === "warning").length;
+  const warningCount = externalWarningCount ?? dataBeforeTypeFilter.filter(e => e.type === "warning" || e.type === "negative").length;
   const totalCount = externalTotalCount ?? dataBeforeTypeFilter.length;
 
   const hasActiveFilters = selectedCategory !== "all" || searchQuery !== "" || typeFilter !== "all";

@@ -15,7 +15,7 @@ export interface VendorEntry {
   rewriteConfidence?: number | null;
   explanation: string;
   member?: string;
-  type: "positive" | "warning";
+  type: "positive" | "warning" | "negative" | "neutral" | "mixed";
   category: string;
   conversationTime?: string;
   isLocked?: boolean;
