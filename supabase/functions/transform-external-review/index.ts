@@ -127,11 +127,9 @@ async function transformReview(
     // Compute NPS tier
     const score = Math.max(1, Math.min(5, parsed.sentiment_score || 3));
     let npsTier: string;
-    if (parsed.sentiment === "positive" && score >= 5) {
+    if (parsed.sentiment === "positive" && score >= 4) {
       npsTier = "promoter";
-    } else if (parsed.sentiment === "positive" && score <= 2) {
-      npsTier = "detractor";
-    } else if (parsed.sentiment === "negative" || parsed.sentiment === "warning") {
+    } else if ((parsed.sentiment === "negative" || parsed.sentiment === "warning") && score >= 4) {
       npsTier = "detractor";
     } else {
       npsTier = "passive";

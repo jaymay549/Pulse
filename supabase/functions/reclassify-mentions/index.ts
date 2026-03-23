@@ -70,27 +70,31 @@ Return JSON:
 
 Sentiment guide:
 - positive: clearly favorable, recommending, praising
-- negative: clearly unfavorable, complaining, warning others away
-- neutral: factual observation without strong opinion
-- mixed: contains both significant praise and significant criticism
+- negative: clearly unfavorable, complaining, warning others away, expressing frustration
+- neutral: factual observation without ANY opinion — just reporting usage or facts
+- mixed: contains both significant praise AND significant criticism in the same quote
 
-Score guide:
-- 1: extremely negative or barely any positive
-- 2: mostly negative or weak positive
-- 3: moderate / balanced
-- 4: mostly positive or mild negative
-- 5: extremely positive / enthusiastic, or very harsh criticism
+Score guide (intensity — how strongly the dealer feels):
+- 1: very mild / barely an opinion
+- 2: mild but noticeable
+- 3: moderate / clear opinion
+- 4: strong feeling
+- 5: extreme / emphatic
 
-Rules:
-- Be consistent — similar quotes should get similar scores
-- The current type is a hint but you can change it
+CRITICAL RULES:
+- The CURRENT TYPE was assigned by a human or careful AI. Treat it as correct unless the quote clearly contradicts it.
+- If the current type is "negative", keep it "negative" unless the quote is genuinely positive or purely factual.
+- Do NOT reclassify complaints, frustrations, or "could be better" language as neutral. Those are negative.
+- "neutral" should be RARE — only for truly opinion-free factual statements like "we use X" or "they added a feature"
+- "mixed" should also be rare — only when there is genuine praise AND genuine criticism in the same quote
+- When in doubt between negative and neutral, choose negative
 - Return only valid JSON, no markdown fences`;
 }
 
 function deriveNpsTier(sentiment: string, score: number): string {
-  if (sentiment === "positive" && score >= 5) return "promoter";
-  if (sentiment === "positive" && score <= 2) return "detractor";
-  if (sentiment === "negative" || sentiment === "warning") return "detractor";
+  if (sentiment === "positive" && score >= 4) return "promoter";
+  if (sentiment === "negative" && score >= 4) return "detractor";
+  if (sentiment === "warning" && score >= 4) return "detractor";
   return "passive";
 }
 
