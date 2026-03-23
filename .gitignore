@@ -30,3 +30,4 @@ dist-ssr
 !.claude/mcp.json.example
 .mcp.json
 .firecrawl/
+.worktrees/
