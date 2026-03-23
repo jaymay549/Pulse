@@ -47,12 +47,12 @@ LANGUAGE plpgsql IMMUTABLE AS $$
 BEGIN
   IF p_type = 'positive' AND p_score >= 5 THEN
     RETURN 'promoter';
+  ELSIF p_type = 'positive' AND p_score <= 2 THEN
+    RETURN 'detractor';
   ELSIF p_type IN ('negative', 'warning') THEN
     RETURN 'detractor';
   ELSIF p_type IN ('neutral', 'mixed') THEN
     RETURN 'passive';
-  ELSIF p_type = 'positive' AND p_score <= 2 THEN
-    RETURN 'detractor';
   ELSE
     RETURN 'passive';
   END IF;
