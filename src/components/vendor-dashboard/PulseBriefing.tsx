@@ -160,26 +160,28 @@ function HealthBadge({ score, trend }: { score: number | null; trend?: "up" | "d
   );
 }
 
+const QUOTE_STYLES: Record<string, { border: string; bg: string; text: string; badge: string }> = {
+  positive: { border: "border-emerald-100", bg: "bg-emerald-50/60", text: "text-emerald-900", badge: "bg-emerald-100 text-emerald-700" },
+  negative: { border: "border-red-100", bg: "bg-red-50/60", text: "text-red-900", badge: "bg-red-100 text-red-700" },
+  warning: { border: "border-red-100", bg: "bg-red-50/60", text: "text-red-900", badge: "bg-red-100 text-red-700" },
+  neutral: { border: "border-slate-100", bg: "bg-slate-50/60", text: "text-slate-900", badge: "bg-slate-100 text-slate-600" },
+  mixed: { border: "border-amber-100", bg: "bg-amber-50/60", text: "text-amber-900", badge: "bg-amber-100 text-amber-700" },
+};
+
 function QuoteCard({ mention }: { mention: RecentMention }) {
-  const isPositive = mention.type === "positive";
+  const style = QUOTE_STYLES[mention.type] ?? QUOTE_STYLES.neutral;
   const dimLabel = mention.dimension && mention.dimension !== "other"
     ? DIMENSION_LABELS[mention.dimension] ?? mention.dimension
     : null;
 
   return (
-    <div className={`rounded-lg border p-4 ${
-      isPositive
-        ? "border-emerald-100 bg-emerald-50/60"
-        : "border-amber-100 bg-amber-50/60"
-    }`}>
-      <p className={`text-sm italic leading-relaxed ${isPositive ? "text-emerald-900" : "text-amber-900"}`}>
+    <div className={`rounded-lg border p-4 ${style.border} ${style.bg}`}>
+      <p className={`text-sm italic leading-relaxed ${style.text}`}>
         "{mention.quote}"
       </p>
       <div className="mt-2 flex items-center gap-2">
         {dimLabel && (
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-            isPositive ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-          }`}>
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${style.badge}`}>
             {dimLabel}
           </span>
         )}
@@ -280,7 +282,7 @@ export function PulseBriefing({ vendorName, onNavigate }: PulseBriefingProps) {
 
   // Pick one positive + one warning quote
   const positiveQuote = mentions?.find((m) => m.type === "positive" && m.quote.length > 20) ?? null;
-  const warningQuote = mentions?.find((m) => m.type === "warning" && m.quote.length > 20) ?? null;
+  const warningQuote = mentions?.find((m) => (m.type === "warning" || m.type === "negative") && m.quote.length > 20) ?? null;
 
   // Health trend from intel history
   const history = intel?.sentiment_history ?? [];

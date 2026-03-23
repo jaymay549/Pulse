@@ -12,6 +12,10 @@ export interface MetricComponentData {
   recency_score?: number;
   velocity_score?: number;
   positive_count?: number;
+  negative_count?: number;
+  neutral_count?: number;
+  mixed_count?: number;
+  avg_sentiment_score?: number;
   recent_mentions?: number;
   prior_mentions?: number;
 }
@@ -76,7 +80,14 @@ export interface SentimentHistoryPoint {
   month: string;
   total_mentions: number;
   positive_count: number;
+  negative_count: number;
+  neutral_count: number;
+  mixed_count: number;
   health_estimate: number | null;
+  avg_intensity: number | null;
+  promoter_count: number;
+  passive_count: number;
+  detractor_count: number;
 }
 
 export interface VendorDashboardIntel {

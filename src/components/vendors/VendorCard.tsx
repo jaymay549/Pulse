@@ -118,6 +118,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
   const getTypeStyles = () => {
     switch (entry.type) {
       case "warning":
+      case "negative":
         return {
           border: "border-l-2 border-l-red-500 border-border/40",
           bg: "bg-transparent hover:bg-red-500/5",
@@ -132,6 +133,22 @@ export const VendorCard: React.FC<VendorCardProps> = ({
           badge: "text-green-700",
           icon: <ThumbsUp className="h-3.5 w-3.5" />,
           label: "RECOMMENDED",
+        };
+      case "neutral":
+        return {
+          border: "border-l-2 border-l-slate-400 border-border/40",
+          bg: "bg-transparent hover:bg-slate-500/5",
+          badge: "text-slate-600",
+          icon: <Lightbulb className="h-3.5 w-3.5" />,
+          label: "NEUTRAL",
+        };
+      case "mixed":
+        return {
+          border: "border-l-2 border-l-amber-500 border-border/40",
+          bg: "bg-transparent hover:bg-amber-500/5",
+          badge: "text-amber-700",
+          icon: <AlertTriangle className="h-3.5 w-3.5" />,
+          label: "MIXED",
         };
       default:
         return {
@@ -314,7 +331,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
     >
       <div className="px-5 py-4 flex flex-col flex-1 min-h-0">
         <div className="flex-1 min-h-0 flex flex-col">
-          {entry.type === "warning" && entry.displayMode === "rewritten_negative" && (
+          {(entry.type === "warning" || entry.type === "negative") && entry.displayMode === "rewritten_negative" && (
             <div className="mb-2 inline-flex items-center">
               <span className="text-[10px] font-semibold tracking-[0.08em] uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">
                 AI-normalized feedback

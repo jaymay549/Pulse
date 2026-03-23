@@ -74,18 +74,19 @@ function formatRelativeTime(dateString: string): string {
   return date.toLocaleDateString();
 }
 
-function TypeBadge({ type }: { type: string }) {
-  if (type === "positive") {
-    return (
-      <span className="inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-        positive
-      </span>
-    );
-  }
+const TYPE_BADGE_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  positive: { bg: "bg-emerald-100", text: "text-emerald-700", label: "positive" },
+  negative: { bg: "bg-red-100", text: "text-red-700", label: "concern" },
+  warning: { bg: "bg-red-100", text: "text-red-700", label: "concern" },
+  neutral: { bg: "bg-slate-100", text: "text-slate-600", label: "neutral" },
+  mixed: { bg: "bg-amber-100", text: "text-amber-700", label: "mixed" },
+};
 
+function TypeBadge({ type }: { type: string }) {
+  const style = TYPE_BADGE_STYLES[type] ?? TYPE_BADGE_STYLES.neutral;
   return (
-    <span className="inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-      concern
+    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${style.bg} ${style.text}`}>
+      {style.label}
     </span>
   );
 }
@@ -223,6 +224,8 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
             name: (VENDOR_DIMENSIONS[dim.dimension]?.label || dim.dimension),
             mentions: dim.mention_count,
             positive: dim.positive_count,
+            neutral: dim.neutral_count,
+            mixed: dim.mixed_count,
             negative: dim.negative_count,
           }));
 
@@ -236,15 +239,22 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
                   <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12, fill: "#475569" }} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
-                    formatter={(value: number, name: string) => [value, name === "positive" ? "Positive" : "Negative"]}
                   />
                   <Bar dataKey="positive" stackId="dim" fill="#10b981" radius={[0, 0, 0, 0]} name="Positive" />
+                  <Bar dataKey="neutral" stackId="dim" fill="#94a3b8" radius={[0, 0, 0, 0]} name="Neutral" />
+                  <Bar dataKey="mixed" stackId="dim" fill="#f59e0b" radius={[0, 0, 0, 0]} name="Mixed" />
                   <Bar dataKey="negative" stackId="dim" fill="#ef4444" radius={[0, 4, 4, 0]} name="Negative" />
                 </BarChart>
               </ResponsiveContainer>
               <div className="mt-2 flex gap-4 text-xs text-slate-400">
                 <span className="flex items-center gap-1.5">
                   <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" /> Positive
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-slate-400" /> Neutral
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" /> Mixed
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="h-2.5 w-2.5 rounded-sm bg-red-500" /> Negative

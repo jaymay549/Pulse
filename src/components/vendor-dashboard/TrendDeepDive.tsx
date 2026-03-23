@@ -47,10 +47,15 @@ export function TrendDeepDive({ metrics, history }: TrendDeepDiveProps) {
     month: parseMonthLabel(h.month),
     total: h.total_mentions,
     positive: h.positive_count,
-    negative: h.total_mentions - h.positive_count,
+    negative: h.negative_count ?? (h.total_mentions - h.positive_count),
+    neutral: h.neutral_count ?? 0,
+    mixed: h.mixed_count ?? 0,
     sentiment: h.total_mentions > 0
       ? Math.round((h.positive_count / h.total_mentions) * 100)
       : 0,
+    promoters: h.promoter_count ?? 0,
+    passives: h.passive_count ?? 0,
+    detractors: h.detractor_count ?? 0,
   }));
 
   return (
@@ -145,10 +150,11 @@ export function TrendDeepDive({ metrics, history }: TrendDeepDiveProps) {
                 <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip
                   contentStyle={{ borderRadius: 6, border: "1px solid #e2e8f0", fontSize: 11 }}
-                  formatter={(value: number, name: string) => [value, name === "positive" ? "Positive" : "Other"]}
                 />
                 <Bar dataKey="positive" stackId="vol" fill="#10b981" radius={[0, 0, 0, 0]} name="Positive" />
-                <Bar dataKey="negative" stackId="vol" fill="#cbd5e1" radius={[4, 4, 0, 0]} name="Other" />
+                <Bar dataKey="neutral" stackId="vol" fill="#94a3b8" radius={[0, 0, 0, 0]} name="Neutral" />
+                <Bar dataKey="mixed" stackId="vol" fill="#f59e0b" radius={[0, 0, 0, 0]} name="Mixed" />
+                <Bar dataKey="negative" stackId="vol" fill="#ef4444" radius={[4, 4, 0, 0]} name="Negative" />
               </BarChart>
             </ResponsiveContainer>
             <div className="mt-2 flex items-center gap-4 text-[10px] text-slate-400">
@@ -156,7 +162,13 @@ export function TrendDeepDive({ metrics, history }: TrendDeepDiveProps) {
                 <span className="h-2 w-2 rounded-sm bg-emerald-500" /> Positive
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-sm bg-slate-300" /> Other
+                <span className="h-2 w-2 rounded-sm bg-slate-400" /> Neutral
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-sm bg-amber-500" /> Mixed
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-sm bg-red-500" /> Negative
               </span>
             </div>
           </div>

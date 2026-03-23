@@ -64,15 +64,30 @@ Transform this into a dealer-style mention. Return JSON:
   "headline": "Short punchy headline (5-10 words) capturing the key point",
   "quote": "1-2 sentence anonymized dealer-style quote. Conversational tone, like something said in a group chat.",
   "dimension": "one of: worth_it, reliable, integrates, support, adopted, other",
-  "sentiment": "positive or negative",
+  "sentiment": "one of: positive, negative, neutral, mixed",
+  "sentiment_score": 1-5 integer (1=very negative/weak, 3=moderate, 5=very positive/strong),
   "category": "one of: crm, dms, marketing, data-analytics, inventory, website, service-bdc, desking-fi, compliance, phone, other"
 }
+
+Sentiment guide:
+- positive: clearly favorable, recommending, praising
+- negative: clearly unfavorable, complaining, warning others away
+- neutral: factual observation without strong opinion, just reporting usage
+- mixed: contains both significant praise and significant criticism
+
+Sentiment score guide:
+- 1: extremely negative / barely any positive signal
+- 2: mostly negative or weak positive
+- 3: moderate / balanced
+- 4: mostly positive or mildly negative
+- 5: extremely positive / enthusiastic endorsement, or very harsh criticism
 
 Rules:
 - Sound like organic dealer conversation, not a formal review
 - Remove all identifying information (reviewer name, company, location)
 - Keep the core insight but rewrite in casual tone
 - Be honest — preserve both positives and negatives
+- If the review has a star rating, use it to inform sentiment_score (1 star=1, 5 stars=5)
 - Return only valid JSON, no markdown fences`;
 }
 
@@ -109,6 +124,26 @@ async function transformReview(
       return { review_id: review.id, success: false, error: "Duplicate" };
     }
 
+    // Compute NPS tier
+    const score = Math.max(1, Math.min(5, parsed.sentiment_score || 3));
+    let npsTier: string;
+    if (parsed.sentiment === "positive" && score >= 5) {
+      npsTier = "promoter";
+    } else if (parsed.sentiment === "positive" && score <= 2) {
+      npsTier = "detractor";
+    } else if (parsed.sentiment === "negative" || parsed.sentiment === "warning") {
+      npsTier = "detractor";
+    } else {
+      npsTier = "passive";
+    }
+
+    const typeMap: Record<string, string> = {
+      positive: "positive",
+      negative: "negative",
+      neutral: "neutral",
+      mixed: "mixed",
+    };
+
     // Insert into vendor_mentions
     const { error: insertError } = await supabase
       .from("vendor_mentions")
@@ -119,7 +154,9 @@ async function transformReview(
         quote: parsed.quote,
         dimension: parsed.dimension || "other",
         sentiment: parsed.sentiment,
-        type: parsed.sentiment === "positive" ? "positive" : "warning",
+        type: typeMap[parsed.sentiment] || "negative",
+        sentiment_score: score,
+        nps_tier: npsTier,
         source: "external",
         source_review_id: review.id,
         approved_at: new Date().toISOString(),
