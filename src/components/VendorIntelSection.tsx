@@ -8,6 +8,7 @@ import {
 import Autoplay from "embla-carousel-autoplay";
 import { useRef, useState, useEffect } from "react";
 import type { CarouselApi } from "@/components/ui/carousel";
+import GainAccessModal from "@/components/GainAccessModal";
 
 // Sample examples for the preview
 const sampleItems = [
@@ -71,6 +72,7 @@ const VendorCard = ({ item }: { item: typeof sampleItems[0] }) => (
 const VendorIntelSection = () => {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
+  const [showGainAccess, setShowGainAccess] = useState(false);
   
   const autoplayPlugin = useRef(
     Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true })
@@ -154,19 +156,19 @@ const VendorIntelSection = () => {
 
         {/* CTA */}
         <div className="text-center">
-          <Button 
-            variant="yellow" 
-            size="lg" 
+          <Button
+            variant="yellow"
+            size="lg"
             className="font-black group"
-            asChild
+            onClick={() => setShowGainAccess(true)}
           >
-            <a href="#pricing">
-              Join Circles
-              <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-            </a>
+            Gain Access
+            <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>
       </div>
+
+      <GainAccessModal isOpen={showGainAccess} onClose={() => setShowGainAccess(false)} />
     </section>
   );
 };

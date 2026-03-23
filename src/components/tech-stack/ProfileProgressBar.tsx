@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   Layers,
@@ -22,10 +22,39 @@ const STALE_DAYS = 90;
 
 export function ProfileProgressBar() {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useClerkAuth();
-  const { data: techData } = useTechStackEntries();
+  const { isAuthenticated, isLoading: isAuthLoading, user } = useClerkAuth();
+  const { data: techData, isSuccess: isTechDataLoaded } = useTechStackEntries();
   const confirmMutation = useConfirmTechStack();
   const [wizardOpen, setWizardOpen] = useState(false);
+
+  // Track when user was loaded-and-unauthenticated so we can detect a real sign-in
+  // (as opposed to a page refresh where Clerk restores an existing session)
+  const sawUnauthRef = useRef(false);
+  const didAutoOpenRef = useRef(false);
+
+  useEffect(() => {
+    if (!isAuthLoading && !isAuthenticated) {
+      sawUnauthRef.current = true;
+    }
+  }, [isAuthLoading, isAuthenticated]);
+
+  // Auto-open wizard on fresh sign-in if tech stack is incomplete
+  useEffect(() => {
+    if (
+      sawUnauthRef.current &&
+      isAuthenticated &&
+      isTechDataLoaded &&
+      !didAutoOpenRef.current
+    ) {
+      const entries = techData?.entries || [];
+      const skipped = techData?.skippedCategories || [];
+      const { isComplete } = computeTechStackCompletion(entries, skipped);
+      if (!isComplete) {
+        setWizardOpen(true);
+        didAutoOpenRef.current = true;
+      }
+    }
+  }, [isAuthenticated, isTechDataLoaded, techData]);
 
   if (!isAuthenticated || !user) return null;
 

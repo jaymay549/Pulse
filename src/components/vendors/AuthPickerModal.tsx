@@ -104,14 +104,15 @@ export const AuthPickerModal = ({
         <div className="text-center pt-2 border-t">
           <p className="text-xs text-muted-foreground">
             Don't have an account?{" "}
-            <a
-              href="https://cdgcircles.com/#pricing"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => {
+                onClose();
+                window.dispatchEvent(new CustomEvent('open-gain-access-modal'));
+              }}
               className="text-primary hover:underline font-medium"
             >
-              Get Viewer Access
-            </a>
+              Gain Access
+            </button>
           </p>
         </div>
       </DialogContent>

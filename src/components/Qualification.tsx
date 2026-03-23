@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Check, X, ArrowRight, Info } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,8 +7,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import GainAccessModal from "@/components/GainAccessModal";
 
 const Qualification = () => {
+  const [showGainAccess, setShowGainAccess] = useState(false);
+
   const forYou = [
     "Dealer Principals, GMs, or other dealership managers",
     "Operators focused on execution, not just strategy",
@@ -80,14 +84,14 @@ const Qualification = () => {
         
         {/* CTA */}
         <div className="mt-12 text-center">
-          <Button size="lg" variant="yellow" className="shadow-lg hover:shadow-xl transition-all" asChild>
-            <a href="#pricing">
-              Join Circles
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </a>
+          <Button size="lg" variant="yellow" className="shadow-lg hover:shadow-xl transition-all" onClick={() => setShowGainAccess(true)}>
+            Gain Access
+            <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
       </div>
+
+      <GainAccessModal isOpen={showGainAccess} onClose={() => setShowGainAccess(false)} />
     </section>
   );
 };

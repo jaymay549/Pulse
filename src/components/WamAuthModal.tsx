@@ -472,11 +472,12 @@ const WamAuthModal = ({ isOpen, onClose, onRequestCode, onVerifyCode }: WamAuthM
                         <Button
                             variant="yellow"
                             onClick={() => {
-                                window.location.href = "https://cdgcircles.com/#pricing";
+                                setShowNotRegisteredModal(false);
+                                window.dispatchEvent(new CustomEvent('open-gain-access-modal'));
                             }}
                             className="w-full sm:w-auto order-1 sm:order-2 font-bold shadow-lg shadow-yellow-500/10 active:scale-[0.98] transition-all"
                         >
-                            Sign Up for CDG Circles
+                            Gain Access
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, Crown, ArrowRight, HelpCircle } from "lucide-react";
 import {
@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import GainAccessModal from "@/components/GainAccessModal";
 
 interface DealerCirclesPricingProps {
   totalReviews: number;
@@ -20,7 +21,10 @@ export const DealerCirclesPricing: React.FC<DealerCirclesPricingProps> = ({
   totalReviews,
   totalWarnings,
   onSignInClick,
-}) => (
+}) => {
+  const [showGainAccess, setShowGainAccess] = useState(false);
+
+  return (
   <div id="tiers-section" className="mt-10">
     <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-primary/5 via-yellow-500/10 to-primary/5 border-2 border-border">
       <div className="max-w-2xl mx-auto">
@@ -80,16 +84,10 @@ export const DealerCirclesPricing: React.FC<DealerCirclesPricingProps> = ({
                   Peer discussions
                 </span>
               </div>
-              <Button variant="yellow" size="sm" className="font-bold" asChild>
-                <a
-                  href="https://cdgcircles.com/#pricing"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Crown className="h-4 w-4 mr-2" />
-                  Join Circles Pro
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </a>
+              <Button variant="yellow" size="sm" className="font-bold" onClick={() => setShowGainAccess(true)}>
+                <Crown className="h-4 w-4 mr-2" />
+                Gain Access
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           </div>
@@ -106,7 +104,10 @@ export const DealerCirclesPricing: React.FC<DealerCirclesPricingProps> = ({
         </p>
       </div>
     </div>
+
+    <GainAccessModal isOpen={showGainAccess} onClose={() => setShowGainAccess(false)} />
   </div>
-);
+  );
+};
 
 export default DealerCirclesPricing;

@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { AlertTriangle, ThumbsUp, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import GainAccessModal from "@/components/GainAccessModal";
 
 interface IntelCardData {
   type: "warning" | "recommended";
@@ -137,6 +139,7 @@ export function VendorIntelTicker({
   totalRecommendations,
   className,
 }: VendorIntelTickerProps) {
+  const [showGainAccess, setShowGainAccess] = useState(false);
   const row1 = [...CARDS, ...CARDS];
   const row2 = [...CARDS.slice(5), ...CARDS.slice(0, 5), ...CARDS.slice(5), ...CARDS.slice(0, 5)];
 
@@ -166,7 +169,7 @@ export function VendorIntelTicker({
       {/* Header */}
       <div className="text-center mb-8 px-4">
         <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase mb-2">
-          From CDG Circles Members
+          Raw Vendor Intel From Verified Dealers
         </p>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
           Raw Vendor Intel You Won't Find Anywhere Else
@@ -213,18 +216,14 @@ export function VendorIntelTicker({
       {/* CTA */}
       <div className="text-center mt-10 px-4">
         <p className="text-sm text-muted-foreground mb-4">
-          This intel is exclusive to CDG Circles members.
+          Raw vendor intel from verified dealers.
         </p>
-        <Button variant="yellow" size="lg" className="font-bold" asChild>
-          <a
-            href="https://cdgcircles.com"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Join CDG Circles to Unlock All Intel
-          </a>
+        <Button variant="yellow" size="lg" className="font-bold" onClick={() => setShowGainAccess(true)}>
+          Gain Access to Unlock All Intel
         </Button>
       </div>
+
+      <GainAccessModal isOpen={showGainAccess} onClose={() => setShowGainAccess(false)} />
     </section>
   );
 }

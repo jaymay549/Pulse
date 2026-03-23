@@ -1,8 +1,12 @@
+import { useState } from "react";
 import phoneChat from "@/assets/phone-chat-square-new.png";
 import { MessageSquare, Users, ArrowRight, Crown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import GainAccessModal from "@/components/GainAccessModal";
 
 const SeeItInAction = () => {
+  const [showGainAccess, setShowGainAccess] = useState(false);
+
   return (
     <section className="py-16 sm:py-28 bg-gradient-to-br from-primary/5 via-white to-secondary/5">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -154,16 +158,16 @@ const SeeItInAction = () => {
 
             {/* CTA */}
             <div>
-              <Button size="lg" variant="yellow" className="shadow-lg hover:shadow-xl transition-all" asChild>
-                <a href="#pricing">
-                  Join Circles
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </a>
+              <Button size="lg" variant="yellow" className="shadow-lg hover:shadow-xl transition-all" onClick={() => setShowGainAccess(true)}>
+                Gain Access
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
           </div>
         </div>
       </div>
+
+      <GainAccessModal isOpen={showGainAccess} onClose={() => setShowGainAccess(false)} />
     </section>
   );
 };

@@ -25,6 +25,7 @@ import {
 } from "@/components/vendors";
 import { CategoryLandscape } from "@/components/vendors/CategoryLandscape";
 import UpgradeModal from "@/components/UpgradeModal";
+import GainAccessModal from "@/components/GainAccessModal";
 import QuoteCardModal from "@/components/wins/QuoteCardModal";
 
 // Hooks
@@ -82,6 +83,7 @@ const VendorsV2 = () => {
 
   // UI State
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showGainAccess, setShowGainAccess] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
   const [selectedCard, setSelectedCard] = useState<VendorEntry | null>(null);
   const [selectedCardForShare, setSelectedCardForShare] =
@@ -402,6 +404,13 @@ const VendorsV2 = () => {
 
   // Landing state = no category/vendor/AI selected
   const isLandingState = selectedCategory === "all" && selectedVendor === null && !aiQuery;
+
+  // Listen for custom event to open Gain Access modal (from AuthPickerModal, WamAuthModal)
+  useEffect(() => {
+    const handler = () => setShowGainAccess(true);
+    window.addEventListener('open-gain-access-modal', handler);
+    return () => window.removeEventListener('open-gain-access-modal', handler);
+  }, []);
 
   // Sync URL params to state (for browser back/forward and initial load)
   useEffect(() => {
@@ -1198,7 +1207,7 @@ const VendorsV2 = () => {
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground mb-4 tracking-tight leading-none">
                 <span className="block mb-2">Raw Vendor Intel</span>
                 <span className="bg-secondary text-secondary-foreground px-2 py-1 inline-block">
-                  From Circles Members
+                  From Verified Dealers
                 </span>
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
@@ -1278,10 +1287,8 @@ const VendorsV2 = () => {
             {/* Circles CTAs -- unauthenticated landing state */}
             {isLandingState && !isAuthenticated && (
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6">
-                <Button variant="yellow" size="lg" className="font-bold w-full sm:w-auto" asChild>
-                  <a href="https://cdgcircles.com" target="_blank" rel="noopener noreferrer">
-                    Join CDG Circles
-                  </a>
+                <Button variant="yellow" size="lg" className="font-bold w-full sm:w-auto" onClick={() => setShowGainAccess(true)}>
+                  Gain Access
                 </Button>
                 <Button variant="outline" size="lg" className="w-full sm:w-auto" onClick={() => setShowSignIn(true)}>
                   Sign In
@@ -1347,13 +1354,11 @@ const VendorsV2 = () => {
                     CDG Pulse is included with CDG Circles
                   </h3>
                   <p className="text-white/70 max-w-lg mx-auto mb-8">
-                    Get full access to all vendor intel, AI-powered insights, and the dealer community when you join CDG Circles.
+                    Get full access to all vendor intel, AI-powered insights, and the dealer community when you gain access.
                   </p>
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                    <Button variant="yellow" size="lg" className="font-bold w-full sm:w-auto" asChild>
-                      <a href="https://cdgcircles.com" target="_blank" rel="noopener noreferrer">
-                        Join CDG Circles
-                      </a>
+                    <Button variant="yellow" size="lg" className="font-bold w-full sm:w-auto" onClick={() => setShowGainAccess(true)}>
+                      Gain Access
                     </Button>
                     <Button
                       size="lg"
@@ -1558,13 +1563,11 @@ const VendorsV2 = () => {
                     Unlock all {paginationInfo?.totalSystemCount ?? wamMentions.length} reviews
                   </p>
                   <p className="text-sm text-white/60 mb-5">
-                    Full vendor intel is exclusive to CDG Circles members.
+                    Raw vendor intel from verified dealers.
                   </p>
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                    <Button variant="yellow" size="lg" className="font-bold w-full sm:w-auto" asChild>
-                      <a href="https://cdgcircles.com" target="_blank" rel="noopener noreferrer">
-                        Join CDG Circles
-                      </a>
+                    <Button variant="yellow" size="lg" className="font-bold w-full sm:w-auto" onClick={() => setShowGainAccess(true)}>
+                      Gain Access
                     </Button>
                     <Button
                       size="sm"
@@ -1716,6 +1719,11 @@ const VendorsV2 = () => {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         targetTier="pro"
+      />
+
+      <GainAccessModal
+        isOpen={showGainAccess}
+        onClose={() => setShowGainAccess(false)}
       />
 
       {/* Clerk Sign In Modal */}
