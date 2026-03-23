@@ -242,6 +242,9 @@ export const SENTIMENT_COLORS: Record<string, string> = {
   neutral: "text-gray-600 bg-gray-50 border-gray-200",
   mixed: "text-amber-600 bg-amber-50 border-amber-200",
   unknown: "text-gray-400 bg-gray-50 border-gray-200",
+  promoter: "text-emerald-700 bg-emerald-50 border-emerald-200",
+  passive: "text-slate-600 bg-slate-50 border-slate-200",
+  detractor: "text-rose-700 bg-rose-50 border-rose-200",
 };
 
 // ── AI Chat Types ──

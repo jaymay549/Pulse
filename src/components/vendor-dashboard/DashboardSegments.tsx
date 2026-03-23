@@ -118,6 +118,18 @@ function BucketCard({
             <p className="mt-0.5 text-[10px] text-slate-400">positive sentiment</p>
           </div>
         </div>
+
+        {/* NPS-style sentiment bar */}
+        <div className="mt-2 flex gap-0.5 h-1.5 rounded-full overflow-hidden">
+          <div
+            className="bg-emerald-400 rounded-l-full"
+            style={{ width: `${Math.min(bucket.positive_pct, 100)}%` }}
+          />
+          <div
+            className="bg-rose-400 rounded-r-full"
+            style={{ width: `${Math.min(100 - bucket.positive_pct, 100)}%` }}
+          />
+        </div>
       </div>
 
       {/* Quotes */}

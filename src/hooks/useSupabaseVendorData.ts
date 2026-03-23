@@ -14,7 +14,7 @@ export interface VendorPulseMention {
   isOpinionHeavy?: boolean | null;
   rewriteConfidence?: number | null;
   explanation: string;
-  type: "positive" | "warning";
+  type: "positive" | "warning" | "negative" | "neutral" | "mixed";
   category: string;
   conversationTime: string;
 }
@@ -445,6 +445,10 @@ export interface VendorDimension {
   mixed_count: number;
   neutral_count: number;
   positive_percent: number;
+  avg_intensity: number | null;
+  promoter_count: number;
+  passive_count: number;
+  detractor_count: number;
 }
 
 /**

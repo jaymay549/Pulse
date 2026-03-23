@@ -223,6 +223,8 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
             name: (VENDOR_DIMENSIONS[dim.dimension]?.label || dim.dimension),
             mentions: dim.mention_count,
             positive: dim.positive_count,
+            neutral: dim.neutral_count,
+            mixed: dim.mixed_count,
             negative: dim.negative_count,
           }));
 
@@ -239,12 +241,20 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
                     formatter={(value: number, name: string) => [value, name === "positive" ? "Positive" : "Negative"]}
                   />
                   <Bar dataKey="positive" stackId="dim" fill="#10b981" radius={[0, 0, 0, 0]} name="Positive" />
+                  <Bar dataKey="neutral" stackId="dim" fill="#94a3b8" radius={[0, 0, 0, 0]} name="Neutral" />
+                  <Bar dataKey="mixed" stackId="dim" fill="#f59e0b" radius={[0, 0, 0, 0]} name="Mixed" />
                   <Bar dataKey="negative" stackId="dim" fill="#ef4444" radius={[0, 4, 4, 0]} name="Negative" />
                 </BarChart>
               </ResponsiveContainer>
               <div className="mt-2 flex gap-4 text-xs text-slate-400">
                 <span className="flex items-center gap-1.5">
                   <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" /> Positive
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-slate-400" /> Neutral
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" /> Mixed
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="h-2.5 w-2.5 rounded-sm bg-red-500" /> Negative
