@@ -90,7 +90,7 @@ Return JSON:
 
   // Include ALL mentions (hidden + visible) so vendors can't game sentiment
   const positive = mentions.filter((m) => m.type === "positive");
-  const warning = mentions.filter((m) => m.type === "warning");
+  const warning = mentions.filter((m) => m.type === "warning" || m.type === "negative");
   const dimensions = [
     ...new Set(mentions.filter((m) => m.dimension).map((m) => m.dimension)),
   ];
@@ -209,7 +209,7 @@ async function generateGapInsights(
     let quotesQuery = supabase
       .from("vendor_mentions")
       .select("quote, headline")
-      .eq("type", "warning")
+      .in("type", ["warning", "negative"])
       .eq("is_hidden", false)
       .in("dimension", dimensions)
       .not("quote", "is", null)
@@ -333,7 +333,7 @@ async function generateForVendor(
       // Stats: only count visible mentions for display
       const visible = mentions.filter((m) => !m.is_hidden);
       const positiveCount = visible.filter((m) => m.type === "positive").length;
-      const warningCount = visible.filter((m) => m.type === "warning").length;
+      const warningCount = visible.filter((m) => m.type === "warning" || m.type === "negative").length;
       const externalCount = visible.filter((m) => m.source === "external").length;
 
       const { error: upsertError } = await supabase

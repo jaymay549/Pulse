@@ -523,7 +523,7 @@ BEGIN
   END IF;
 
   -- Active recommendations (max 5)
-  SELECT COALESCE(jsonb_agg(row_to_jsonb(r) ORDER BY
+  SELECT COALESCE(jsonb_agg(to_jsonb(r) ORDER BY
     CASE r.priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
     r.triggered_at DESC
   ), '[]'::JSONB) INTO v_recommendations
