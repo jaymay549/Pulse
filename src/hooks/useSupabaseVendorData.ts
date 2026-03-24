@@ -343,6 +343,8 @@ export async function fetchVendorProfile(
       type: m.type,
       category: m.category,
       conversationTime: m.conversationTime || m.conversation_time,
+      npsTier: m.npsTier || m.nps_tier || null,
+      sentimentScore: m.sentimentScore ?? m.sentiment_score ?? null,
     })),
     productLines: (result.productLines || []).map((pl: any) => ({
       id: pl.id,
