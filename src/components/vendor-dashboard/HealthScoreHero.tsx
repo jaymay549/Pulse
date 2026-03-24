@@ -1,4 +1,4 @@
-import { ArrowUp, ArrowDown, Minus, Activity } from "lucide-react";
+import { ArrowUp, ArrowDown, Minus, Activity, ShieldCheck, TrendingUp, Sparkles } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -11,6 +11,8 @@ import {
   getScoreColor,
 } from "@/hooks/useVendorIntelligenceDashboard";
 import { InfoTooltip } from "./InfoTooltip";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface HealthScoreHeroProps {
   score: number | null;
@@ -30,88 +32,123 @@ function getTrend(history: SentimentHistoryPoint[]): { direction: "up" | "down" 
   const recent = withData[withData.length - 1].health_estimate!;
   const prior = withData[withData.length - 2].health_estimate!;
   const delta = recent - prior;
-  if (delta > 3) return { direction: "up", delta };
-  if (delta < -3) return { direction: "down", delta };
+  if (delta > 2) return { direction: "up", delta };
+  if (delta < -2) return { direction: "down", delta };
   return { direction: "stable", delta };
 }
 
 export function HealthScoreHero({ score, history }: HealthScoreHeroProps) {
   const trend = getTrend(history);
+  
+  const statusConfig = {
+    strong: { label: "Exceptional", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100", icon: ShieldCheck },
+    improving: { label: "Solid Performance", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100", icon: TrendingUp },
+    attention: { label: "Action Required", color: "text-red-600", bg: "bg-red-50", border: "border-red-100", icon: Activity },
+    gathering: { label: "Calculating...", color: "text-slate-400", bg: "bg-slate-50", border: "border-slate-100", icon: Activity },
+  };
+
+  const status = score === null ? "gathering" : score >= 75 ? "strong" : score >= 55 ? "improving" : "attention";
+  const { label: statusLabel, color: statusTextColor, bg: statusBg, border: statusBorder, icon: StatusIcon } = statusConfig[status];
 
   return (
-    <div className="rounded-xl border bg-white p-6">
-      <div className="flex items-start justify-between">
+    <div className="relative overflow-hidden bg-white p-6 sm:p-8">
+      {/* Background accents */}
+      <div className="absolute top-0 right-0 -mt-20 -mr-20 h-64 w-64 rounded-full bg-indigo-50/50 blur-3xl transition-all group-hover:bg-indigo-100/50" />
+      <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-64 w-64 rounded-full bg-blue-50/30 blur-3xl transition-all group-hover:bg-blue-100/30" />
+
+      <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-10">
         {/* Score display */}
-        <div className="flex items-center gap-5">
-          <div className="relative flex h-24 w-24 items-center justify-center">
+        <div className="flex items-center gap-8">
+          <div className="relative flex h-32 w-32 items-center justify-center shrink-0">
             {/* Circular progress */}
-            <svg className="absolute inset-0" viewBox="0 0 96 96">
+            <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
               <circle
-                cx="48" cy="48" r="42"
-                fill="none" stroke="#f1f5f9" strokeWidth="6"
+                cx="50" cy="50" r="44"
+                fill="none" stroke="#F1F5F9" strokeWidth="8"
               />
               {score !== null && (
                 <circle
-                  cx="48" cy="48" r="42"
+                  cx="50" cy="50" r="44"
                   fill="none"
-                  stroke={score >= 70 ? "#10b981" : score >= 50 ? "#f59e0b" : "#ef4444"}
-                  strokeWidth="6"
+                  stroke="currentColor"
+                  strokeWidth="8"
                   strokeLinecap="round"
-                  strokeDasharray={`${(score / 100) * 264} 264`}
-                  transform="rotate(-90 48 48)"
-                  className="transition-all duration-700"
+                  strokeDasharray={`${(score / 100) * 276.5} 276.5`}
+                  transform="rotate(-90 50 50)"
+                  className={cn("transition-all duration-1000 ease-out", getScoreColor(score))}
                 />
               )}
             </svg>
-            <span className={`text-3xl font-bold ${getScoreColor(score)}`}>
-              {score !== null ? score : "—"}
-            </span>
+            <div className="flex flex-col items-center justify-center">
+              <span className={cn("text-4xl font-black tracking-tighter", getScoreColor(score))}>
+                {score !== null ? score : "—"}
+              </span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Pulse Score</span>
+            </div>
           </div>
 
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold text-slate-900">Health Score</h2>
-              <InfoTooltip
-                content={
-                  <div className="space-y-1.5">
-                    <p className="font-medium text-slate-900">How it&apos;s calculated</p>
-                    <p>A weighted composite of your three performance metrics, based on dealer feedback from the last 90 days.</p>
-                    <ul className="space-y-0.5 text-slate-500">
-                      <li>· Customer Experience — 40%</li>
-                      <li>· Product Stability — 35%</li>
-                      <li>· Value Perception — 25%</li>
-                    </ul>
-                    <p className="text-slate-500">Scores 0–100: 70+ strong · 50–69 improving · below 50 needs attention. Requires 5+ mentions per dimension.</p>
-                  </div>
-                }
-              />
-              {trend.direction === "up" && (
-                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                  <ArrowUp className="h-3 w-3" />
-                  +{Math.abs(trend.delta)}
-                </span>
-              )}
-              {trend.direction === "down" && (
-                <span className="inline-flex items-center gap-0.5 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
-                  <ArrowDown className="h-3 w-3" />
-                  {trend.delta}
-                </span>
-              )}
-              {trend.direction === "stable" && score !== null && (
-                <span className="inline-flex items-center gap-0.5 rounded-full bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-500">
-                  <Minus className="h-3 w-3" />
-                  Stable
-                </span>
-              )}
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Market Health Score</h2>
+                <InfoTooltip
+                  content={
+                    <div className="p-1 space-y-2">
+                      <p className="font-bold text-slate-900 text-[13px] flex items-center gap-2">
+                        <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+                        Intelligence Engine
+                      </p>
+                      <p className="text-[12px] leading-relaxed text-slate-600">A weighted composite of your performance dimensions, based on verified dealer feedback from the last 90 days.</p>
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CX Ratio</p>
+                          <p className="text-[12px] font-bold text-slate-700">40% Weight</p>
+                        </div>
+                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Stability</p>
+                          <p className="text-[12px] font-bold text-slate-700">35% Weight</p>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {trend.direction === "up" && (
+                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 gap-1 py-1 pr-2.5">
+                    <ArrowUp className="h-3 w-3 stroke-[3]" />
+                    <span className="font-bold">+{Math.abs(trend.delta)}</span>
+                  </Badge>
+                )}
+                {trend.direction === "down" && (
+                  <Badge className="bg-red-50 text-red-600 border-red-100 gap-1 py-1 pr-2.5">
+                    <ArrowDown className="h-3 w-3 stroke-[3]" />
+                    <span className="font-bold">{trend.delta}</span>
+                  </Badge>
+                )}
+                {trend.direction === "stable" && score !== null && (
+                  <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-200 gap-1 py-1 pr-2.5">
+                    <Minus className="h-3 w-3 stroke-[3]" />
+                    <span className="font-bold tracking-tight">STABLE</span>
+                  </Badge>
+                )}
+              </div>
             </div>
-            <p className="mt-1 text-sm text-slate-500">
+
+            <div className={cn("inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[13px] font-bold", statusBg, statusBorder, statusTextColor)}>
+              <StatusIcon className="h-3.5 w-3.5" />
+              {statusLabel}
+            </div>
+            
+            <p className="max-w-md text-[14px] leading-relaxed text-slate-500 font-medium italic">
               {score === null
-                ? "Gathering data — need 5+ mentions across dimensions"
-                : score >= 70
-                  ? "Strong performance across key dimensions"
-                  : score >= 50
-                    ? "Room for improvement in some areas"
-                    : "Significant concerns flagged by dealers"
+                ? "Our engine is currently gathering dealer feedback. Need 5+ mentions across all dimensions to generate your first score."
+                : score >= 75
+                  ? "Your presence is outstanding. Dealers consistently report high satisfaction and product reliability."
+                  : score >= 55
+                    ? "Solid performance overall, with specific opportunities to improve dealer perception in key areas."
+                    : "Significant market concerns detected. Review recent mentions to address critical stability or experience issues."
               }
             </p>
           </div>
@@ -128,39 +165,48 @@ export function HealthScoreHero({ score, history }: HealthScoreHeroProps) {
             : "#94a3b8";
 
           return (
-            <div style={{ width: 180, height: 60 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={sparkData} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
-                  <defs>
-                    <linearGradient id="healthSparkGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={color} stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="month" hide />
-                  <Tooltip
-                    contentStyle={{ borderRadius: 6, border: "1px solid #e2e8f0", fontSize: 11, padding: "4px 8px" }}
-                    formatter={(value: number) => [`${value}%`, "Health"]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="health"
-                    stroke={color}
-                    strokeWidth={2}
-                    fill="url(#healthSparkGrad)"
-                    dot={{ r: 2.5, fill: color, stroke: "#fff", strokeWidth: 1.5 }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+            <div className="flex flex-col items-end gap-3 self-end lg:self-center">
+              <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 w-full sm:w-[240px]">
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Growth Trend</span>
+                  <span className="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded">90D</span>
+                </div>
+                <div style={{ width: '100%', height: 70 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={sparkData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="healthSparkGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={color} stopOpacity={0.25} />
+                          <stop offset="95%" stopColor={color} stopOpacity={0.01} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="month" hide />
+                      <Tooltip
+                        contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 11, padding: "8px 12px", boxShadow: "0 4px 12px -2px rgb(0 0 0 / 0.1)" }}
+                        formatter={(value: number) => [`${value}%`, "Health"]}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="health"
+                        stroke={color}
+                        strokeWidth={3}
+                        fill="url(#healthSparkGrad)"
+                        dot={{ r: 3, fill: color, stroke: "#fff", strokeWidth: 2 }}
+                        activeDot={{ r: 5, strokeWidth: 0 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             </div>
           );
         })()}
       </div>
 
       {score === null && (
-        <div className="mt-4 flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
-          <Activity className="h-3.5 w-3.5" />
-          Your scores will appear once enough dealer feedback has been collected.
+        <div className="mt-8 flex items-center gap-3 rounded-xl bg-indigo-50/50 border border-indigo-100/50 px-4 py-3.5 text-[13px] font-medium text-indigo-700">
+          <div className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+          Market intelligence gathering in progress. Real-time feedback will populate here shortly.
         </div>
       )}
     </div>
