@@ -170,6 +170,8 @@ export async function fetchVendorPulseFeed(params: {
       type: m.type,
       category: m.category,
       conversationTime: m.conversationTime,
+      npsTier: m.npsTier || m.nps_tier || null,
+      sentimentScore: m.sentimentScore ?? m.sentiment_score ?? null,
     })),
     totalCount: result.totalCount || 0,
     totalPositiveCount: result.totalPositiveCount || 0,

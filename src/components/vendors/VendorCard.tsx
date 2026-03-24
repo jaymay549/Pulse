@@ -116,6 +116,38 @@ export const VendorCard: React.FC<VendorCardProps> = ({
   knownVendors,
 }) => {
   const getTypeStyles = () => {
+    // Use NPS tier when available for more accurate labels
+    const tier = entry.npsTier;
+    if (tier) {
+      switch (tier) {
+        case "promoter":
+          return {
+            border: "border-l-2 border-l-green-500 border-border/40",
+            bg: "bg-transparent hover:bg-green-500/5",
+            badge: "text-green-700",
+            icon: <ThumbsUp className="h-3.5 w-3.5" />,
+            label: "RECOMMENDED",
+          };
+        case "detractor":
+          return {
+            border: "border-l-2 border-l-red-500 border-border/40",
+            bg: "bg-transparent hover:bg-red-500/5",
+            badge: "text-red-700",
+            icon: <AlertTriangle className="h-3.5 w-3.5" />,
+            label: "CONCERN",
+          };
+        case "passive":
+          return {
+            border: "border-l-2 border-l-slate-400 border-border/40",
+            bg: "bg-transparent hover:bg-slate-500/5",
+            badge: "text-slate-600",
+            icon: <Lightbulb className="h-3.5 w-3.5" />,
+            label: "NOTED",
+          };
+      }
+    }
+
+    // Fallback to type-based labels for mentions without NPS tier
     switch (entry.type) {
       case "warning":
       case "negative":
@@ -140,7 +172,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
           bg: "bg-transparent hover:bg-slate-500/5",
           badge: "text-slate-600",
           icon: <Lightbulb className="h-3.5 w-3.5" />,
-          label: "NEUTRAL",
+          label: "NOTED",
         };
       case "mixed":
         return {
@@ -156,7 +188,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
           bg: "bg-transparent hover:bg-primary/5",
           badge: "text-primary",
           icon: <Lightbulb className="h-3.5 w-3.5" />,
-          label: "STRATEGY",
+          label: "NOTED",
         };
     }
   };

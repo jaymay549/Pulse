@@ -18,6 +18,8 @@ export interface VendorEntry {
   type: "positive" | "warning" | "negative" | "neutral" | "mixed";
   category: string;
   conversationTime?: string;
+  npsTier?: "promoter" | "passive" | "detractor" | null;
+  sentimentScore?: number | null;
   isLocked?: boolean;
   views?: number;
   shares?: number;
