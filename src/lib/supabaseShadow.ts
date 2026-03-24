@@ -169,7 +169,8 @@ export function buildVendorProfileQuery(vendorName: string) {
       .eq("vendor_name", vendorName);
     const total = mentions?.length ?? 0;
     const pos = mentions?.filter((m) => m.type === "positive").length ?? 0;
-    return { stats: { totalMentions: total, positiveCount: pos, warningCount: total - pos } };
+    const warn = mentions?.filter((m) => m.type === "warning" || m.type === "negative").length ?? 0;
+    return { stats: { totalMentions: total, positiveCount: pos, warningCount: warn } };
   };
 }
 
