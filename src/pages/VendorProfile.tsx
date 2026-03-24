@@ -477,6 +477,13 @@ const VendorProfile = () => {
   const neutralCount = profileData.stats.totalMentions - profileData.stats.positiveCount - profileData.stats.warningCount;
   const neutralPercent = 100 - profileData.stats.positivePercent - profileData.stats.warningPercent;
 
+  // NPS tier counts from loaded mentions
+  const promoterCount = allMentions.filter((m) => m.npsTier === "promoter").length;
+  const passiveCount = allMentions.filter((m) => m.npsTier === "passive").length;
+  const detractorCount = allMentions.filter((m) => m.npsTier === "detractor").length;
+  const npsTotal = promoterCount + passiveCount + detractorCount;
+  const npsScore = npsTotal > 0 ? Math.round(((promoterCount - detractorCount) / npsTotal) * 100) : null;
+
   return (
     <>
       <Helmet>
@@ -954,9 +961,9 @@ const VendorProfile = () => {
               STATS ROW
               ══════════════════════════════════════════ */}
           {isAuthenticated && (
-          <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Sentiment Breakdown */}
-            <div className="sm:col-span-2 bg-white rounded-2xl border border-border/50 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            <div className="sm:col-span-2 lg:col-span-2 bg-white rounded-2xl border border-border/50 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
               <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 mb-4">
                 Sentiment Breakdown
               </h3>
@@ -1005,6 +1012,51 @@ const VendorProfile = () => {
                 </div>
               </div>
             </div>
+
+            {/* Dealer NPS */}
+            {npsTotal > 0 && (
+            <div className="bg-white rounded-2xl border border-border/50 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex flex-col justify-between">
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 mb-3">
+                Dealer NPS
+              </h3>
+              <span
+                className={`text-5xl sm:text-6xl font-extrabold leading-none tabular-nums ${
+                  npsScore !== null && npsScore >= 30 ? "text-emerald-600" : npsScore !== null && npsScore >= 0 ? "text-amber-500" : "text-red-500"
+                }`}
+                style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+              >
+                {npsScore !== null ? (npsScore > 0 ? `+${npsScore}` : npsScore) : "—"}
+              </span>
+              <div className="mt-3">
+                {/* NPS distribution bar */}
+                <div className="flex h-2 rounded-full overflow-hidden bg-slate-100/80 mb-2">
+                  {promoterCount > 0 && (
+                    <div
+                      className="bg-emerald-500 transition-all duration-700"
+                      style={{ width: `${(promoterCount / npsTotal) * 100}%` }}
+                    />
+                  )}
+                  {passiveCount > 0 && (
+                    <div
+                      className="bg-slate-300 transition-all duration-700"
+                      style={{ width: `${(passiveCount / npsTotal) * 100}%` }}
+                    />
+                  )}
+                  {detractorCount > 0 && (
+                    <div
+                      className="bg-red-400 transition-all duration-700"
+                      style={{ width: `${(detractorCount / npsTotal) * 100}%` }}
+                    />
+                  )}
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-400">
+                  <span className="text-emerald-600">{promoterCount} promoters</span>
+                  <span>{passiveCount} passive</span>
+                  <span className="text-red-500">{detractorCount} detractors</span>
+                </div>
+              </div>
+            </div>
+            )}
 
             {/* Total Mentions */}
             <div className="bg-white rounded-2xl border border-border/50 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex flex-col justify-between">
