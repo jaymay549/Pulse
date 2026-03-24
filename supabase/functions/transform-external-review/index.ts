@@ -76,11 +76,14 @@ Sentiment guide:
 - mixed: contains both significant praise and significant criticism
 
 Sentiment score guide:
-- 1: extremely negative / barely any positive signal
-- 2: mostly negative or weak positive
-- 3: moderate / balanced
-- 4: mostly positive or mildly negative
-- 5: extremely positive / enthusiastic endorsement, or very harsh criticism
+- 1: very mild / barely an opinion
+- 2: mild but noticeable
+- 3: moderate opinion but not a strong endorsement or complaint
+- 4: strong feeling — clear recommendation, clear complaint, specific praise or specific problem
+- 5: extreme / emphatic — "best thing ever" or "worst experience"
+If someone likes, recommends, or expresses excitement about a product → at least 4.
+If someone describes a specific problem or warns others → at least 4.
+Reserve 3 for genuinely tepid opinions like "it works fine" or "it's okay".
 
 Rules:
 - Sound like organic dealer conversation, not a formal review

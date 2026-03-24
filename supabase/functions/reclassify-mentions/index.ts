@@ -77,9 +77,24 @@ Sentiment guide:
 Score guide (intensity — how strongly the dealer feels):
 - 1: very mild / barely an opinion
 - 2: mild but noticeable
-- 3: moderate / clear opinion
-- 4: strong feeling
-- 5: extreme / emphatic
+- 3: moderate / clear opinion but not a strong endorsement or complaint
+- 4: strong feeling, clear recommendation or clear complaint
+- 5: extreme / emphatic — "best thing ever" or "worst experience"
+
+SCORING RULES FOR POSITIVES:
+- If someone says they LIKE a product ("I really like X", "X has been great") → score 4
+- If someone RECOMMENDS a product ("check out X", "would recommend X") → score 4
+- If someone expresses EXCITEMENT ("couldn't be more excited", "we're switching to X") → score 4
+- If someone reports SAVINGS or clear BENEFIT ("saving $2500/mo", "way less time") → score 4-5
+- If someone just mentions using it without opinion ("we use X") → score 2-3
+- Reserve score 3 for genuinely tepid positives — "it's okay", "it works fine"
+
+SCORING RULES FOR NEGATIVES:
+- If someone describes a specific PROBLEM ("doesn't integrate", "support is slow") → score 4
+- If someone is WARNING others ("the feedback has worried us") → score 4
+- If someone reports a COST concern with specifics ("$18k/month") → score 4
+- If it's a minor gripe or caveat ("onboarding can be bumpy") → score 3
+- Reserve score 2 for very mild negatives
 
 CRITICAL RULES:
 - The CURRENT TYPE was assigned by a human or careful AI. Treat it as correct unless the quote clearly contradicts it.
