@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { Loader2, Search, GitMerge } from "lucide-react";
+import { Loader2, Search, GitMerge, Unlink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import VendorMergeDialog from "./VendorMergeDialog";
+import VendorSplitDialog from "./VendorSplitDialog";
 import { useApprovedMentions } from "@/hooks/useVendorQueue";
 import { SENTIMENT_COLORS } from "@/types/admin";
 
@@ -23,6 +24,8 @@ const VendorView = () => {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [mergeOpen, setMergeOpen] = useState(false);
+  const [splitOpen, setSplitOpen] = useState(false);
+  const [splitVendor, setSplitVendor] = useState("");
 
   const vendors = useMemo(() => {
     if (!mentions) return [];
@@ -98,6 +101,20 @@ const VendorView = () => {
             Merge {selected.size} Vendors
           </Button>
         )}
+        {selected.size === 1 && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 text-xs border-zinc-700 text-zinc-300"
+            onClick={() => {
+              setSplitVendor(Array.from(selected)[0]);
+              setSplitOpen(true);
+            }}
+          >
+            <Unlink className="h-3 w-3 mr-1" />
+            Split Entity
+          </Button>
+        )}
         <span className="text-xs text-zinc-500">
           {filtered.length} vendor{filtered.length !== 1 ? "s" : ""}
         </span>
@@ -162,6 +179,14 @@ const VendorView = () => {
         onOpenChange={setMergeOpen}
         vendorNames={Array.from(selected)}
         onMerged={() => setSelected(new Set())}
+      />
+
+      {/* Split dialog */}
+      <VendorSplitDialog
+        open={splitOpen}
+        onOpenChange={setSplitOpen}
+        vendorName={splitVendor}
+        onSplit={() => setSelected(new Set())}
       />
     </div>
   );
