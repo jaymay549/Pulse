@@ -5,6 +5,7 @@ import ConversationView from "@/components/admin/queue/ConversationView";
 import VendorView from "@/components/admin/queue/VendorView";
 import MentionsSearchView from "@/components/admin/queue/MentionsSearchView";
 import FlaggedMentionsView from "@/components/admin/queue/FlaggedMentionsView";
+import LinkSuggestionsView from "@/components/admin/queue/LinkSuggestionsView";
 import VersionInfoPanel from "@/components/admin/queue/VersionInfoPanel";
 
 const VendorQueuePage = () => {
@@ -64,6 +65,12 @@ const VendorQueuePage = () => {
           >
             Flagged Mentions
           </TabsTrigger>
+          <TabsTrigger
+            value="links"
+            className="text-xs data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 text-zinc-500"
+          >
+            Link Suggestions
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="conversation">
@@ -77,6 +84,9 @@ const VendorQueuePage = () => {
         </TabsContent>
         <TabsContent value="flags">
           <FlaggedMentionsView />
+        </TabsContent>
+        <TabsContent value="links">
+          <LinkSuggestionsView />
         </TabsContent>
       </Tabs>
     </div>
