@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Globe, TrendingUp, TrendingDown, ThumbsUp, AlertTriangle, Loader2, Crown, Share2, CreditCard, MessageCircle, Linkedin, MapPin, CalendarCheck, MessagesSquare, ExternalLink, BotMessageSquare, Send, ArrowLeftIcon, Lock } from "lucide-react";
+import { ArrowLeft, Globe, TrendingUp, TrendingDown, ThumbsUp, AlertTriangle, Loader2, Crown, Share2, CreditCard, MessageCircle, Linkedin, MapPin, CalendarCheck, MessagesSquare, ExternalLink, BotMessageSquare, Send, ArrowLeftIcon, Lock, Info } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
@@ -1016,9 +1017,43 @@ const VendorProfile = () => {
             {/* Dealer NPS */}
             {npsTotal > 0 && (
             <div className="bg-white rounded-2xl border border-border/50 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex flex-col justify-between">
-              <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 mb-3">
-                Dealer NPS
-              </h3>
+              <div className="flex items-center gap-1.5 mb-3">
+                <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">
+                  Dealer NPS
+                </h3>
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-slate-300 hover:text-slate-500 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[260px] text-xs leading-relaxed">
+                      <p className="font-semibold mb-1">How Dealer NPS works</p>
+                      <p className="text-muted-foreground mb-2">
+                        Score = % Promoters - % Detractors. Ranges from -100 to +100.
+                      </p>
+                      <div className="space-y-1 text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                          <span><strong className="text-foreground">Promoters</strong> — strong positive mentions (enthusiastic, recommending)</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />
+                          <span><strong className="text-foreground">Passive</strong> — mild opinions, factual mentions, mixed feelings</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                          <span><strong className="text-foreground">Detractors</strong> — strong negative mentions (complaints, warnings)</span>
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t text-muted-foreground">
+                        <span className="text-emerald-600 font-medium">+30 or above</span> = strong &middot;{" "}
+                        <span className="text-amber-500 font-medium">0 to +29</span> = moderate &middot;{" "}
+                        <span className="text-red-500 font-medium">below 0</span> = needs work
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <span
                 className={`text-5xl sm:text-6xl font-extrabold leading-none tabular-nums ${
                   npsScore !== null && npsScore >= 30 ? "text-emerald-600" : npsScore !== null && npsScore >= 0 ? "text-amber-500" : "text-red-500"
