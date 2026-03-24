@@ -174,7 +174,7 @@ export function DimensionalInsights({
                 </div>
               </HoverCardTrigger>
 
-              <HoverCardContent side="bottom" align="start" className="w-80 p-0">
+              <HoverCardContent side="bottom" align="start" className="w-[calc(100vw-2rem)] sm:w-80 p-0">
                 <div className="border-b px-4 py-2.5">
                   <p className="text-sm font-semibold text-slate-900">
                     Recent {label} Mentions

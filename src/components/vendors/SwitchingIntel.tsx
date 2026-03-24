@@ -96,7 +96,7 @@ export function SwitchingIntel({
       </div>
 
       {/* Two-column grid */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Gained from — dealers who left other vendors and came here */}
         <div>
           <div className="flex items-center gap-2 mb-3">

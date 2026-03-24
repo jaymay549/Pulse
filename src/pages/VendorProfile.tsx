@@ -495,7 +495,7 @@ const VendorProfile = () => {
         <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&display=swap" rel="stylesheet" />
       </Helmet>
 
-      <div className="min-h-screen bg-[hsl(var(--vendor-bg))]">
+      <div className="min-h-screen bg-[hsl(var(--vendor-bg))] overflow-x-hidden">
         {/* Navigation Header */}
         <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
