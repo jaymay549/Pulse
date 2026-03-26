@@ -18,21 +18,11 @@ interface SalesTargetsTableProps {
   onRetrySynopsis: (signal: SalesOpportunitySignal) => void;
 }
 
-const COLUMNS: { key: SortField; label: string }[] = [
-  { key: "vendor_name", label: "Vendor" },
-  { key: "category", label: "Category" },
-  { key: "mentions_30d", label: "30d" },
-  { key: "total_mentions", label: "Total" },
-  { key: "negative_pct", label: "Neg %" },
-  { key: "nps_score", label: "NPS" },
-  { key: "health_score", label: "Health" },
-  { key: "trend_direction", label: "Trend" },
-  { key: "feature_gap_count", label: "Gaps" },
-  { key: "known_dealers", label: "Dealers" },
-  { key: "has_profile", label: "Profile" },
-  { key: "pain_score", label: "Pain" },
-  { key: "buzz_score", label: "Buzz" },
-  { key: "gap_score", label: "Gap" },
+const COLUMNS: { key: SortField; label: string; tooltip: string }[] = [
+  { key: "vendor_name", label: "Vendor", tooltip: "Vendor & Category" },
+  { key: "pain_score", label: "Opportunity", tooltip: "Pain, Buzz, and Gap Scores" },
+  { key: "trend_direction", label: "The Pulse", tooltip: "Sentiment Trend (30d)" },
+  { key: "mentions_30d", label: "Volume", tooltip: "Mentions in the last 30 days" },
 ];
 
 function compareValues(a: any, b: any, dir: SortDirection): number {
@@ -110,8 +100,9 @@ export function SalesTargetsTable({
             {COLUMNS.map((col) => (
               <th
                 key={col.key}
-                className="py-2 px-4 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider cursor-pointer hover:text-zinc-300 transition-colors select-none"
+                className="py-3 px-4 text-left text-[10px] font-mono text-zinc-500 uppercase tracking-[0.15em] cursor-pointer hover:text-zinc-300 transition-colors select-none"
                 onClick={() => handleSort(col.key)}
+                title={col.tooltip}
               >
                 <div className="flex items-center gap-1">
                   {col.label}
