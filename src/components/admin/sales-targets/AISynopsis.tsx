@@ -1,4 +1,4 @@
-import { Loader2, AlertCircle, RefreshCw, Sparkles } from "lucide-react";
+import { Loader2, AlertCircle, RefreshCw, Sparkles, Target } from "lucide-react";
 import type { SalesSynopsis } from "@/types/sales-targets";
 
 interface AISynopsisProps {
@@ -37,13 +37,36 @@ export function AISynopsis({ synopsis, isLoading, error, onRetry }: AISynopsisPr
   if (!synopsis) return null;
 
   return (
-    <div className="py-3 px-4 space-y-2">
-      <div className="flex items-center gap-2 text-xs font-medium text-zinc-500 uppercase tracking-wider">
-        <Sparkles className="h-3 w-3" />
-        AI Sales Synopsis
+    <div className="p-6 bg-zinc-950/50 border-r border-zinc-800 h-full flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-[0.2em]">
+          <Sparkles className="h-3.5 w-3.5 text-zinc-400" />
+          Strategic Briefing
+        </div>
+        <div className="h-px flex-1 bg-zinc-800 ml-4" />
       </div>
-      <p className="text-sm text-zinc-300">{synopsis.data_summary}</p>
-      <p className="text-sm text-amber-400 font-medium">{synopsis.pitch_angle}</p>
+
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <p className="text-sm text-zinc-400 leading-relaxed font-sans italic">
+            "{synopsis.data_summary}"
+          </p>
+        </div>
+
+        <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg space-y-3 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-1 opacity-20 group-hover:opacity-40 transition-opacity">
+            <Target className="h-12 w-12 text-zinc-100" />
+          </div>
+          
+          <div className="text-[10px] font-mono font-bold text-amber-500/80 uppercase tracking-widest flex items-center gap-2">
+            <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+            Pitch Angle
+          </div>
+          <p className="text-base text-zinc-100 font-bold leading-snug tracking-tight pr-8">
+            {synopsis.pitch_angle}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
