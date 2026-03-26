@@ -91,10 +91,18 @@ export function SmartSearchBar({
     if (e.key === "Enter") {
       e.preventDefault()
       if (searchQuery.trim().length > 0) {
-        setShowDropdown(false)
-        onAISubmit(searchQuery.trim())
-        setSearchQuery("")
-        onSearchChange?.("")
+        // If there are matching vendors, select the first one
+        if (filteredSuggestions.length > 0) {
+          handleSuggestionClick(filteredSuggestions[0])
+          return
+        }
+        // Otherwise, trigger AI search (pro only)
+        if (isPro) {
+          setShowDropdown(false)
+          onAISubmit(searchQuery.trim())
+          setSearchQuery("")
+          onSearchChange?.("")
+        }
       }
     } else if (e.key === "Escape") {
       setShowDropdown(false)
@@ -208,7 +216,7 @@ export function SmartSearchBar({
             )}
           </AnimatePresence>
 
-          {isPro && (
+          {isPro ? (
             <motion.div
               className="text-primary/60"
               animate={{
@@ -218,6 +226,20 @@ export function SmartSearchBar({
             >
               <Sparkles className="h-4 w-4" />
             </motion.div>
+          ) : (
+            <AnimatePresence>
+              {searchQuery.trim().length > 0 && filteredSuggestions.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 text-primary whitespace-nowrap"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span className="text-xs font-semibold">PRO</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           )}
         </div>
       </motion.div>
@@ -277,7 +299,9 @@ export function SmartSearchBar({
             >
               <p className="text-sm text-muted-foreground">
                 No vendors found for "{searchQuery}"
-                {isPro && " — press Enter to ask AI"}
+                {isPro
+                  ? " — press Enter to ask AI"
+                  : " — AI search is a Pro feature"}
               </p>
             </motion.div>
           )}
