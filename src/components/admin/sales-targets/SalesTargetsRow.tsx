@@ -58,7 +58,7 @@ export function SalesTargetsRow({
   return (
     <>
       <tr
-        className="border-b border-zinc-800/50 hover:bg-zinc-900/40 cursor-pointer transition-all duration-200 group relative"
+        className="border-b border-zinc-800/50 hover:bg-zinc-900/40 cursor-pointer transition-all duration-200 group relative target-row-hover"
         onClick={() => setExpanded(!expanded)}
       >
         <td className="py-4 px-4 min-w-[300px]">

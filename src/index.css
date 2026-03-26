@@ -185,6 +185,19 @@ All colors MUST be HSL.
     display: none;
   }
 
+  .target-row-hover {
+    @apply relative transition-all duration-300;
+  }
+
+  .target-row-hover::after {
+    content: '';
+    @apply absolute inset-0 border border-transparent pointer-events-none transition-all duration-300;
+  }
+
+  .target-row-hover:hover::after {
+    @apply border-zinc-700 shadow-[inset_0_0_20px_rgba(255,255,255,0.02)];
+  }
+
   @keyframes shimmer {
     0%, 100% {
       background-position: 200% 0;
