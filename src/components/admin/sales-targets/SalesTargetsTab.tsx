@@ -4,6 +4,7 @@ import { useSalesOpportunities } from "@/hooks/useSalesOpportunities";
 import { useSalesSynopsis } from "@/hooks/useSalesSynopsis";
 import { computeOpportunityRows } from "./scoring";
 import { SalesTargetsTable } from "./SalesTargetsTable";
+import { SalesAISearch } from "./SalesAISearch";
 
 export function SalesTargetsTab() {
   const [minMentions, setMinMentions] = useState(3);
@@ -53,6 +54,9 @@ export function SalesTargetsTab() {
           {rows.length} vendors
         </span>
       </div>
+
+      {/* AI Search */}
+      <SalesAISearch rows={rows} />
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-4 bg-zinc-900 border border-zinc-800 rounded-xl p-3">
