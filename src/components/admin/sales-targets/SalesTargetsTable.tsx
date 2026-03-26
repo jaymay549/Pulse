@@ -22,7 +22,7 @@ const COLUMNS: { key: SortField; label: string; tooltip: string }[] = [
   { key: "vendor_name", label: "Vendor", tooltip: "Vendor & Category" },
   { key: "pain_score", label: "Opportunity", tooltip: "Pain, Buzz, and Gap Scores" },
   { key: "trend_direction", label: "The Pulse", tooltip: "Sentiment Trend (30d)" },
-  { key: "mentions_30d", label: "Volume", tooltip: "Mentions in the last 30 days" },
+  { key: "mentions_30d", label: "Volume", tooltip: "Mention counts: 30 days / 90 days / all time. Sorted by 30d." },
 ];
 
 function compareValues(a: any, b: any, dir: SortDirection): number {

@@ -31,6 +31,7 @@ const MembersPage = lazy(() => import("./pages/admin/MembersPage"));
 const TrendsPage = lazy(() => import("./pages/admin/TrendsPage"));
 const DebugPage = lazy(() => import("./pages/admin/DebugPage"));
 const ClaimsPage = lazy(() => import("./pages/admin/ClaimsPage"));
+const SalesTargetsPage = lazy(() => import("./pages/admin/SalesTargetsPage"));
 const VendorDashboardPage = lazy(() => import("./pages/VendorDashboardPage"));
 const MarketIntelReport = lazy(() => import("./components/tech-stack/MarketIntelReport"));
 const VendorClaimPage = lazy(() => import("./pages/VendorClaimPage"));
@@ -91,6 +92,7 @@ const App = () => (
               <Route path="trends" element={<Suspense fallback={<AdminFallback />}><TrendsPage /></Suspense>} />
               <Route path="debug" element={<Suspense fallback={<AdminFallback />}><DebugPage /></Suspense>} />
               <Route path="claims" element={<Suspense fallback={<AdminFallback />}><ClaimsPage /></Suspense>} />
+              <Route path="sales-targets" element={<Suspense fallback={<AdminFallback />}><SalesTargetsPage /></Suspense>} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

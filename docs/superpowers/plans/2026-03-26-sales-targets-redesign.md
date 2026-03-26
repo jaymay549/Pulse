@@ -166,7 +166,7 @@ Use CSS transitions or Framer Motion for sliding in dossier sections.
 ```
 
 - [ ] **Step 3: Polish DealerSubTable with "Verified" badges**
-Add styling for status labels.
+Add styling for "Confirmed User" (green), "Likely User" (amber), and "Mentioned Only" (zinc).
 
 - [ ] **Step 4: Commit**
 ```bash

@@ -9,9 +9,7 @@ import {
   AlertTriangle,
   Clock,
   Loader2,
-  Target,
 } from "lucide-react";
-import { SalesTargetsTab } from "@/components/admin/sales-targets/SalesTargetsTab";
 
 interface DashboardStats {
   queuePending: number;
@@ -52,7 +50,7 @@ const StatCard = ({
 const AdminDashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"system" | "sales">("system");
+
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -126,85 +124,54 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-8 max-w-5xl">
-      <div>
-        <h1 className="text-xl font-bold text-zinc-100">Dashboard</h1>
-        <div className="flex gap-1 mt-3">
-          <button
-            onClick={() => setTab("system")}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              tab === "system"
-                ? "bg-zinc-800 text-zinc-100"
-                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
-            }`}
-          >
-            System
-          </button>
-          <button
-            onClick={() => setTab("sales")}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-              tab === "sales"
-                ? "bg-zinc-800 text-zinc-100"
-                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
-            }`}
-          >
-            <Target className="h-3.5 w-3.5" />
-            Sales Targets
-          </button>
+      <h1 className="text-xl font-bold text-zinc-100">Dashboard</h1>
+
+      {/* Vendor Queue */}
+      <section>
+        <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <ListChecks className="h-4 w-4" /> Vendor Queue
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCard label="Pending" value={stats.queuePending} icon={Clock} color="text-amber-400" />
+          <StatCard label="Processed" value={stats.queueProcessed} icon={CheckCircle2} color="text-green-400" />
+          <StatCard label="Failed" value={stats.queueFailed} icon={AlertTriangle} color="text-red-400" />
+          <StatCard label="Approved Mentions" value={stats.approvedMentions} icon={CheckCircle2} color="text-blue-400" />
         </div>
-      </div>
+      </section>
 
-      {tab === "system" ? (
-        <>
-          {/* Vendor Queue */}
-          <section>
-            <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <ListChecks className="h-4 w-4" /> Vendor Queue
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <StatCard label="Pending" value={stats.queuePending} icon={Clock} color="text-amber-400" />
-              <StatCard label="Processed" value={stats.queueProcessed} icon={CheckCircle2} color="text-green-400" />
-              <StatCard label="Failed" value={stats.queueFailed} icon={AlertTriangle} color="text-red-400" />
-              <StatCard label="Approved Mentions" value={stats.approvedMentions} icon={CheckCircle2} color="text-blue-400" />
-            </div>
-          </section>
+      {/* Topics */}
+      <section>
+        <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <MessageSquare className="h-4 w-4" /> Topics
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <StatCard label="Active" value={stats.topicsActive} icon={MessageSquare} color="text-green-400" />
+          <StatCard label="Rejected" value={stats.topicsRejected} icon={AlertTriangle} color="text-red-400" />
+          <StatCard label="Pinned" value={stats.topicsPinned} icon={CheckCircle2} color="text-amber-400" />
+        </div>
+      </section>
 
-          {/* Topics */}
-          <section>
-            <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" /> Topics
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              <StatCard label="Active" value={stats.topicsActive} icon={MessageSquare} color="text-green-400" />
-              <StatCard label="Rejected" value={stats.topicsRejected} icon={AlertTriangle} color="text-red-400" />
-              <StatCard label="Pinned" value={stats.topicsPinned} icon={CheckCircle2} color="text-amber-400" />
-            </div>
-          </section>
+      {/* Groups */}
+      <section>
+        <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <Radio className="h-4 w-4" /> Groups
+        </h2>
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard label="Total" value={stats.groupsTotal} icon={Radio} />
+          <StatCard label="Monitored" value={stats.groupsMonitored} icon={CheckCircle2} color="text-green-400" />
+        </div>
+      </section>
 
-          {/* Groups */}
-          <section>
-            <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Radio className="h-4 w-4" /> Groups
-            </h2>
-            <div className="grid grid-cols-2 gap-3">
-              <StatCard label="Total" value={stats.groupsTotal} icon={Radio} />
-              <StatCard label="Monitored" value={stats.groupsMonitored} icon={CheckCircle2} color="text-green-400" />
-            </div>
-          </section>
-
-          {/* Tasks */}
-          <section>
-            <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <CalendarClock className="h-4 w-4" /> Tasks
-            </h2>
-            <div className="grid grid-cols-2 gap-3">
-              <StatCard label="Active Definitions" value={stats.tasksActive} icon={CalendarClock} />
-              <StatCard label="Pending Occurrences" value={stats.occurrencesPending} icon={Clock} color="text-amber-400" />
-            </div>
-          </section>
-        </>
-      ) : (
-        <SalesTargetsTab />
-      )}
+      {/* Tasks */}
+      <section>
+        <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <CalendarClock className="h-4 w-4" /> Tasks
+        </h2>
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard label="Active Definitions" value={stats.tasksActive} icon={CalendarClock} />
+          <StatCard label="Pending Occurrences" value={stats.occurrencesPending} icon={Clock} color="text-amber-400" />
+        </div>
+      </section>
     </div>
   );
 };

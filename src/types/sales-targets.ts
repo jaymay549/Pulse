@@ -2,6 +2,7 @@ export interface SalesOpportunitySignal {
   vendor_name: string;
   total_mentions: number;
   mentions_30d: number;
+  mentions_90d: number;
   positive_count: number;
   negative_count: number;
   neutral_count: number;

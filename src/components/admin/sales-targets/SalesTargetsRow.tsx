@@ -108,13 +108,31 @@ export function SalesTargetsRow({
         </td>
 
         <td className="py-4 px-4">
-          <div className="flex flex-col">
-            <span className="text-sm font-mono font-bold text-zinc-200">
-              {row.mentions_30d}
-            </span>
-            <span className="text-[9px] uppercase text-zinc-600 font-mono">
-              30d mentions
-            </span>
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col items-center">
+              <span className="text-sm font-mono font-bold text-zinc-200">
+                {row.mentions_30d}
+              </span>
+              <span className="text-[9px] uppercase text-zinc-600 font-mono">
+                30d
+              </span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-sm font-mono font-bold text-zinc-400">
+                {row.mentions_90d}
+              </span>
+              <span className="text-[9px] uppercase text-zinc-600 font-mono">
+                90d
+              </span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-sm font-mono font-bold text-zinc-500">
+                {row.total_mentions}
+              </span>
+              <span className="text-[9px] uppercase text-zinc-600 font-mono">
+                All
+              </span>
+            </div>
           </div>
         </td>
       </tr>

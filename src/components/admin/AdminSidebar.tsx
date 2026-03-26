@@ -14,10 +14,12 @@ import {
   TrendingUp,
   Bug,
   BadgeCheck,
+  Target,
 } from "lucide-react";
 
 const navItems = [
   { to: "/admin", icon: LayoutDashboard, label: "Dashboard", end: true },
+  { to: "/admin/sales-targets", icon: Target, label: "Sales Targets" },
   { to: "/admin/chat", icon: Sparkles, label: "AI Chat" },
   { to: "/admin/queue", icon: ListChecks, label: "Vendor Queue" },
   { to: "/admin/claims", icon: BadgeCheck, label: "Claims" },

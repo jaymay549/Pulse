@@ -36,11 +36,12 @@ The Sales Targets page is an internal tool for the CDG Pulse sales team to prior
   - "Lead with:" sentence emphasized.
 - **Vital Signs (Right 60%)**: 
   - 2x4 grid of metric cards for data hidden from the main table (NPS, Health, Feature Gaps, Has Profile, etc.).
-- **Dealer Proof (Bottom 100%)**: 
-  - Dealer sub-table with "Verified" badges for confirmed users.
-  - Direct links to source mentions (if available).
+### C. Dealer Proof (Bottom 100%)
+- **Primary Evidence**: This section is the "proof" that dealers are using/talking about the vendor. It must remain visually prominent and easy to read.
+- **Verified Badging**: High-contrast, color-coded badges for "Confirmed User" (green), "Likely User" (amber), and "Mentioned Only" (zinc).
+- **Direct Proof**: Dealer names and rooftops clearly visible, with icons to source mentions where available.
 
-### C. Visual Polish
+## 4. Visual Polish
 - **Color Palette**: Deep zincs (`zinc-900`, `zinc-950`), high-contrast white text for primary data, muted `zinc-500` for secondary labels.
 - **Animations**: Sharp, fast staggered entrance (100ms offset) for dossier sections.
 
