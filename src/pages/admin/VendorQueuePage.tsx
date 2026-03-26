@@ -18,7 +18,7 @@ const VendorQueuePage = () => {
         <div>
           <h1 className="text-xl font-bold text-zinc-100">Vendor Processing Queue</h1>
           <p className="text-sm text-zinc-500 mt-1">
-            Review AI-extracted vendor mentions and approve them for the public feed.
+            Review AI-extracted vendor discussions and approve them for the public feed.
           </p>
         </div>
 
@@ -57,13 +57,13 @@ const VendorQueuePage = () => {
             value="search"
             className="text-xs data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 text-zinc-500"
           >
-            Search Mentions
+            Search Discussions
           </TabsTrigger>
           <TabsTrigger
             value="flags"
             className="text-xs data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 text-zinc-500"
           >
-            Flagged Mentions
+            Flagged Discussions
           </TabsTrigger>
           <TabsTrigger
             value="links"

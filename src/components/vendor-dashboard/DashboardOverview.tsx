@@ -122,7 +122,7 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
             Full Analysis
           </Button>
           <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm" onClick={() => onNavigate("mentions")}>
-            Manage Mentions
+            Manage Discussions
           </Button>
         </div>
       </div>
@@ -197,7 +197,7 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm font-bold flex items-center gap-2">
                         <BarChart2 className="h-4 w-4 text-indigo-500" />
-                        Mention Volume
+                        Discussion Volume
                       </CardTitle>
                       <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wider">
                         <span className="flex items-center gap-1.5 text-emerald-600">
@@ -256,7 +256,7 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
                   <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4 text-slate-400">
                     <MessageSquare className="h-6 w-6" />
                   </div>
-                  <p className="text-sm font-medium text-slate-500">No recent mentions recorded.</p>
+                  <p className="text-sm font-medium text-slate-500">No recent discussions recorded.</p>
                   <p className="text-xs text-slate-400 mt-1">Activity will appear as users interact with your brand.</p>
                 </CardContent>
               </Card>

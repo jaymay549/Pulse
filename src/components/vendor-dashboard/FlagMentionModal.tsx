@@ -63,7 +63,7 @@ export function FlagMentionModal({
           {/* Reason selection */}
           <div>
             <p className="text-sm font-medium mb-2">
-              Why are you flagging this mention?
+              Why are you flagging this discussion?
             </p>
             <div className="space-y-2">
               {FLAG_REASONS.map((r) => (
@@ -91,7 +91,7 @@ export function FlagMentionModal({
               Additional context (optional)
             </p>
             <Textarea
-              placeholder="Explain why this mention should be reviewed..."
+              placeholder="Explain why this discussion should be reviewed..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={3}
@@ -102,8 +102,8 @@ export function FlagMentionModal({
           {/* Info */}
           <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
             <p className="text-xs text-blue-800">
-              Flagged mentions are reviewed by CDG admins. You can flag up to 5
-              mentions per month. Hidden mentions still count in aggregate
+              Flagged discussions are reviewed by CDG admins. You can flag up to 5
+              discussions per month. Hidden discussions still count in aggregate
               sentiment.
             </p>
           </div>

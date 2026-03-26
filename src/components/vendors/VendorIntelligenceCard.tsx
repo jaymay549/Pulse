@@ -81,7 +81,7 @@ export function VendorIntelligenceCard({
             </p>
             <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold tracking-wide">
               <span className="text-slate-400">
-                <span className="text-slate-600">{stats.total}</span> mentions
+                <span className="text-slate-600">{stats.total}</span> discussions
               </span>
               <span className="text-emerald-600 flex items-center gap-1">
                 <span className="h-1 w-1 rounded-full bg-emerald-500" />
@@ -134,7 +134,7 @@ export function VendorIntelligenceCard({
 
         <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold tracking-wide">
           <span className="text-slate-400">
-            <span className="text-slate-600">{stats.total}</span> mentions
+            <span className="text-slate-600">{stats.total}</span> discussions
           </span>
           <span className="text-emerald-600 flex items-center gap-1">
             <span className="h-1 w-1 rounded-full bg-emerald-500" />
@@ -176,7 +176,7 @@ export function VendorIntelligenceCard({
               {parseMarkdown(intelligence.summary_text)}
             </p>
             <p className="text-[10px] text-slate-400">
-              Based on {stats.total} early mention{stats.total !== 1 ? "s" : ""}
+              Based on {stats.total} early discussion{stats.total !== 1 ? "s" : ""}
             </p>
           </div>
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded-xl">
@@ -212,7 +212,7 @@ export function VendorIntelligenceCard({
         </p>
 
         <p className="text-[10px] text-slate-400">
-          Based on {stats.total} early mention{stats.total !== 1 ? "s" : ""}
+          Based on {stats.total} early discussion{stats.total !== 1 ? "s" : ""}
         </p>
       </div>
     );

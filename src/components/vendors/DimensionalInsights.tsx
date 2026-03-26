@@ -136,7 +136,7 @@ export function DimensionalInsights({
       <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 mb-1">
         Dimensional Breakdown
       </h3>
-      <p className="text-[10px] text-slate-400 mb-4">Hover to see recent mentions</p>
+      <p className="text-[10px] text-slate-400 mb-4">Hover to see recent discussions</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {dimensions.map((dim) => {
@@ -177,12 +177,12 @@ export function DimensionalInsights({
               <HoverCardContent side="bottom" align="start" className="w-[calc(100vw-2rem)] sm:w-80 p-0">
                 <div className="border-b px-4 py-2.5">
                   <p className="text-sm font-semibold text-slate-900">
-                    Recent {label} Mentions
+                    Recent {label} Discussions
                   </p>
                 </div>
 
                 {mentions.length === 0 ? (
-                  <p className="px-4 py-3 text-xs text-slate-400">No recent mentions</p>
+                  <p className="px-4 py-3 text-xs text-slate-400">No recent discussions</p>
                 ) : (
                   <div className="max-h-60 overflow-y-auto divide-y">
                     {mentions.map((mention) => (

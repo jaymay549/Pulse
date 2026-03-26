@@ -143,12 +143,12 @@ export function HealthScoreHero({ score, history }: HealthScoreHeroProps) {
             
             <p className="max-w-md text-[14px] leading-relaxed text-slate-500 font-medium italic">
               {score === null
-                ? "Our engine is currently gathering dealer feedback. Need 5+ mentions across all dimensions to generate your first score."
+                ? "Our engine is currently gathering dealer feedback. Need 5+ discussions across all dimensions to generate your first score."
                 : score >= 75
                   ? "Your presence is outstanding. Dealers consistently report high satisfaction and product reliability."
                   : score >= 55
                     ? "Solid performance overall, with specific opportunities to improve dealer perception in key areas."
-                    : "Significant market concerns detected. Review recent mentions to address critical stability or experience issues."
+                    : "Significant market concerns detected. Review recent discussions to address critical stability or experience issues."
               }
             </p>
           </div>

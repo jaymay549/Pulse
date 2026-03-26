@@ -27,7 +27,7 @@ export function VendorDashboardLayout({ vendorName, activeSection, onNavigate, c
     intelligence: "Intelligence Hub",
     overview: "Dashboard Overview",
     segments: "Market Segments",
-    mentions: "Mentions & Feedback",
+    mentions: "Discussions & Feedback",
     intel: "Competitive Intelligence",
     dimensions: "Feature Matrix",
     "dealer-signals": "Dealer Signals",

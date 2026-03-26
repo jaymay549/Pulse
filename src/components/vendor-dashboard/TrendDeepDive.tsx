@@ -109,7 +109,7 @@ export function TrendDeepDive({ metrics, history }: TrendDeepDiveProps) {
                           <YAxis hide />
                           <Tooltip
                             contentStyle={{ borderRadius: 6, border: "1px solid #e2e8f0", fontSize: 11, padding: "4px 8px" }}
-                            formatter={(value: number) => [value, "Mentions"]}
+                            formatter={(value: number) => [value, "Discussions"]}
                           />
                           <Area
                             type="monotone"
@@ -142,7 +142,7 @@ export function TrendDeepDive({ metrics, history }: TrendDeepDiveProps) {
 
           {/* Overall volume stacked bar chart */}
           <div className="mt-6 pt-4 border-t">
-            <p className="text-xs font-medium text-slate-700 mb-2">Monthly Mention Volume</p>
+            <p className="text-xs font-medium text-slate-700 mb-2">Monthly Discussion Volume</p>
             <ResponsiveContainer width="100%" height={140}>
               <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />

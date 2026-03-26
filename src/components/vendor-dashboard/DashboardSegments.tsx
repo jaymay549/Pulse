@@ -74,7 +74,7 @@ function BucketCard({
               {bucket.bucket}
             </h3>
             <p className="mt-0.5 text-[12px] text-slate-400">
-              {bucket.mentions} mention{bucket.mentions !== 1 ? "s" : ""}
+              {bucket.mentions} discussion{bucket.mentions !== 1 ? "s" : ""}
             </p>
           </div>
 
@@ -190,7 +190,7 @@ function AxisPanel({ buckets }: { buckets: SegmentBucket[] }) {
           <span className={`font-semibold ${sentimentColor(avg)}`}>{avg}%</span> avg positive
         </span>
         <span className="text-slate-300">·</span>
-        <span>{totalMentions} attributed mention{totalMentions !== 1 ? "s" : ""}</span>
+        <span>{totalMentions} attributed discussion{totalMentions !== 1 ? "s" : ""}</span>
         <span className="text-slate-300">·</span>
         <span>{sorted.length} segment{sorted.length !== 1 ? "s" : ""}</span>
       </div>
@@ -248,7 +248,7 @@ export function DashboardSegments({ vendorName }: DashboardSegmentsProps) {
             Segment insights will appear as more dealer feedback is attributed.
           </p>
           <p className="mt-1 text-[12px] text-slate-400">
-            {intel.total_attributed} attributed mention{intel.total_attributed !== 1 ? "s" : ""} so far
+            {intel.total_attributed} attributed discussion{intel.total_attributed !== 1 ? "s" : ""} so far
           </p>
         </div>
       </div>
@@ -262,7 +262,7 @@ export function DashboardSegments({ vendorName }: DashboardSegmentsProps) {
         <h1 className="text-2xl font-semibold text-slate-900">Audience Segments</h1>
         <p className="mt-1 text-sm text-slate-500">
           How sentiment varies across different types of dealers —{" "}
-          {intel.total_attributed} attributed mention{intel.total_attributed !== 1 ? "s" : ""}
+          {intel.total_attributed} attributed discussion{intel.total_attributed !== 1 ? "s" : ""}
         </p>
         {intel.standout && (
           <p className="mt-2 text-[13px] text-slate-600 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2 inline-block">

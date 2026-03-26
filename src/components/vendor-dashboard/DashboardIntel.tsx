@@ -168,7 +168,7 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-4">
-          {/* Total Mentions */}
+          {/* Total Discussions */}
           <div className="rounded-lg border bg-slate-50 p-4">
             <div className="flex items-center gap-2">
               <span className="text-2xl font-bold text-slate-900">
@@ -176,7 +176,7 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
               </span>
               {trend && <TrendBadge trend={trend} />}
             </div>
-            <p className="mt-1 text-xs text-slate-500">Total Mentions</p>
+            <p className="mt-1 text-xs text-slate-500">Total Discussions</p>
           </div>
 
           {/* Positive % */}
@@ -203,7 +203,7 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
           Competitor Comparison
         </h2>
         <p className="mt-1 text-sm text-slate-500">
-          Vendors dealers mention alongside you
+          Vendors dealers discuss alongside you
         </p>
 
         <div className="mt-4 overflow-hidden rounded-lg border">
@@ -214,7 +214,7 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
                   Vendor
                 </th>
                 <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Mentions
+                  Discussions
                 </th>
                 <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-slate-500">
                   Positive %

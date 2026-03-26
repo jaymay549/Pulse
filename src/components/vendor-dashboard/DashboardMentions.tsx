@@ -183,12 +183,12 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
     <div className="space-y-8 pb-12 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Mentions & Response</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Discussions & Response</h1>
           <p className="text-slate-500 mt-1 font-medium">Engage with your community and monitor brand health</p>
         </div>
         <div className="flex items-center gap-2">
            <Badge className="bg-indigo-50 text-indigo-700 border-none font-bold px-3 py-1">
-             {mentions.length} TOTAL MENTIONS
+             {mentions.length} TOTAL DISCUSSIONS
            </Badge>
         </div>
       </div>
@@ -248,7 +248,7 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
                   <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100 flex gap-3">
                     <Info className="h-5 w-5 text-indigo-500 shrink-0 mt-0.5" />
                     <p className="text-[12px] leading-relaxed text-indigo-700 font-medium">
-                      Responding to mentions improves your **Customer Experience** score by up to 15%.
+                      Responding to discussions improves your **Customer Experience** score by up to 15%.
                     </p>
                   </div>
                 </div>
@@ -293,9 +293,9 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
                  <div className="h-16 w-16 rounded-full bg-white shadow-sm flex items-center justify-center mb-4 text-slate-300">
                    <MessageSquare className="h-8 w-8" />
                  </div>
-                 <h3 className="text-lg font-bold text-slate-900">No Mentions Found</h3>
+                 <h3 className="text-lg font-bold text-slate-900">No Discussions Found</h3>
                  <p className="text-slate-500 max-w-xs mx-auto mt-2">
-                   We haven't detected any community mentions for **{vendorName}** yet.
+                   We haven't detected any community discussions for **{vendorName}** yet.
                  </p>
                </CardContent>
              </Card>

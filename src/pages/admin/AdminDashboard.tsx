@@ -135,7 +135,7 @@ const AdminDashboard = () => {
           <StatCard label="Pending" value={stats.queuePending} icon={Clock} color="text-amber-400" />
           <StatCard label="Processed" value={stats.queueProcessed} icon={CheckCircle2} color="text-green-400" />
           <StatCard label="Failed" value={stats.queueFailed} icon={AlertTriangle} color="text-red-400" />
-          <StatCard label="Approved Mentions" value={stats.approvedMentions} icon={CheckCircle2} color="text-blue-400" />
+          <StatCard label="Approved Discussions" value={stats.approvedMentions} icon={CheckCircle2} color="text-blue-400" />
         </div>
       </section>
 

@@ -109,6 +109,9 @@ Below are ${mentions.length} dealer mentions about this vendor.
 
 Rules:
 - summary_text must be 2-4 sentences, substantive and specific.
+- The summary must be internally consistent. If positive mentions cite one thing (e.g., "lower costs") and warnings contradict it (e.g., "high fees"), reconcile the apparent contradiction with precision (e.g., "lower ongoing costs than legacy platforms, though setup fees drew criticism") rather than stating both as absolutes.
+- Do NOT include a statement that contradicts something else in the same summary.
+- Match tone to the actual data balance — do not force a positive spin if warnings dominate.
 - category_context should provide competitive context or be null if insufficient data.
 - Do not invent information not present in the mentions.
 - Do not mention specific dealer names or quote verbatim.

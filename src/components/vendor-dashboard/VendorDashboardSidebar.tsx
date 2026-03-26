@@ -43,7 +43,7 @@ const navGroups: NavGroup[] = [
   {
     label: "Engagement & Activity",
     items: [
-      { id: "mentions", icon: MessageSquare, label: "Mentions" },
+      { id: "mentions", icon: MessageSquare, label: "Discussions" },
       { id: "dealer-signals", icon: Users, label: "Dealer Signals" },
       { id: "demo-requests", icon: CalendarCheck, label: "Demo Requests" },
     ],

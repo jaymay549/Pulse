@@ -724,7 +724,7 @@ function MentionDisplayPolicySection() {
         `Finished in ${elapsedSec}s · ${batch} batches · ${totalUpdated} updated`
       );
       if (lastBatchMentions === 0) {
-        toast.info("No pending warning mentions matched this scope.");
+        toast.info("No pending warning discussions matched this scope.");
       } else {
         toast.success(
           `Display policy run complete: ${totalUpdated} updated across ${batch} batches`
@@ -825,12 +825,12 @@ function MentionDisplayPolicySection() {
       </div>
 
       <p className="text-[11px] text-zinc-500">
-        Tip: pick a vendor from suggestions. Family names like CDK now include mapped product-line mentions.
+        Tip: pick a vendor from suggestions. Family names like CDK now include mapped product-line discussions.
       </p>
 
       {lastResult && (
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs text-zinc-300">
-          Updated: {lastResult.updated ?? 0} · Errors: {lastResult.errors ?? 0} · Total mentions: {lastResult.total_mentions ?? 0} · Batches: {lastResult.batches ?? 0}
+          Updated: {lastResult.updated ?? 0} · Errors: {lastResult.errors ?? 0} · Total discussions: {lastResult.total_mentions ?? 0} · Batches: {lastResult.batches ?? 0}
         </div>
       )}
 

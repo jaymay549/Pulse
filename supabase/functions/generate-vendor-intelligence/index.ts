@@ -103,9 +103,15 @@ MENTIONS (${mentions.length}):\n`;
       const dim = m.dimension ? ` [${m.dimension}]` : "";
       prompt += `- [${m.type}] "${m.headline || ""}" — "${m.quote || ""}"${dim}\n`;
     }
-    prompt += `\nReturn JSON:
+    prompt += `\nRULES:
+- The summary must be internally consistent — never state something that contradicts another part of the summary.
+- Match tone to the actual data. If early feedback is mostly negative, say so honestly. If positive, say so.
+- Acknowledge limited data.
+- Professional analyst tone. Don't reference individual dealers.
+
+Return JSON:
 {
-  "summary_text": "2-3 sentence summary of early dealer feedback. Acknowledge limited data. End with a constructive or encouraging note — highlight a strength, an opportunity, or positive momentum.",
+  "summary_text": "2-3 sentence summary of early dealer feedback. Be precise: qualify claims when data is mixed rather than stating both sides as absolutes.",
   "sentiment": "positive, negative, or mixed",
   "top_dimension": "${dimensions[0] || ""}"
 }`;
@@ -139,9 +145,15 @@ ${mentions.length} dealer mentions (${positive.length} positive, ${warning.lengt
     prompt += `DIMENSIONS: ${dimensions.join(", ")}\n\n`;
   }
 
-  prompt += `Return JSON:
+  prompt += `RULES:
+- The summary must be internally consistent. If positive mentions cite "lower costs" and negative mentions cite "high fees", reconcile the apparent contradiction (e.g., "lower ongoing costs than legacy DMS platforms, though setup and migration fees drew criticism").
+- Do NOT include a statement that contradicts something else in the same summary.
+- Match the overall tone to the actual data balance. If warnings dominate, the summary should reflect that honestly — do not force a positive spin. If feedback is genuinely strong, say so.
+- Professional analyst tone. Don't quote or reference individual dealers.
+
+Return JSON:
 {
-  "summary_text": "3-4 sentence intelligence summary. Synthesize patterns — strengths, concerns, trends. Professional analyst tone. Don't quote individuals. End on a positive or forward-looking note — a key strength, improving trend, or competitive advantage.",
+  "summary_text": "3-4 sentence intelligence summary. Synthesize patterns — strengths, concerns, trends. Be precise: qualify claims when data is mixed rather than stating both sides as absolutes.",
   "sentiment": "positive, negative, or mixed",
   "trend_direction": "up, down, or stable",
   "top_dimension": "${dimensions[0] || ""}"

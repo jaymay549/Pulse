@@ -231,7 +231,7 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
 
           return (
             <div className="rounded-xl border bg-white p-6">
-              <h2 className="text-lg font-medium text-slate-900">Mentions by Dimension</h2>
+              <h2 className="text-lg font-medium text-slate-900">Discussions by Dimension</h2>
               <ResponsiveContainer width="100%" height={dimensions.length * 50 + 40}>
                 <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
@@ -267,7 +267,7 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
 
       {/* Dimensional Breakdown — 2 column grid with hover popovers */}
       <h2 className="mt-6 text-lg font-medium text-slate-900">Dimensional Breakdown</h2>
-      <p className="mt-1 text-xs text-slate-400">Hover a dimension to see recent mentions</p>
+      <p className="mt-1 text-xs text-slate-400">Hover a dimension to see recent discussions</p>
 
       <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
         {dimensions.map((dim) => {
@@ -307,12 +307,12 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
               <HoverCardContent side="bottom" align="start" className="w-96 p-0">
                 <div className="border-b px-4 py-2.5">
                   <p className="text-sm font-semibold text-slate-900">
-                    Recent {label} Mentions
+                    Recent {label} Discussions
                   </p>
                 </div>
 
                 {mentions.length === 0 ? (
-                  <p className="px-4 py-3 text-xs text-slate-400">No recent mentions</p>
+                  <p className="px-4 py-3 text-xs text-slate-400">No recent discussions</p>
                 ) : (
                   <div className="max-h-60 overflow-y-auto divide-y">
                     {mentions.map((mention) => (

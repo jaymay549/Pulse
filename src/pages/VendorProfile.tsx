@@ -7,6 +7,7 @@ import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import UpgradeModal from "@/components/UpgradeModal";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -134,6 +135,7 @@ const VendorProfile = () => {
   const [selectedProductLine, setSelectedProductLine] = useState<string | null>(null);
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
+  const [websiteDrawerOpen, setWebsiteDrawerOpen] = useState(false);
 
   // Inline vendor chat state
   const [ctaChatOpen, setCtaChatOpen] = useState(false);
@@ -315,6 +317,11 @@ const VendorProfile = () => {
     if (!profileData) return null;
     return getLogoUrl(profileData.vendorName, profileData.metadata?.website_url);
   }, [profileData, getLogoUrl]);
+  const vendorWebsiteUrl = useMemo(() => {
+    const rawUrl = profileData?.metadata?.website_url?.trim();
+    if (!rawUrl) return null;
+    return rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
+  }, [profileData?.metadata?.website_url]);
 
   useEffect(() => {
     if (!vendorName) return;
@@ -689,15 +696,14 @@ const VendorProfile = () => {
                           );
                         })()}
                     {profileData.metadata?.website_url && (
-                      <a
-                        href={profileData.metadata.website_url.startsWith("http") ? profileData.metadata.website_url : `https://${profileData.metadata.website_url}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
+                        onClick={() => setWebsiteDrawerOpen(true)}
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-primary hover:bg-primary/5 transition-colors"
                       >
                         <Globe className="h-3 w-3" />
                         Website
-                      </a>
+                      </button>
                     )}
                     {profileData.metadata?.linkedin_url && (
                       <a
@@ -936,7 +942,7 @@ const VendorProfile = () => {
               </p>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-left mb-7 text-sm text-slate-600">
                 {[
-                  "Sentiment breakdown & mention trends",
+                  "Sentiment breakdown & discussion trends",
                   "Dimensional insights (pricing, support, onboarding)",
                   "Competitive movement & switching data",
                   "Alternatives & competitors",
@@ -1034,15 +1040,15 @@ const VendorProfile = () => {
                       <div className="space-y-1 text-muted-foreground">
                         <div className="flex items-center gap-1.5">
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          <span><strong className="text-foreground">Promoters</strong> — strong positive mentions (enthusiastic, recommending)</span>
+                          <span><strong className="text-foreground">Promoters</strong> — strong positive discussions (enthusiastic, recommending)</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />
-                          <span><strong className="text-foreground">Passive</strong> — mild opinions, factual mentions, mixed feelings</span>
+                          <span><strong className="text-foreground">Passive</strong> — mild opinions, factual discussions, mixed feelings</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
-                          <span><strong className="text-foreground">Detractors</strong> — strong negative mentions (complaints, warnings)</span>
+                          <span><strong className="text-foreground">Detractors</strong> — strong negative discussions (complaints, warnings)</span>
                         </div>
                       </div>
                       <div className="mt-2 pt-2 border-t text-muted-foreground">
@@ -1096,7 +1102,7 @@ const VendorProfile = () => {
             {/* Total Mentions */}
             <div className="bg-white rounded-2xl border border-border/50 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] flex flex-col justify-between">
               <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 mb-3">
-                Total Mentions
+                Total Discussions
               </h3>
               <span
                 className="text-5xl sm:text-6xl font-extrabold text-slate-900 leading-none tabular-nums"
@@ -1201,7 +1207,7 @@ const VendorProfile = () => {
                         />
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-slate-400">{v.mention_count} mentions</span>
+                        <span className="text-[10px] text-slate-400">{v.mention_count} discussions</span>
                         <span className="text-[10px] font-medium text-emerald-600">{v.positive_percent}% positive</span>
                       </div>
                     </button>
@@ -1341,7 +1347,7 @@ const VendorProfile = () => {
                   className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900"
                   style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
                 >
-                  Community Mentions
+                  Community Discussions
                 </h2>
                 <p className="text-[11px] text-slate-400 mt-1">Real discussions from the community</p>
               </div>
@@ -1419,7 +1425,7 @@ const VendorProfile = () => {
 
             {filteredMentions.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-sm border border-border/50 p-6 sm:p-8 text-center">
-                <p className="text-sm text-slate-500">No mentions found for this vendor.</p>
+                <p className="text-sm text-slate-500">No discussions found for this vendor.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
@@ -1470,10 +1476,10 @@ const VendorProfile = () => {
               >
                 <Crown className="h-5 w-5 text-amber-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
                 <p className="text-sm text-amber-800 font-semibold mb-1">
-                  Upgrade to Pro to see all mentions
+                  Upgrade to Pro to see all discussions
                 </p>
                 <p className="text-[11px] text-amber-600/70">
-                  Pro members get unlimited access to all vendor mentions and insights
+                  Pro members get unlimited access to all vendor discussions and insights
                 </p>
               </button>
             )}
@@ -1534,6 +1540,48 @@ const VendorProfile = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Sheet open={websiteDrawerOpen} onOpenChange={setWebsiteDrawerOpen}>
+        <SheetContent side="right" className="w-screen max-w-none p-0 sm:max-w-none">
+          <div className="flex h-full flex-col">
+            <div className="flex items-center justify-between border-b px-5 py-3 pr-12">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-900">
+                  {profileData?.vendorName} Website
+                </p>
+                {vendorWebsiteUrl && (
+                  <p className="truncate text-xs text-slate-500">{vendorWebsiteUrl}</p>
+                )}
+              </div>
+              {vendorWebsiteUrl && (
+                <a
+                  href={vendorWebsiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Open in new tab
+                </a>
+              )}
+            </div>
+
+            {vendorWebsiteUrl ? (
+              <iframe
+                src={vendorWebsiteUrl}
+                title={`${profileData?.vendorName ?? "Vendor"} website`}
+                className="h-full w-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center px-6 text-sm text-slate-500">
+                Website URL is unavailable for this vendor.
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 };

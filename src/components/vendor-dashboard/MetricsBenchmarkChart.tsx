@@ -153,7 +153,7 @@ export function MetricsBenchmarkChart({ metrics, benchmarks, percentiles }: Metr
             content={
               <div className="space-y-1.5">
                 <p className="font-medium text-slate-900">Category Benchmarks</p>
-                <p>Your scores compared against the median of all vendors in your product category with 5+ qualifying mentions.</p>
+                <p>Your scores compared against the median of all vendors in your product category with 5+ qualifying discussions.</p>
                 <p className="text-slate-500">Percentile rank shows where you fall relative to peers — e.g. &ldquo;Top 25%&rdquo; means you outrank 75% of vendors in your category.</p>
               </div>
             }

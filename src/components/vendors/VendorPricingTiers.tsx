@@ -250,7 +250,7 @@ export const VendorPricingTiers: React.FC<VendorPricingTiersProps> = ({
                 <Globe className="h-4 w-4 text-primary shrink-0" />
                 <span>
                   <strong className="text-foreground">Website link</strong> on
-                  mentions
+                  discussions
                 </span>
               </li>
               <li className="flex items-center gap-2">

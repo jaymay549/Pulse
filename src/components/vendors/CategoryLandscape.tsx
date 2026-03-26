@@ -47,7 +47,7 @@ export function CategoryLandscape({
         <p className="text-sm text-muted-foreground mt-1">
           {vendors.length} vendor{vendors.length !== 1 ? "s" : ""}
           {" · "}
-          {totalMentions.toLocaleString()} mention{totalMentions !== 1 ? "s" : ""}
+          {totalMentions.toLocaleString()} discussion{totalMentions !== 1 ? "s" : ""}
         </p>
       </div>
 
@@ -85,7 +85,7 @@ export function CategoryLandscape({
                   {vendor.name}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {vendor.count} mention{vendor.count !== 1 ? "s" : ""}
+                  {vendor.count} discussion{vendor.count !== 1 ? "s" : ""}
                 </p>
               </div>
 

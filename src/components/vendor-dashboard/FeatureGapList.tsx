@@ -26,7 +26,7 @@ export function FeatureGapList({ gaps }: FeatureGapListProps) {
         </div>
         <p className="mt-2 text-xs text-slate-400">
           No recurring concerns detected yet. Recommendations appear when 2+ dealers
-          mention the same issue within 90 days.
+          discuss the same issue within 90 days.
         </p>
       </div>
     );
@@ -51,7 +51,7 @@ export function FeatureGapList({ gaps }: FeatureGapListProps) {
                 {gap.gap_label}
               </span>
               <span className="text-[11px] text-slate-400">
-                {gap.mention_count} {gap.mention_count === 1 ? "mention" : "mentions"}
+                {gap.mention_count} {gap.mention_count === 1 ? "discussion" : "discussions"}
               </span>
               <span className="text-slate-200">&middot;</span>
               <span className="text-[11px] text-slate-400">
@@ -77,7 +77,7 @@ export function FeatureGapList({ gaps }: FeatureGapListProps) {
 
             {/* Action text */}
             <p className="mt-2 text-sm text-slate-700 leading-relaxed">
-              {gap.ai_insight || "Review recent mentions to identify patterns in this area."}
+              {gap.ai_insight || "Review recent discussions to identify patterns in this area."}
             </p>
           </div>
         ))}

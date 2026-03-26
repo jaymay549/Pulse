@@ -75,10 +75,10 @@ function buildNarrative(
   const parts: string[] = [];
 
   if (stats.totalMentions === 0) {
-    return "No dealer mentions yet. Once dealers start talking about you, insights will appear here.";
+    return "No dealer discussions yet. Once dealers start talking about you, insights will appear here.";
   }
 
-  const mentionStr = `${stats.totalMentions} dealer${stats.totalMentions !== 1 ? "s" : ""} mentioned you`;
+  const mentionStr = `${stats.totalMentions} dealer discussion${stats.totalMentions !== 1 ? "s" : ""} about you`;
   parts.push(mentionStr);
 
   if (topPositive && topPositive.positive_percent >= 70) {
@@ -316,7 +316,7 @@ export function PulseBriefing({ vendorName, onNavigate }: PulseBriefingProps) {
           <div className="flex flex-wrap gap-4 sm:justify-end">
             <div className="text-center">
               <div className="text-xl font-bold text-slate-900">{stats.totalMentions}</div>
-              <div className="text-[11px] text-slate-400">Mentions</div>
+              <div className="text-[11px] text-slate-400">Discussions</div>
             </div>
             <div className="text-center">
               <div className={`text-xl font-bold ${
