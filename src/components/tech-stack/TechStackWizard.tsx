@@ -60,7 +60,6 @@ export function TechStackWizard({ open, onOpenChange }: TechStackWizardProps) {
         hasInitializedRef.current = true;
       }
     } else {
-      // Reset initialization flag when closed
       hasInitializedRef.current = false;
     }
   }, [open, techData]);
@@ -108,37 +107,33 @@ export function TechStackWizard({ open, onOpenChange }: TechStackWizardProps) {
   }, [toggleSkipMutation]);
 
   const handleAddVendor = useCallback((name: string, category: StackCategory, isCurrent: boolean) => {
-    setVendors(prev => {
-      if (prev.some(v => v.vendor_name === name && v.category === category)) return prev;
-      
-      // If it was skipped, unskip it in both state and DB
-      setSkippedCategories(prevSkipped => {
-        if (prevSkipped.includes(category)) {
-          toggleSkipMutation.mutate({ category, isSkipped: false });
-          return prevSkipped.filter(c => c !== category);
-        }
-        return prevSkipped;
-      });
+    // Check for duplicate before updating state
+    const alreadyExists = vendors.some(v => v.vendor_name === name && v.category === category);
+    if (alreadyExists) return;
 
-      const newVendor: CanvasVendor = {
-        vendor_name: name,
-        category,
-        is_current: isCurrent,
-        status: isCurrent ? "stable" : "left",
-        switching_intent: false,
-        exit_reasons: [],
-        sentiment_score: null,
-        insight_text: "",
-      };
-      
-      const next = [...prev, newVendor];
-      saveMutation.mutate({
-        vendors: [newVendor],
-        silent: true
-      });
-      return next;
+    // If it was skipped, unskip it
+    if (skippedCategories.includes(category)) {
+      setSkippedCategories(prev => prev.filter(c => c !== category));
+      toggleSkipMutation.mutate({ category, isSkipped: false });
+    }
+
+    const newVendor: CanvasVendor = {
+      vendor_name: name,
+      category,
+      is_current: isCurrent,
+      status: isCurrent ? "stable" : "left",
+      switching_intent: false,
+      exit_reasons: [],
+      sentiment_score: null,
+      insight_text: "",
+    };
+
+    setVendors(prev => [...prev, newVendor]);
+    saveMutation.mutate({
+      vendors: [newVendor],
+      silent: true
     });
-  }, [saveMutation, toggleSkipMutation]);
+  }, [vendors, skippedCategories, saveMutation, toggleSkipMutation]);
 
   const handleRemoveVendor = useCallback((name: string, category: StackCategory) => {
     setVendors(prev => {
@@ -183,7 +178,11 @@ export function TechStackWizard({ open, onOpenChange }: TechStackWizardProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-5xl p-0 gap-0 overflow-hidden max-h-[100dvh] sm:max-h-[92vh] flex flex-col bg-white [&>button.absolute]:text-white [&>button.absolute]:hover:text-yellow-300 [&>button.absolute]:z-10">
+      <DialogContent
+        className="sm:max-w-5xl p-0 gap-0 overflow-hidden max-h-[100dvh] sm:max-h-[92vh] flex flex-col bg-white [&>button.absolute]:text-white [&>button.absolute]:hover:text-yellow-300 [&>button.absolute]:z-10"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogTitle className="sr-only">Tech Stack Intelligence Builder</DialogTitle>
         <DialogDescription className="sr-only">
           Configure your current and former technology stack to unlock market intelligence reports.
@@ -237,7 +236,7 @@ export function TechStackWizard({ open, onOpenChange }: TechStackWizardProps) {
             </div>
           </div>
 
-          <div className="flex items-center sm:flex-col sm:items-end gap-2">
+          <div className="flex items-center sm:flex-col sm:items-end gap-2 pr-6">
             <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Profile Strength</span>
             <div className="flex-1 sm:flex-none w-full sm:w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden">
               <motion.div

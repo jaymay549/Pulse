@@ -44,6 +44,7 @@ export function VendorSearchCombobox({
       maxHeight: maxH > 80 ? maxH : 240,
       overflowY: "auto",
       zIndex: 9999,
+      pointerEvents: "auto" as const,
     });
   }, []);
 

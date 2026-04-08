@@ -479,9 +479,14 @@ const VendorCard = forwardRef<HTMLDivElement, {
                   value={vendor.sentiment_score || 0}
                   onChange={(e) => onUpdate({ sentiment_score: parseInt(e.target.value) })}
                   className={cn(
-                    "w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-yellow-500 transition-all focus:outline-none",
-                    vendor.sentiment_score ? "bg-slate-200" : "bg-slate-100 ring-1 ring-yellow-400/30"
+                    "w-full h-1.5 rounded-lg appearance-none cursor-pointer transition-all focus:outline-none",
+                    !vendor.sentiment_score && "ring-1 ring-blue-400/30"
                   )}
+                  style={{
+                    background: vendor.sentiment_score
+                      ? `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${((vendor.sentiment_score - 1) / 9) * 100}%, #e2e8f0 ${((vendor.sentiment_score - 1) / 9) * 100}%, #e2e8f0 100%)`
+                      : "#f1f5f9",
+                  }}
                 />
                 <div className="flex justify-between px-0.5">
                   <span className="text-[8px] text-slate-400 font-bold uppercase">Poor</span>

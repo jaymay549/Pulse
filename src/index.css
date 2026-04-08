@@ -198,6 +198,29 @@ All colors MUST be HSL.
     @apply border-zinc-700 shadow-[inset_0_0_20px_rgba(255,255,255,0.02)];
   }
 
+  /* Tech Stack satisfaction slider thumb */
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #3B82F6;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #3B82F6;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+  }
+
   @keyframes shimmer {
     0%, 100% {
       background-position: 200% 0;

@@ -208,8 +208,8 @@ export function useSaveTechStackStep() {
     onSuccess: (_, variables) => {
       if (!variables.silent) {
         toast.success("Progress saved");
+        queryClient.invalidateQueries({ queryKey: ["tech-stack"] });
       }
-      queryClient.invalidateQueries({ queryKey: ["tech-stack"] });
     },
     onError: (err: Error) => {
       toast.error(`Failed to save: ${err.message}`);
