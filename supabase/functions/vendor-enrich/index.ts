@@ -9,6 +9,34 @@ const corsHeaders = {
 
 const FIRECRAWL_BASE = "https://api.firecrawl.dev/v1";
 
+// ── Unified vendor categories (keep in sync with src/constants/vendorCategories.ts) ──
+const VALID_CATEGORIES = [
+  "dms",               // Dealer Management Systems — back-office operations (CDK, Reynolds, Tekion)
+  "crm",               // Customer Relationship Management — sales/lead management (DriveCentric, VinSolutions)
+  "inventory",         // Inventory management, pricing, appraisal tools (vAuto, VinCue, Accu-Trade)
+  "marketing",         // Digital advertising, SEO, SEM, social media marketing
+  "website",           // Dealership website platforms (Dealer Inspire, DealerOn, Dealer.com)
+  "digital-retailing", // Online buying/selling tools (Roadster, Darwin, Gubagoo)
+  "fixed-ops",         // Service, parts, recalls, repair orders
+  "ai-automation",     // AI chatbots, automation, virtual assistants (Impel, Numa, Matador)
+  "f-and-i",           // Finance & Insurance products, menu selling
+  "equity-mining",     // Data mining for trade equity opportunities
+  "desking",           // Deal structuring, desking tools
+  "call-management",   // Phone tracking, call analytics (CallRevu, Car Wars)
+  "lead-providers",    // Third-party lead generation and aggregators
+  "reputation",        // Reviews, reputation management (Podium, Birdeye)
+  "training",          // Training, consulting, 20-groups (NCM, Chris Collins)
+  "recon",             // Vehicle reconditioning workflow
+  "accounting",        // Dealership accounting software
+  "hr-payroll",        // Human resources and payroll
+  "compliance",        // Regulatory compliance, OFAC, deal auditing
+  "service-products",  // Aftermarket service contracts, warranties
+  "security",          // Vehicle tracking, lot management, security
+  "diagnostics",       // Vehicle diagnostics and inspection
+  "it-support",        // IT infrastructure, managed services, cybersecurity
+  "other",             // Doesn't fit above categories
+];
+
 interface EnrichRequest {
   vendor_names?: string[];
   batch_size?: number;
@@ -251,6 +279,11 @@ async function enrichVendor(
           if (updates.description) contextParts.push(`Description: ${updates.description}`);
           if (updates.headquarters) contextParts.push(`HQ: ${updates.headquarters}`);
 
+          const categoryList = VALID_CATEGORIES
+            .filter((c) => c !== "other")
+            .map((c) => `"${c}"`)
+            .join(", ");
+
           const prompt = `You are analyzing a vendor in the automotive dealership technology space.
 
 VENDOR: ${vendor_name}
@@ -259,11 +292,22 @@ ${contextParts.length > 0 ? `CONTEXT:\n${contextParts.join("\n")}` : ""}
 
 Generate a structured profile. Return JSON:
 {
+  "category": "Pick the single BEST category from: ${categoryList}. Only use \"other\" if the vendor truly does not fit ANY of the above.",
   "auto_summary": "2-3 sentence neutral, factual overview of what this company does for auto dealerships. No marketing fluff.",
   "auto_products": ["Key", "product", "areas"],
   "auto_segments": ["Target", "customer", "segments"],
   "auto_integrations": ["Known", "integration", "partners"]
 }
+
+CATEGORY GUIDELINES:
+- "dms" = back-office dealer management (CDK, Reynolds, Tekion). NOT the same as CRM.
+- "crm" = sales/lead management (VinSolutions, DriveCentric, Elead). NOT the same as DMS.
+- "website" = dealership website providers (Dealer Inspire, DealerOn). NOT "marketing".
+- "marketing" = advertising, SEO, SEM, social. NOT website providers.
+- "reputation" = review management, customer feedback (Podium, Birdeye).
+- "f-and-i" = finance & insurance products/tools.
+- "lead-providers" = third-party lead sources. NOT CRM.
+- Prefer a specific category over "other". Only use "other" as a last resort.
 
 If insufficient data for a field, use an empty array. Return only valid JSON.`;
 
@@ -287,6 +331,10 @@ If insufficient data for a field, use an empty array. Return only valid JSON.`;
             const rawJson = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
             if (rawJson) {
               const parsed = JSON.parse(rawJson);
+              if (parsed.category && VALID_CATEGORIES.includes(parsed.category)) {
+                updates.category = parsed.category;
+                console.log(`[${vendor_name}] Assigned category: ${parsed.category}`);
+              }
               if (parsed.auto_summary) updates.auto_summary = parsed.auto_summary;
               if (parsed.auto_products?.length) updates.auto_products = parsed.auto_products;
               if (parsed.auto_segments?.length) updates.auto_segments = parsed.auto_segments;

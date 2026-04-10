@@ -23,23 +23,31 @@ const VALID_DIMENSIONS = [
   "other",       // doesn't clearly fit the above
 ];
 
+// ── Unified vendor categories (keep in sync with src/constants/vendorCategories.ts) ──
 const VALID_CATEGORIES = [
-  "dms",               // Dealer Management Systems (CDK, Reynolds, Tekion, PBS, Frazer)
-  "crm",               // Customer Relationship Management (DriveCentric, VinSolutions, Elead)
+  "dms",               // Dealer Management Systems — back-office (CDK, Reynolds, Tekion)
+  "crm",               // Customer Relationship Management — sales/leads (DriveCentric, VinSolutions)
   "inventory",         // Inventory management, pricing, appraisal (vAuto, VinCue, Accu-Trade)
+  "marketing",         // Digital advertising, SEO, SEM, social media
+  "website",           // Dealership website platforms (Dealer Inspire, DealerOn, Dealer.com)
   "digital-retailing", // Online buying/selling tools (Roadster, Darwin, Gubagoo)
   "fixed-ops",         // Service, parts, recalls, repair orders
-  "marketing",         // Digital advertising, SEO, SEM, social media
   "ai-automation",     // AI chatbots, automation tools (Impel, Numa, Matador)
-  "call-management",   // Phone tracking, call analytics (CallRevu, Car Wars)
-  "equity-mining",     // Data mining for trade equity opportunities
   "f-and-i",           // Finance & Insurance products and tools
-  "accounting",        // Dealership accounting software
-  "training",          // Training, consulting, 20-groups (NCM, Chris Collins)
-  "website",           // Website providers (Dealer Inspire, DealerOn, Dealer.com)
-  "reputation",        // Reviews, reputation management (Podium, Birdeye)
+  "equity-mining",     // Data mining for trade equity opportunities
   "desking",           // Deal structuring, desking tools
-  "compliance",        // Compliance, regulatory tools
+  "call-management",   // Phone tracking, call analytics (CallRevu, Car Wars)
+  "lead-providers",    // Third-party lead generation and aggregators
+  "reputation",        // Reviews, reputation management (Podium, Birdeye)
+  "training",          // Training, consulting, 20-groups (NCM, Chris Collins)
+  "recon",             // Vehicle reconditioning workflow
+  "accounting",        // Dealership accounting software
+  "hr-payroll",        // Human resources and payroll
+  "compliance",        // Regulatory compliance, OFAC, deal auditing
+  "service-products",  // Aftermarket service contracts, warranties
+  "security",          // Vehicle tracking, lot management, security
+  "diagnostics",       // Vehicle diagnostics and inspection
+  "it-support",        // IT infrastructure, managed services, cybersecurity
   "other",             // Doesn't fit above categories
 ];
 

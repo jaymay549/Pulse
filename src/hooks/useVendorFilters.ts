@@ -1,34 +1,15 @@
 import { useState, useMemo, useCallback } from "react";
 import { VendorEntry } from "./useVendorReviews";
+import { VENDOR_CATEGORIES } from "@/constants/vendorCategories";
 
 export type TypeFilter = "all" | "positive" | "warning" | "negative" | "neutral" | "mixed";
 
-export interface Category {
-  id: string;
-  label: string;
-  icon: string;
-}
+import type { VendorCategory } from "@/constants/vendorCategories";
+export type Category = VendorCategory;
 
 export const categories: Category[] = [
-  { id: "all", label: "All", icon: "📊" },
-  { id: "dms", label: "DMS", icon: "💻" },
-  { id: "crm", label: "CRM", icon: "👥" },
-  { id: "digital-retailing", label: "Digital Retailing", icon: "🛒" },
-  { id: "marketing", label: "Marketing & Ads", icon: "📣" },
-  { id: "fixed-ops", label: "Fixed Ops", icon: "🔧" },
-  { id: "ai-automation", label: "AI & Automation", icon: "🤖" },
-  { id: "equity-mining", label: "Equity Mining", icon: "💎" },
-  { id: "recon", label: "Reconditioning", icon: "🚗" },
-  { id: "inventory", label: "Inventory", icon: "📦" },
-  { id: "training", label: "Training", icon: "🎓" },
-  { id: "accounting", label: "Accounting", icon: "📊" },
-  { id: "hr-payroll", label: "HR & Payroll", icon: "👥" },
-  { id: "service-products", label: "Service Products", icon: "🧴" },
-  { id: "diagnostics", label: "Diagnostics", icon: "🔍" },
-  { id: "security", label: "Security & Tracking", icon: "🔐" },
-  { id: "lead-providers", label: "Lead Providers", icon: "📞" },
-  { id: "call-management", label: "Call Management", icon: "📱" },
-  { id: "it-support", label: "IT Support", icon: "🖥️" },
+  { id: "all", label: "All", icon: "📊", aiHint: "" },
+  ...VENDOR_CATEGORIES,
 ];
 
 // Primary categories shown by default (top 6)

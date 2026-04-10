@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2, Trash2, Plus, Key, Sparkles, RefreshCw, AlertCircle, CheckCircle2, Clock, Search, Linkedin, ImageIcon, MapPin, BotMessageSquare } from "lucide-react";
+import { Loader2, Trash2, Plus, Key, Sparkles, RefreshCw, AlertCircle, CheckCircle2, Clock, Search, Linkedin, ImageIcon, MapPin, BotMessageSquare, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -180,6 +180,7 @@ function VendorIgnoresSection() {
 
 // Vendor Metadata
 const ENRICHMENT_FUNCTION_URL = "https://nsfrxtpxzdmqlezvvjgg.supabase.co/functions/v1/vendor-enrich";
+const RESOLVE_URLS_FUNCTION_URL = "https://nsfrxtpxzdmqlezvvjgg.supabase.co/functions/v1/resolve-vendor-websites";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; icon: typeof Clock }> = {
@@ -218,6 +219,9 @@ function VendorMetadataSection() {
   const [enriching, setEnriching] = useState(false);
   const [enrichingVendor, setEnrichingVendor] = useState<string | null>(null);
   const [enrichProgress, setEnrichProgress] = useState("");
+  const [resolving, setResolving] = useState(false);
+  const [resolveProgress, setResolveProgress] = useState("");
+  const [resolvingVendor, setResolvingVendor] = useState<string | null>(null);
   const stopRef = useRef(false);
 
   const loadMetadata = async () => {
@@ -238,6 +242,7 @@ function VendorMetadataSection() {
     pending: metadata.filter((m) => m.enrichment_status === "pending" || !m.enrichment_status).length,
     failed: metadata.filter((m) => m.enrichment_status === "failed").length,
     enriching: metadata.filter((m) => m.enrichment_status === "enriching").length,
+    missingUrl: metadata.filter((m) => !m.website_url).length,
   };
 
   const handleAdd = async () => {
@@ -329,7 +334,72 @@ function VendorMetadataSection() {
   const handleStopEnrich = () => {
     stopRef.current = true;
     setEnrichProgress("Stopping after current batch...");
+    setResolveProgress("Stopping after current batch...");
   };
+
+  const callResolveFunction = async (body: Record<string, unknown>) => {
+    const res = await fetch(RESOLVE_URLS_FUNCTION_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(SUPABASE_ANON_KEY
+          ? {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            }
+          : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    return res.json();
+  };
+
+  const handleResolveSingle = async (vendorName: string) => {
+    setResolvingVendor(vendorName);
+    try {
+      const result = await callResolveFunction({ vendor_names: [vendorName] });
+      if (result.resolved > 0) {
+        toast.success(`Found website for "${vendorName}"`);
+      } else {
+        toast.error(`No website found for "${vendorName}"`);
+      }
+      loadMetadata();
+    } catch {
+      toast.error("Failed to resolve website");
+    }
+    setResolvingVendor(null);
+  };
+
+  const handleResolveUrls = useCallback(async () => {
+    setResolving(true);
+    stopRef.current = false;
+    let totalResolved = 0;
+    let remaining = stats.missingUrl;
+
+    while (remaining > 0 && !stopRef.current) {
+      setResolveProgress(`Resolving URLs... ${totalResolved} done, ${remaining} remaining`);
+      try {
+        const result = await callResolveFunction({ batch_size: 15 });
+        totalResolved += result.resolved || 0;
+        remaining = result.remaining || 0;
+
+        if (result.rate_limited) {
+          setResolveProgress(`Rate limited. Waiting 30s... (${totalResolved} done)`);
+          await new Promise((r) => setTimeout(r, 30000));
+        }
+        if (result.resolved === 0 && !result.rate_limited) break;
+        loadMetadata();
+      } catch {
+        toast.error("URL resolve batch failed");
+        break;
+      }
+    }
+
+    setResolving(false);
+    setResolveProgress("");
+    toast.success(`URL resolution complete. ${totalResolved} websites found.`);
+    loadMetadata();
+  }, [stats.missingUrl]);
 
   const filtered = searchQuery
     ? metadata.filter((m) =>
@@ -344,23 +414,33 @@ function VendorMetadataSection() {
         <div>
           <h2 className="text-sm font-semibold text-zinc-300">Vendor Metadata</h2>
           <p className="text-xs text-zinc-600">
-            {stats.total} vendors — {stats.enriched} enriched, {stats.pending} pending, {stats.failed} failed
+            {stats.total} vendors — {stats.enriched} enriched, {stats.pending} pending, {stats.failed} failed, {stats.missingUrl} missing URL
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {enriching ? (
+          {enriching || resolving ? (
             <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={handleStopEnrich}>
               Stop
             </Button>
           ) : (
-            <Button
-              size="sm"
-              className="h-7 text-xs bg-violet-600 hover:bg-violet-700"
-              onClick={handleEnrichAll}
-              disabled={stats.pending === 0}
-            >
-              <Sparkles className="h-3 w-3 mr-1" /> Enrich All ({stats.pending})
-            </Button>
+            <>
+              <Button
+                size="sm"
+                className="h-7 text-xs bg-amber-600 hover:bg-amber-700"
+                onClick={handleResolveUrls}
+                disabled={stats.missingUrl === 0}
+              >
+                <Globe className="h-3 w-3 mr-1" /> Resolve URLs ({stats.missingUrl})
+              </Button>
+              <Button
+                size="sm"
+                className="h-7 text-xs bg-violet-600 hover:bg-violet-700"
+                onClick={handleEnrichAll}
+                disabled={stats.pending === 0}
+              >
+                <Sparkles className="h-3 w-3 mr-1" /> Enrich All ({stats.pending})
+              </Button>
+            </>
           )}
           <Button size="sm" variant="ghost" className="h-7 text-xs text-zinc-500" onClick={loadMetadata}>
             <RefreshCw className="h-3 w-3" />
@@ -372,6 +452,13 @@ function VendorMetadataSection() {
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-900/20 border border-violet-800/30">
           <Loader2 className="h-3 w-3 animate-spin text-violet-400" />
           <span className="text-xs text-violet-300">{enrichProgress}</span>
+        </div>
+      )}
+
+      {resolveProgress && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-900/20 border border-amber-800/30">
+          <Loader2 className="h-3 w-3 animate-spin text-amber-400" />
+          <span className="text-xs text-amber-300">{resolveProgress}</span>
         </div>
       )}
 
@@ -459,6 +546,22 @@ function VendorMetadataSection() {
                 )}
               </div>
               <div className="flex items-center gap-1 shrink-0">
+                {!m.website_url && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-1.5 text-zinc-600 hover:text-amber-400 opacity-0 group-hover:opacity-100"
+                    onClick={() => handleResolveSingle(m.vendor_name)}
+                    disabled={resolvingVendor === m.vendor_name}
+                    title="Find website URL"
+                  >
+                    {resolvingVendor === m.vendor_name ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Globe className="h-3 w-3" />
+                    )}
+                  </Button>
+                )}
                 {m.enrichment_status !== "enriched" && m.enrichment_status !== "enriching" && (
                   <Button
                     size="sm"
