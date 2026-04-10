@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2, Trash2, Plus, Key, Sparkles, RefreshCw, AlertCircle, CheckCircle2, Clock, Search, Linkedin, ImageIcon, MapPin, BotMessageSquare, Globe } from "lucide-react";
+import { Loader2, Trash2, Plus, Key, Sparkles, RefreshCw, AlertCircle, CheckCircle2, Clock, Search, Linkedin, ImageIcon, MapPin, BotMessageSquare, Globe, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -546,6 +546,20 @@ function VendorMetadataSection() {
                 )}
               </div>
               <div className="flex items-center gap-1 shrink-0">
+                <a
+                  href={`/vendors/${m.vendor_name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-1.5 text-zinc-600 hover:text-blue-400 opacity-0 group-hover:opacity-100"
+                    title="Open Pulse profile"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </Button>
+                </a>
                 {!m.website_url && (
                   <Button
                     size="sm"
