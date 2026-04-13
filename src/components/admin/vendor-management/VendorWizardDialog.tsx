@@ -9,6 +9,31 @@ import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { VendorTierBadge } from "./VendorTierBadge";
 
+function VendorAvatar({ name, logoUrl, size = "md" }: { name: string; logoUrl?: string | null; size?: "sm" | "md" }) {
+  const [broken, setBroken] = useState(false);
+  const px = size === "sm" ? "h-5 w-5" : "h-7 w-7";
+  const textSize = size === "sm" ? "text-[9px]" : "text-[10px]";
+
+  if (logoUrl && !broken) {
+    return (
+      <img
+        src={logoUrl}
+        alt=""
+        onError={() => setBroken(true)}
+        className={`${px} rounded-md object-contain bg-zinc-800 p-0.5 flex-shrink-0`}
+      />
+    );
+  }
+
+  return (
+    <div className={`${px} rounded-md bg-zinc-800 flex items-center justify-center flex-shrink-0`}>
+      <span className={`${textSize} font-semibold text-zinc-400`}>
+        {name.charAt(0).toUpperCase()}
+      </span>
+    </div>
+  );
+}
+
 interface VendorWizardDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -227,19 +252,7 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
                               : "text-zinc-300 hover:bg-zinc-800/70"
                           }`}
                         >
-                          {v.company_logo_url ? (
-                            <img
-                              src={v.company_logo_url}
-                              alt=""
-                              className="h-7 w-7 rounded-md object-contain bg-white/10 flex-shrink-0"
-                            />
-                          ) : (
-                            <div className="h-7 w-7 rounded-md bg-zinc-800 flex items-center justify-center flex-shrink-0">
-                              <span className="text-[10px] font-bold text-zinc-500">
-                                {v.vendor_name.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                          )}
+                          <VendorAvatar name={v.vendor_name} logoUrl={v.company_logo_url} />
                           <div className="min-w-0">
                             <p className="text-sm truncate">{v.vendor_name}</p>
                             {v.category && (
@@ -253,19 +266,7 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
                 </div>
                 {vendorName && selectedProfile && (
                   <div className="flex items-center gap-2 mt-1 px-1">
-                    {selectedProfile.company_logo_url ? (
-                      <img
-                        src={selectedProfile.company_logo_url}
-                        alt=""
-                        className="h-5 w-5 rounded object-contain bg-white/10"
-                      />
-                    ) : (
-                      <div className="h-5 w-5 rounded bg-zinc-800 flex items-center justify-center">
-                        <span className="text-[9px] font-bold text-zinc-500">
-                          {vendorName.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
+                    <VendorAvatar name={vendorName} logoUrl={selectedProfile.company_logo_url} size="sm" />
                     <span className="text-xs text-blue-400 flex items-center gap-1">
                       <Check className="h-3 w-3" /> {vendorName}
                     </span>
