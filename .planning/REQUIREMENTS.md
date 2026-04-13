@@ -30,13 +30,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Tier-Based Data Gating
 
-- [ ] **TIER-01**: RLS base predicate ensures vendor sees only their own data (`vendor_logins.user_id = auth.uid()`)
-- [ ] **TIER-02**: Tier 1 vendors ($12K) see market intel and positivity/ranking leaderboard within their segment
-- [ ] **TIER-03**: Tier 1 vendors cannot access action plans, "what people are saying", or actionable data segments
-- [ ] **TIER-04**: Tier 2 vendors ($25K) see all Tier 1 content plus granular dimension insights, mentions, and action plans
-- [ ] **TIER-05**: Tier gating enforced at database level via RLS policies (not just frontend)
-- [ ] **TIER-06**: Frontend renders locked/hidden sections for out-of-tier features (no data leaks via API)
-- [ ] **TIER-07**: `vendor_tier()` SECURITY DEFINER function provides tier lookup for RLS policies without circular dependency
+- [x] **TIER-01**: RLS base predicate ensures vendor sees only their own data (`vendor_logins.user_id = auth.uid()`)
+- [x] **TIER-02**: Tier 1 vendors ($12K) see market intel and positivity/ranking leaderboard within their segment
+- [x] **TIER-03**: Tier 1 vendors cannot access action plans, "what people are saying", or actionable data segments
+- [x] **TIER-04**: Tier 2 vendors ($25K) see all Tier 1 content plus granular dimension insights, mentions, and action plans
+- [x] **TIER-05**: Tier gating enforced at database level via RLS policies (not just frontend)
+- [x] **TIER-06**: Frontend renders locked/hidden sections for out-of-tier features (no data leaks via API)
+- [x] **TIER-07**: `vendor_tier()` SECURITY DEFINER function provides tier lookup for RLS policies without circular dependency
 
 ## v2 Requirements
 
@@ -93,13 +93,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ADMIN-04 | Phase 2 | Complete |
 | ADMIN-05 | Phase 2 | Complete |
 | ADMIN-06 | Phase 2 | Complete |
-| TIER-01 | Phase 3 | Pending |
-| TIER-02 | Phase 3 | Pending |
-| TIER-03 | Phase 3 | Pending |
-| TIER-04 | Phase 3 | Pending |
-| TIER-05 | Phase 3 | Pending |
-| TIER-06 | Phase 3 | Pending |
-| TIER-07 | Phase 3 | Pending |
+| TIER-01 | Phase 3 | Complete |
+| TIER-02 | Phase 3 | Complete |
+| TIER-03 | Phase 3 | Complete |
+| TIER-04 | Phase 3 | Complete |
+| TIER-05 | Phase 3 | Complete |
+| TIER-06 | Phase 3 | Complete |
+| TIER-07 | Phase 3 | Complete |
 
 **Coverage:**
 - v1 requirements: 22 total

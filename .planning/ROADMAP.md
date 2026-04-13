@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Vendor Auth Primitives** - Vendor can log in via OTP and land on the dashboard with an isolated Supabase Auth session (completed 2026-04-13)
 - [x] **Phase 2: Admin Provisioning Tools** - Sales team can create, link, and tier vendor accounts without engineering involvement (completed 2026-04-13)
-- [ ] **Phase 3: Tier-Gated Data Access** - RLS enforces T1/T2 data boundaries at the database level; frontend shows locked sections for out-of-tier features
+- [x] **Phase 3: Tier-Gated Data Access** - RLS enforces T1/T2 data boundaries at the database level; frontend shows locked sections for out-of-tier features (completed 2026-04-13)
 
 ## Phase Details
 
@@ -63,12 +63,12 @@ Plans:
   2. A Tier 2 vendor can see all T1 content plus granular dimension insights, mentions, and action plans
   3. A vendor authenticated as Vendor A cannot see Vendor B's data under any circumstances, including direct RPC calls
   4. The frontend renders locked or hidden sections for features outside the vendor's tier (no data visible, not just greyed out)
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 03-01-PLAN.md — Database migrations: vendor_tier() + auth_vendor_name() functions, vendor_mentions RLS, T2 RPC auth guards
 - [x] 03-02-PLAN.md — Frontend client dispatch: useVendorDataClient hook, update all section components to use vendorSupabase for vendor sessions
-- [ ] 03-03-PLAN.md — Frontend tier gating: sidebar T2 section filtering, VendorDashboardPage tier propagation + section render guards
+- [x] 03-03-PLAN.md — Frontend tier gating: sidebar T2 section filtering, VendorDashboardPage tier propagation + section render guards
 
 **UI hint**: yes
 
@@ -81,4 +81,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. Vendor Auth Primitives | 3/3 | Complete    | 2026-04-13 |
 | 2. Admin Provisioning Tools | 2/2 | Complete    | 2026-04-13 |
-| 3. Tier-Gated Data Access | 2/3 | In Progress|  |
+| 3. Tier-Gated Data Access | 3/3 | Complete   | 2026-04-13 |
