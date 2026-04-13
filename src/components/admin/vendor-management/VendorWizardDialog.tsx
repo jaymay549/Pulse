@@ -36,23 +36,31 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
   const { fetchWithAuth } = useClerkAuth();
   const supabase = useClerkSupabase();
 
-  const { data: vendorProfiles = [] } = useQuery<string[]>({
+  interface VendorProfile {
+    vendor_name: string;
+    company_logo_url: string | null;
+    category: string | null;
+  }
+
+  const { data: vendorProfiles = [] } = useQuery<VendorProfile[]>({
     queryKey: ["admin-vendor-profiles-list"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vendor_profiles")
-        .select("vendor_name")
+        .select("vendor_name, company_logo_url, category")
         .order("vendor_name");
       if (error) throw error;
-      return (data ?? []).map((row) => row.vendor_name);
+      return (data ?? []) as VendorProfile[];
     },
   });
 
   const filtered = useMemo(() => {
     if (!vendorSearch) return vendorProfiles.slice(0, 8);
     const q = vendorSearch.toLowerCase();
-    return vendorProfiles.filter((n) => n.toLowerCase().includes(q)).slice(0, 8);
+    return vendorProfiles.filter((v) => v.vendor_name.toLowerCase().includes(q)).slice(0, 8);
   }, [vendorSearch, vendorProfiles]);
+
+  const selectedProfile = vendorProfiles.find((v) => v.vendor_name === vendorName);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -114,7 +122,7 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
   };
 
   const isEmailValid = EMAIL_REGEX.test(email);
-  const isVendorNameValid = vendorName.trim() !== "" && vendorProfiles.includes(vendorName);
+  const isVendorNameValid = vendorName.trim() !== "" && vendorProfiles.some((v) => v.vendor_name === vendorName);
 
   const canAdvance =
     (step === 0 && isEmailValid) ||
@@ -202,33 +210,66 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
                   {showDropdown && filtered.length > 0 && (
                     <div
                       ref={dropdownRef}
-                      className="absolute z-50 top-full left-0 right-0 mt-1 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+                      className="absolute z-50 top-full left-0 right-0 mt-1 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 max-h-[260px] overflow-y-auto"
                     >
-                      {filtered.map((name) => (
+                      {filtered.map((v) => (
                         <button
-                          key={name}
+                          key={v.vendor_name}
                           type="button"
                           onClick={() => {
-                            setVendorName(name);
+                            setVendorName(v.vendor_name);
                             setVendorSearch("");
                             setShowDropdown(false);
                           }}
-                          className={`w-full text-left px-3 py-2 text-sm transition-colors ${
-                            vendorName === name
-                              ? "bg-blue-600/20 text-blue-300"
-                              : "text-zinc-300 hover:bg-zinc-800"
+                          className={`w-full text-left px-3 py-2.5 flex items-center gap-3 transition-colors ${
+                            vendorName === v.vendor_name
+                              ? "bg-blue-600/15 text-blue-300"
+                              : "text-zinc-300 hover:bg-zinc-800/70"
                           }`}
                         >
-                          {name}
+                          {v.company_logo_url ? (
+                            <img
+                              src={v.company_logo_url}
+                              alt=""
+                              className="h-7 w-7 rounded-md object-contain bg-white/10 flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="h-7 w-7 rounded-md bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                              <span className="text-[10px] font-bold text-zinc-500">
+                                {v.vendor_name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-sm truncate">{v.vendor_name}</p>
+                            {v.category && (
+                              <p className="text-[11px] text-zinc-500 truncate">{v.category}</p>
+                            )}
+                          </div>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
-                {vendorName && (
-                  <p className="text-xs text-blue-400 flex items-center gap-1">
-                    <Check className="h-3 w-3" /> {vendorName}
-                  </p>
+                {vendorName && selectedProfile && (
+                  <div className="flex items-center gap-2 mt-1 px-1">
+                    {selectedProfile.company_logo_url ? (
+                      <img
+                        src={selectedProfile.company_logo_url}
+                        alt=""
+                        className="h-5 w-5 rounded object-contain bg-white/10"
+                      />
+                    ) : (
+                      <div className="h-5 w-5 rounded bg-zinc-800 flex items-center justify-center">
+                        <span className="text-[9px] font-bold text-zinc-500">
+                          {vendorName.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <span className="text-xs text-blue-400 flex items-center gap-1">
+                      <Check className="h-3 w-3" /> {vendorName}
+                    </span>
+                  </div>
                 )}
               </div>
             )}
