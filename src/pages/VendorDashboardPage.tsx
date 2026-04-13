@@ -115,6 +115,14 @@ export default function VendorDashboardPage() {
       : ownVendorProfile;
   const vendorName = vendorProfile?.vendor_name ?? "";
 
+  // Extract tier from vendorLoginProfile (vendor session only).
+  // undefined in admin mode — admin always sees all sections.
+  const vendorTier = vendorLoginProfile?.tier;
+
+  // isT2 is true when admin mode (undefined tier) or tier_2 vendor.
+  // T2 section components only mount when this is true.
+  const isT2 = !vendorTier || vendorTier === "tier_2";
+
   // Must be called before any early returns to satisfy React's rules of hooks.
   // React Query cache shares data with VendorCommandCenter (same queryKey).
   const { data: dashboardIntel } = useVendorIntelligenceDashboard(vendorName);
@@ -158,7 +166,7 @@ export default function VendorDashboardPage() {
 
   return (
     <>
-      <VendorDashboardLayout vendorName={vendorName} activeSection={activeSection} onNavigate={setActiveSection}>
+      <VendorDashboardLayout vendorName={vendorName} activeSection={activeSection} onNavigate={setActiveSection} tier={vendorTier}>
         <div className="max-w-5xl">
           {isAdminMode && (
             <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-800">
@@ -174,14 +182,14 @@ export default function VendorDashboardPage() {
           {activeSection === "intelligence" && <VendorCommandCenter vendorName={vendorName} />}
           {activeSection === "overview" && <DashboardOverview vendorName={vendorName} onNavigate={setActiveSection} />}
           {activeSection === "segments" && <DashboardSegments vendorName={vendorName} />}
-          {activeSection === "mentions" && <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfile.id} />}
+          {activeSection === "mentions" && isT2 && <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfile.id} />}
           {activeSection === "profile" && <DashboardEditProfile vendorProfileId={isAdminMode ? vendorProfile.id : undefined} />}
           {activeSection === "intel" && <DashboardIntel vendorName={vendorName} />}
-          {activeSection === "dimensions" && <DashboardDimensions vendorName={vendorName} />}
-          {activeSection === "demo-requests" && <DashboardDemoRequests vendorName={vendorName} />}
+          {activeSection === "dimensions" && isT2 && <DashboardDimensions vendorName={vendorName} />}
+          {activeSection === "demo-requests" && isT2 && <DashboardDemoRequests vendorName={vendorName} />}
           {activeSection === "screenshots" && <DashboardScreenshots vendorName={vendorName} />}
           {activeSection === "categories" && <DashboardCategories vendorName={vendorName} />}
-          {activeSection === "dealer-signals" && <DashboardDealerSignals vendorName={vendorName} />}
+          {activeSection === "dealer-signals" && isT2 && <DashboardDealerSignals vendorName={vendorName} />}
         </div>
       </VendorDashboardLayout>
 
