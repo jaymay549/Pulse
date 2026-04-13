@@ -63,7 +63,14 @@ Plans:
   2. A Tier 2 vendor can see all T1 content plus granular dimension insights, mentions, and action plans
   3. A vendor authenticated as Vendor A cannot see Vendor B's data under any circumstances, including direct RPC calls
   4. The frontend renders locked or hidden sections for features outside the vendor's tier (no data visible, not just greyed out)
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Database migrations: vendor_tier() + auth_vendor_name() functions, vendor_mentions RLS, T2 RPC auth guards
+- [ ] 03-02-PLAN.md — Frontend client dispatch: useVendorDataClient hook, update all section components to use vendorSupabase for vendor sessions
+- [ ] 03-03-PLAN.md — Frontend tier gating: sidebar T2 section filtering, VendorDashboardPage tier propagation + section render guards
+
+**UI hint**: yes
 
 ## Progress
 
@@ -74,4 +81,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. Vendor Auth Primitives | 3/3 | Complete    | 2026-04-13 |
 | 2. Admin Provisioning Tools | 2/2 | Complete    | 2026-04-13 |
-| 3. Tier-Gated Data Access | 0/TBD | Not started | - |
+| 3. Tier-Gated Data Access | 0/3 | Not started | - |
