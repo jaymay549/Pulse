@@ -12,14 +12,12 @@ Vendors can securely log in via magic link and see only the data their tier perm
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Vendor auth via Supabase magic link (separate from Clerk) — Validated in Phase 1: Vendor Auth Primitives
+- [x] Vendor session management and protected routes — Validated in Phase 1: Vendor Auth Primitives
+- [x] Nav button for vendor login (next to admin, for testing) — Validated in Phase 1: Vendor Auth Primitives
+- [x] Vendors land on existing /vendor-dashboard after auth — Validated in Phase 1: Vendor Auth Primitives
 
 ### Active
-
-- [ ] Vendor auth via Supabase magic link (separate from Clerk)
-- [ ] Vendor session management and protected routes
-- [ ] Nav button for vendor login (next to admin, for testing)
-- [ ] Vendors land on existing /vendor-dashboard after auth
 - [ ] Admin panel: create vendor login credentials
 - [ ] Admin panel: match vendor to existing vendor profile
 - [ ] Admin panel: set vendor tier (Unverified / Tier 1 / Tier 2)
@@ -78,4 +76,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-13 after initialization*
+*Last updated: 2026-04-13 after Phase 1 completion*
