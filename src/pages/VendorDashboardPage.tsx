@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, ShieldCheck } from "lucide-react";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
+import { useVendorSupabaseAuth } from "@/hooks/useVendorSupabaseAuth";
+import { vendorSupabase } from "@/integrations/supabase/vendorClient";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -32,6 +34,7 @@ interface VendorProfileRow {
 export default function VendorDashboardPage() {
   const supabase = useClerkSupabase();
   const { user, isAuthenticated, isAdmin, isLoading: authLoading, getToken } = useClerkAuth();
+  const { isAuthenticated: isVendorAuth, user: vendorUser } = useVendorSupabaseAuth();
   const [activeSection, setActiveSection] = useState<DashboardSection>("intelligence");
   const [searchParams] = useSearchParams();
 
@@ -86,8 +89,30 @@ export default function VendorDashboardPage() {
     enabled: isAuthenticated && !!user?.id && !isAdminMode,
   });
 
-  const isLoading = isAdminMode ? adminLoading : ownLoading;
-  const vendorProfile = isAdminMode ? adminVendorProfile : ownVendorProfile;
+  // Vendor Supabase Auth: resolve vendor name from vendor_logins table
+  const { data: vendorLoginProfile, isLoading: vendorLoginLoading } = useQuery({
+    queryKey: ["vendor-login-profile", vendorUser?.id],
+    queryFn: async () => {
+      const { data, error } = await vendorSupabase
+        .from("vendor_logins")
+        .select("vendor_name, tier")
+        .eq("user_id", vendorUser!.id)
+        .maybeSingle();
+      if (error) {
+        console.error("[VendorAuth] vendor_logins lookup error:", error);
+        throw error;
+      }
+      return data;
+    },
+    enabled: isVendorAuth && !!vendorUser?.id && !isAdminMode && !isAuthenticated,
+  });
+
+  const isLoading = isAdminMode ? adminLoading : (isVendorAuth && !isAuthenticated ? vendorLoginLoading : ownLoading);
+  const vendorProfile = isAdminMode
+    ? adminVendorProfile
+    : (isVendorAuth && !isAuthenticated && vendorLoginProfile)
+      ? { id: "vendor-session", vendor_name: vendorLoginProfile.vendor_name, is_approved: true }
+      : ownVendorProfile;
   const vendorName = vendorProfile?.vendor_name ?? "";
 
   // Must be called before any early returns to satisfy React's rules of hooks.
@@ -127,7 +152,7 @@ export default function VendorDashboardPage() {
     );
   }
 
-  if (!isAuthenticated || !vendorProfile) {
+  if ((!isAuthenticated && !isVendorAuth) || !vendorProfile) {
     return <Navigate to="/vendors" replace />;
   }
 
