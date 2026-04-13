@@ -114,11 +114,7 @@ const Pricing = () => {
             <ul className="space-y-3 mb-8 flex-grow">
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span className="text-foreground/80 font-medium">Everything in Community, plus:</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span className="text-foreground/80"><strong>Focused chats:</strong> Topic-based groups (Rural, Urban, AI, Fixed Ops, and more)</span>
+                <span className="text-foreground/80"><strong>Focused chats:</strong> Topic-based groups (Fixed Ops, AI, Rural, Urban, and more)</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
@@ -126,7 +122,11 @@ const Pricing = () => {
               </li>
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span className="text-foreground/80"><strong>Raw vendor intel:</strong> Real reviews and concerns from dealers who've used the tools</span>
+                <span className="text-foreground/80"><strong>Live benchmarking:</strong> Compare your store's numbers and processes against other operators in real time</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-foreground/80"><strong>Raw vendor intel:</strong> Access 2,300+ real dealer reviews and warnings on the tools you're evaluating</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
@@ -179,6 +179,7 @@ const Pricing = () => {
                 <div className="text-5xl font-extrabold text-foreground tracking-tight">$1</div>
                 <div className="text-foreground/70">/month</div>
               </div>
+              <div className="text-sm text-foreground/70 mb-1">billed annually ($12)</div>
               <Dialog>
                 <DialogTrigger asChild>
                   <button className="text-xs text-primary hover:underline cursor-pointer mb-2">
@@ -212,23 +213,19 @@ const Pricing = () => {
               </li>
               <li className="flex items-start gap-3 opacity-50">
                 <X className="h-5 w-5 text-foreground/50 mt-0.5 flex-shrink-0" />
-                <span className="text-foreground/60 line-through">Raw vendor intel</span>
-              </li>
-              <li className="flex items-start gap-3 opacity-50">
-                <X className="h-5 w-5 text-foreground/50 mt-0.5 flex-shrink-0" />
-                <span className="text-foreground/60 line-through">Monthly roundtables</span>
-              </li>
-              <li className="flex items-start gap-3 opacity-50">
-                <X className="h-5 w-5 text-foreground/50 mt-0.5 flex-shrink-0" />
-                <span className="text-foreground/60 line-through">Network insights</span>
-              </li>
-              <li className="flex items-start gap-3 opacity-50">
-                <X className="h-5 w-5 text-foreground/50 mt-0.5 flex-shrink-0" />
                 <span className="text-foreground/60 line-through">OEM dealer chats</span>
               </li>
               <li className="flex items-start gap-3 opacity-50">
                 <X className="h-5 w-5 text-foreground/50 mt-0.5 flex-shrink-0" />
-                <span className="text-foreground/60 line-through">Private dealer circles</span>
+                <span className="text-foreground/60 line-through">Live benchmarking</span>
+              </li>
+              <li className="flex items-start gap-3 opacity-50">
+                <X className="h-5 w-5 text-foreground/50 mt-0.5 flex-shrink-0" />
+                <span className="text-foreground/60 line-through">2,300+ vendor reviews</span>
+              </li>
+              <li className="flex items-start gap-3 opacity-50">
+                <X className="h-5 w-5 text-foreground/50 mt-0.5 flex-shrink-0" />
+                <span className="text-foreground/60 line-through">Monthly roundtables</span>
               </li>
             </ul>
             
@@ -323,6 +320,10 @@ const Pricing = () => {
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
                 <span className="text-white/90"><strong>Elite network:</strong> Carefully curated community with our top dealers where partnerships and deals happen regularly</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
+                <span className="text-white/90"><strong>Personal concierge:</strong> A dedicated point of contact for white-glove onboarding, introductions, and ongoing support</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
