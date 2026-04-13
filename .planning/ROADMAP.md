@@ -28,7 +28,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. An unauthenticated user navigating directly to `/vendor-dashboard` is redirected to `/vendor-login`
   4. An admin user (Clerk-authenticated) can still access `/vendor-dashboard` without a vendor session (existing behavior preserved)
   5. An expired or invalid OTP shows a clear error with a "request a new link" call to action; an unknown email (not provisioned) shows a "contact your sales rep" message
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Vendor auth foundation: isolated Supabase client, useVendorSupabaseAuth hook, vendor_logins migration
+- [ ] 01-02-PLAN.md — Vendor login page (two-step email/OTP flow) and nav entry point
+- [ ] 01-03-PLAN.md — VendorAuthGuard, route wiring, VendorDashboardPage dual-auth integration
+
 **UI hint**: yes
 
 ### Phase 2: Admin Provisioning Tools
@@ -61,6 +67,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Vendor Auth Primitives | 0/TBD | Not started | - |
+| 1. Vendor Auth Primitives | 0/3 | Planning complete | - |
 | 2. Admin Provisioning Tools | 0/TBD | Not started | - |
 | 3. Tier-Gated Data Access | 0/TBD | Not started | - |
