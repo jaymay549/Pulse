@@ -80,9 +80,9 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
   });
 
   const filtered = useMemo(() => {
-    if (!vendorSearch) return vendorProfiles.slice(0, 8);
+    if (!vendorSearch) return [];
     const q = vendorSearch.toLowerCase();
-    return vendorProfiles.filter((v) => v.vendor_name.toLowerCase().includes(q)).slice(0, 8);
+    return vendorProfiles.filter((v) => v.vendor_name.toLowerCase().includes(q)).slice(0, 3);
   }, [vendorSearch, vendorProfiles]);
 
   const selectedProfile = vendorProfiles.find((v) => v.vendor_name === vendorName);
