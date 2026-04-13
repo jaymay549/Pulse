@@ -13,7 +13,7 @@ Three phases that mirror three hard dependencies: vendors can't be provisioned u
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Vendor Auth Primitives** - Vendor can log in via OTP and land on the dashboard with an isolated Supabase Auth session (completed 2026-04-13)
-- [ ] **Phase 2: Admin Provisioning Tools** - Sales team can create, link, and tier vendor accounts without engineering involvement
+- [x] **Phase 2: Admin Provisioning Tools** - Sales team can create, link, and tier vendor accounts without engineering involvement (completed 2026-04-13)
 - [ ] **Phase 3: Tier-Gated Data Access** - RLS enforces T1/T2 data boundaries at the database level; frontend shows locked sections for out-of-tier features
 
 ## Phase Details
@@ -46,11 +46,11 @@ Plans:
   2. The admin vendor list displays each vendor account with a color-coded tier badge (Unverified / T1 / T2) visible at a glance
   3. Admin can resend an OTP to an existing vendor with one click from the vendor list
   4. The `vendor_logins` table record correctly links the Supabase Auth UUID to the vendor profile and tier after provisioning
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 02-01-PLAN.md — Backend: provision-vendor Edge Function + admin_list_vendor_logins RPC migration
-- [ ] 02-02-PLAN.md — Frontend: Vendor Management admin page with data table, 4-step wizard, sidebar + route wiring
+- [x] 02-02-PLAN.md — Frontend: Vendor Management admin page with data table, 4-step wizard, sidebar + route wiring
 
 **UI hint**: yes
 
@@ -73,5 +73,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Vendor Auth Primitives | 3/3 | Complete    | 2026-04-13 |
-| 2. Admin Provisioning Tools | 1/2 | In Progress|  |
+| 2. Admin Provisioning Tools | 2/2 | Complete   | 2026-04-13 |
 | 3. Tier-Gated Data Access | 0/TBD | Not started | - |
