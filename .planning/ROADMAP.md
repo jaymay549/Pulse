@@ -73,5 +73,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Vendor Auth Primitives | 3/3 | Complete    | 2026-04-13 |
-| 2. Admin Provisioning Tools | 2/2 | Complete   | 2026-04-13 |
+| 2. Admin Provisioning Tools | 2/2 | Complete    | 2026-04-13 |
 | 3. Tier-Gated Data Access | 0/TBD | Not started | - |
