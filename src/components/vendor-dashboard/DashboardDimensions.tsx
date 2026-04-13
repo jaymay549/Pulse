@@ -13,7 +13,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { useClerkSupabase } from "@/hooks/useClerkSupabase";
+import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { VENDOR_DIMENSIONS } from "@/types/admin";
 import type { VendorDimension } from "@/hooks/useSupabaseVendorData";
 import {
@@ -92,7 +92,7 @@ function TypeBadge({ type }: { type: string }) {
 }
 
 export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): JSX.Element {
-  const supabase = useClerkSupabase();
+  const supabase = useVendorDataClient();
 
   // Fetch dimension aggregates
   const { data: dimensions, isLoading: dimensionsLoading } = useQuery<VendorDimension[]>({

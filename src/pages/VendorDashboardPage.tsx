@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Navigate, useSearchParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, ShieldCheck } from "lucide-react";
-import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
+import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useVendorSupabaseAuth } from "@/hooks/useVendorSupabaseAuth";
 import { vendorSupabase } from "@/integrations/supabase/vendorClient";
 
@@ -32,7 +32,7 @@ interface VendorProfileRow {
 }
 
 export default function VendorDashboardPage() {
-  const supabase = useClerkSupabase();
+  const clerkSupabase = useClerkSupabase();
   const { user, isAuthenticated, isAdmin, isLoading: authLoading, getToken } = useClerkAuth();
   const { isAuthenticated: isVendorAuth, user: vendorUser } = useVendorSupabaseAuth();
   const [activeSection, setActiveSection] = useState<DashboardSection>("intelligence");
@@ -77,7 +77,7 @@ export default function VendorDashboardPage() {
   const { data: ownVendorProfile, isLoading: ownLoading } = useQuery({
     queryKey: ["my-vendor-profile", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await clerkSupabase
         .from("vendor_profiles")
         .select("id, vendor_name, is_approved")
         .eq("user_id", user!.id)
@@ -178,7 +178,7 @@ export default function VendorDashboardPage() {
           {activeSection === "profile" && <DashboardEditProfile vendorProfileId={isAdminMode ? vendorProfile.id : undefined} />}
           {activeSection === "intel" && <DashboardIntel vendorName={vendorName} />}
           {activeSection === "dimensions" && <DashboardDimensions vendorName={vendorName} />}
-          {activeSection === "demo-requests" && <DashboardDemoRequests vendorName={vendorName} supabase={supabase} />}
+          {activeSection === "demo-requests" && <DashboardDemoRequests vendorName={vendorName} />}
           {activeSection === "screenshots" && <DashboardScreenshots vendorName={vendorName} />}
           {activeSection === "categories" && <DashboardCategories vendorName={vendorName} />}
           {activeSection === "dealer-signals" && <DashboardDealerSignals vendorName={vendorName} />}
