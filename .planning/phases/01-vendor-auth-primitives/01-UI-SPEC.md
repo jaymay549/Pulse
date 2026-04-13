@@ -55,11 +55,13 @@ Source: `tailwind.config.ts` (Inter/JetBrains Mono), `index.css` (headings use `
 | Role | Size | Weight | Line Height | Notes |
 |------|------|--------|-------------|-------|
 | Body | 14px | 400 (regular) | 1.5 | Form help text, error messages, descriptions |
-| Label | 14px | 600 (semibold) | 1.4 | Form field labels, nav link text |
+| Label | 14px | 400 (regular) | 1.4 | Form field labels, nav link text — use `font-normal` |
 | Heading | 20px | 900 (black) | 1.2 | Login page card title ("Vendor Portal") |
 | Display | 28px | 900 (black) | 1.2 | Reserved — not used in Phase 1 |
 
-OTP digits: JetBrains Mono, 20px, weight 600 — use `font-mono text-xl font-semibold` on `InputOTPSlot` wrapper.
+OTP digits: JetBrains Mono, 20px, weight 900 — use `font-mono text-xl font-black` on `InputOTPSlot` wrapper. Monospaced face provides sufficient visual distinction without requiring a third weight.
+
+Declared weights: **400 (regular)** and **900 (black)** only.
 
 ---
 
@@ -122,6 +124,8 @@ Loading state layout mirrors `AdminGuard`: `min-h-screen flex items-center justi
 ---
 
 ## Layout Specification
+
+Primary visual anchor: the full-width "Send Code" / "Verify Code" CTA button, which occupies the bottom of the card and draws the eye to the single available action at each step.
 
 ### VendorLoginPage
 
