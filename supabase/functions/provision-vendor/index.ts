@@ -7,11 +7,11 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-organization-id",
 };
 
-function verifyAdmin(token: string): { isAdmin: boolean; userId: string } {
+function parseToken(token: string): { userId: string; jwtAdmin: boolean } {
   const payload = JSON.parse(atob(token.split(".")[1]));
   const userId = payload.sub || "";
-  const isAdmin = payload.user_role === "admin";
-  return { isAdmin, userId };
+  const jwtAdmin = payload.user_role === "admin";
+  return { userId, jwtAdmin };
 }
 
 const VALID_TIERS = ["unverified", "tier_1", "tier_2"];
@@ -29,7 +29,22 @@ serve(async (req) => {
     const authToken = _auth_token || req.headers.get("Authorization")?.replace("Bearer ", "");
     if (!authToken) throw new Error("Missing auth token");
 
-    const { isAdmin, userId } = verifyAdmin(authToken);
+    const { userId, jwtAdmin } = parseToken(authToken);
+
+    // Check JWT claim first, then fall back to admin_clerk_users table
+    let isAdmin = jwtAdmin;
+    if (!isAdmin) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const adminCheck = createClient(supabaseUrl, supabaseServiceKey);
+      const { data } = await adminCheck
+        .from("admin_clerk_users")
+        .select("clerk_user_id")
+        .eq("clerk_user_id", userId)
+        .maybeSingle();
+      isAdmin = !!data;
+    }
+
     if (!isAdmin) {
       throw new Error(
         `permission denied: admin role required (user: ${userId}).`
