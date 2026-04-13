@@ -46,10 +46,10 @@ Plans:
   2. The admin vendor list displays each vendor account with a color-coded tier badge (Unverified / T1 / T2) visible at a glance
   3. Admin can resend an OTP to an existing vendor with one click from the vendor list
   4. The `vendor_logins` table record correctly links the Supabase Auth UUID to the vendor profile and tier after provisioning
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 02-01-PLAN.md — Backend: provision-vendor Edge Function + admin_list_vendor_logins RPC migration
+- [x] 02-01-PLAN.md — Backend: provision-vendor Edge Function + admin_list_vendor_logins RPC migration
 - [ ] 02-02-PLAN.md — Frontend: Vendor Management admin page with data table, 4-step wizard, sidebar + route wiring
 
 **UI hint**: yes
@@ -73,5 +73,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Vendor Auth Primitives | 3/3 | Complete    | 2026-04-13 |
-| 2. Admin Provisioning Tools | 0/2 | Planning complete | - |
+| 2. Admin Provisioning Tools | 1/2 | In Progress|  |
 | 3. Tier-Gated Data Access | 0/TBD | Not started | - |

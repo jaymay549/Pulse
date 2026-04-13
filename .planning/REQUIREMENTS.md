@@ -21,12 +21,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Admin Vendor Management
 
-- [ ] **ADMIN-01**: Admin can create vendor login credentials by entering a vendor email address
+- [x] **ADMIN-01**: Admin can create vendor login credentials by entering a vendor email address
 - [ ] **ADMIN-02**: Admin can link a new vendor login to an existing vendor profile from a searchable list
 - [ ] **ADMIN-03**: Admin can set vendor tier (Unverified / Tier 1 / Tier 2) during or after provisioning
 - [ ] **ADMIN-04**: Admin vendor list shows color-coded tier badges for quick visual identification
 - [ ] **ADMIN-05**: Admin can resend magic link to a vendor with one click
-- [ ] **ADMIN-06**: `vendor_logins` table links Supabase Auth user ID (UUID) to vendor profile and tier
+- [x] **ADMIN-06**: `vendor_logins` table links Supabase Auth user ID (UUID) to vendor profile and tier
 
 ### Tier-Based Data Gating
 
@@ -87,12 +87,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-07 | Phase 1 | Pending |
 | AUTH-08 | Phase 1 | Pending |
 | AUTH-09 | Phase 1 | Pending |
-| ADMIN-01 | Phase 2 | Pending |
+| ADMIN-01 | Phase 2 | Complete |
 | ADMIN-02 | Phase 2 | Pending |
 | ADMIN-03 | Phase 2 | Pending |
 | ADMIN-04 | Phase 2 | Pending |
 | ADMIN-05 | Phase 2 | Pending |
-| ADMIN-06 | Phase 2 | Pending |
+| ADMIN-06 | Phase 2 | Complete |
 | TIER-01 | Phase 3 | Pending |
 | TIER-02 | Phase 3 | Pending |
 | TIER-03 | Phase 3 | Pending |
