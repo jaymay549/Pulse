@@ -1494,7 +1494,6 @@ const VendorsV2 = () => {
                         isFullAccess={accessLevel.unlimitedAccess}
                         isAuthenticated={isAuthenticated}
                         vendorResponse={vendorResponse}
-                        vendorWebsite={vendorWebsiteUrl}
                         vendorLogo={vendorLogoUrl}
                         onCardClick={(e) => setSelectedCard(e)}
                         onVendorClick={handleVendorSelect}
@@ -1502,7 +1501,7 @@ const VendorsV2 = () => {
                           if (isAuthenticated) {
                             setShowUpgradeModal(true);
                           } else {
-                            window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
+                            setShowGainAccess(true);
                           }
                         }}
                       />
@@ -1518,7 +1517,7 @@ const VendorsV2 = () => {
                         if (isAuthenticated) {
                           setShowUpgradeModal(true);
                         } else {
-                          window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
+                          setShowGainAccess(true);
                         }
                       }}
                     />
@@ -1671,11 +1670,6 @@ const VendorsV2 = () => {
         onShare={(entry) => setSelectedCardForShare(entry)}
         onVendorSelect={handleVendorSelect}
         onCategorySelect={handleCategoryChange}
-        vendorWebsite={
-          selectedCard?.vendorName
-            ? getWebsiteForVendor(selectedCard.vendorName)
-            : null
-        }
         vendorLogo={
           selectedCard?.vendorName
             ? getVendorLogoUrl(

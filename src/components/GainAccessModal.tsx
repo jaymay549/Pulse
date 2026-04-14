@@ -27,8 +27,8 @@ const GainAccessModal = ({ isOpen, onClose }: GainAccessModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-        <DialogHeader className="text-center mb-4">
+      <DialogContent className="sm:max-w-5xl max-h-[90vh] flex flex-col p-4 sm:p-6">
+        <DialogHeader className="text-center mb-4 flex-shrink-0">
           <div className="flex items-center justify-center gap-3">
             <DialogTitle className="text-2xl sm:text-4xl font-bold text-foreground">
               Choose Your Membership
@@ -49,9 +49,9 @@ const GainAccessModal = ({ isOpen, onClose }: GainAccessModalProps) => {
           </p>
         </DialogHeader>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-3 overflow-y-auto flex-1 min-h-0">
           {/* Pro Tier */}
-          <Card className="p-6 border-2 border-primary relative bg-primary/5 flex flex-col">
+          <Card className="p-6 border-2 border-primary relative bg-primary/5 flex flex-col max-h-full">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-secondary text-white px-4 py-1 rounded-full text-sm font-bold uppercase tracking-wide shadow-lg">
               Best Deal
             </div>
@@ -114,7 +114,7 @@ const GainAccessModal = ({ isOpen, onClose }: GainAccessModalProps) => {
               <p className="text-xs text-foreground/70 italic">For performance-driven operators</p>
             </div>
 
-            <ul className="space-y-2 mb-4 flex-grow text-sm">
+            <ul className="space-y-2 mb-4 flex-grow text-sm overflow-y-auto min-h-0">
               <li className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                 <span className="text-foreground/80"><strong>Focused chats:</strong> Topic-based groups (Fixed Ops, AI, Rural, Urban, and more)</span>
@@ -138,7 +138,7 @@ const GainAccessModal = ({ isOpen, onClose }: GainAccessModalProps) => {
             </ul>
 
             {/* Testimonial */}
-            <div className="p-3 bg-white/50 rounded-lg border border-primary/20 mt-auto mb-4">
+            <div className="p-3 bg-white/50 rounded-lg border border-primary/20 mt-auto mb-4 flex-shrink-0">
               <p className="text-xs text-foreground/80 italic mb-2">
                 "Being able to open my phone, fire off a question, and immediately get thoughtful responses—that's the power of the room."
               </p>
@@ -147,7 +147,7 @@ const GainAccessModal = ({ isOpen, onClose }: GainAccessModalProps) => {
               </p>
             </div>
 
-            <div>
+            <div className="flex-shrink-0">
               <Button
                 variant="yellow"
                 size="lg"
@@ -174,7 +174,7 @@ const GainAccessModal = ({ isOpen, onClose }: GainAccessModalProps) => {
           </Card>
 
           {/* Community Tier */}
-          <Card className="p-6 border bg-white flex flex-col">
+          <Card className="p-6 border bg-white flex flex-col max-h-full">
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-foreground mb-2">Community</h3>
               <div className="flex items-baseline gap-2 mb-1">
@@ -200,7 +200,7 @@ const GainAccessModal = ({ isOpen, onClose }: GainAccessModalProps) => {
               <p className="text-xs text-foreground/70 italic">For exploring & networking</p>
             </div>
 
-            <ul className="space-y-2 mb-auto flex-grow text-sm">
+            <ul className="space-y-2 mb-auto flex-grow text-sm overflow-y-auto min-h-0">
               <li className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-foreground/70 mt-0.5 flex-shrink-0" />
                 <span className="text-foreground/80">General dealer chat (not curated)</span>
@@ -231,7 +231,7 @@ const GainAccessModal = ({ isOpen, onClose }: GainAccessModalProps) => {
               </li>
             </ul>
 
-            <div className="mt-6 sm:mt-auto">
+            <div className="mt-6 sm:mt-auto flex-shrink-0">
               <Button
                 variant="outline"
                 size="lg"
@@ -253,7 +253,7 @@ const GainAccessModal = ({ isOpen, onClose }: GainAccessModalProps) => {
           </Card>
 
           {/* Executive Tier */}
-          <Card className="p-6 border-2 border-secondary bg-foreground text-white relative overflow-hidden flex flex-col">
+          <Card className="p-6 border-2 border-secondary bg-foreground text-white relative overflow-hidden flex flex-col max-h-full">
             <div className="absolute top-0 right-0 w-48 h-48 bg-secondary/20 rounded-full blur-3xl"></div>
 
             <div className="mb-4 relative z-10">
@@ -313,7 +313,7 @@ const GainAccessModal = ({ isOpen, onClose }: GainAccessModalProps) => {
               <p className="text-xs text-white/70 italic">Best for high-growth dealership executives</p>
             </div>
 
-            <ul className="space-y-2 mb-4 relative z-10 flex-grow text-sm">
+            <ul className="space-y-2 mb-4 relative z-10 flex-grow text-sm overflow-y-auto min-h-0">
               <li className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-secondary mt-0.5 flex-shrink-0" />
                 <span className="text-white/90 font-medium">Everything in Pro, plus:</span>
@@ -337,7 +337,7 @@ const GainAccessModal = ({ isOpen, onClose }: GainAccessModalProps) => {
             </ul>
 
             {/* Testimonial */}
-            <div className="p-3 bg-white/10 rounded-lg border border-secondary/20 relative z-10 mt-auto mb-4">
+            <div className="p-3 bg-white/10 rounded-lg border border-secondary/20 relative z-10 mt-auto mb-4 flex-shrink-0">
               <p className="text-xs text-white/90 italic mb-2">
                 "Joining Circles was the single best decision I made this year. It's like having a private board of top dealers who actually share what works."
               </p>
@@ -346,7 +346,7 @@ const GainAccessModal = ({ isOpen, onClose }: GainAccessModalProps) => {
               </p>
             </div>
 
-            <div className="space-y-2 relative z-10">
+            <div className="space-y-2 relative z-10 flex-shrink-0">
               <Button
                 variant="secondary"
                 size="lg"
