@@ -13,7 +13,6 @@ import {
 import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { fetchVendorPulseFeed } from "@/hooks/useSupabaseVendorData";
 import { PulseBriefing } from "./PulseBriefing";
-import { NPSChart } from "./NPSChart";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -231,14 +230,8 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
           })()}
         </div>
 
-        {/* Right: NPS & Activity */}
+        {/* Right: Activity */}
         <div className="lg:col-span-1 space-y-8">
-          <NPSChart 
-            promoterCount={latestSentiment?.promoter_count ?? 0}
-            passiveCount={latestSentiment?.passive_count ?? 0}
-            detractorCount={latestSentiment?.detractor_count ?? 0}
-          />
-
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">

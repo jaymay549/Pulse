@@ -203,6 +203,14 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
                   <PolarGrid stroke="#e2e8f0" />
                   <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 11, fill: "#475569" }} />
                   <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10, fill: "#94a3b8" }} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12, padding: "8px 12px" }}
+                    formatter={(value: number, _name: string, props: any) => [
+                      `${value}% positive (${props.payload.mentions} mentions)`,
+                      props.payload.dimension,
+                    ]}
+                    labelFormatter={() => ""}
+                  />
                   <Radar
                     name="Positive %"
                     dataKey="score"

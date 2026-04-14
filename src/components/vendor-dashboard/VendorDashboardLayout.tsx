@@ -80,15 +80,6 @@ export function VendorDashboardLayout({ vendorName, activeSection, onNavigate, c
             </div>
           </main>
 
-          {/* Footer */}
-          <footer className="px-8 py-6 text-[12px] text-slate-400 border-t bg-white flex items-center justify-between">
-            <p>© 2026 CDG Pulse · Vendor Control Center</p>
-            <div className="flex gap-6">
-              <a href="#" className="hover:text-slate-600 transition-colors">Help Center</a>
-              <a href="#" className="hover:text-slate-600 transition-colors">API Docs</a>
-              <a href="#" className="hover:text-slate-600 transition-colors">Privacy</a>
-            </div>
-          </footer>
         </div>
       </div>
     </div>
