@@ -62,10 +62,7 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
   // Form state
   const [tagline, setTagline] = useState("");
   const [description, setDescription] = useState("");
-  const [website, setWebsite] = useState("");
-  const [linkedin, setLinkedin] = useState("");
   const [headquarters, setHeadquarters] = useState("");
-  const [email, setEmail] = useState("");
 
   // Track whether form has been initialized from profile data
   const [formInitialized, setFormInitialized] = useState(false);
@@ -157,10 +154,7 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
     if (profile && !formInitialized) {
       setTagline(profile.tagline ?? "");
       setDescription(profile.company_description ?? "");
-      setWebsite(profile.company_website ?? "");
-      setLinkedin(profile.linkedin_url ?? "");
       setHeadquarters(profile.headquarters ?? "");
-      setEmail(profile.contact_email ?? "");
       setFormInitialized(true);
     }
   }, [profile, formInitialized]);
@@ -171,10 +165,7 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
     profile &&
     (tagline !== (profile.tagline ?? "") ||
       description !== (profile.company_description ?? "") ||
-      website !== (profile.company_website ?? "") ||
-      linkedin !== (profile.linkedin_url ?? "") ||
-      headquarters !== (profile.headquarters ?? "") ||
-      email !== (profile.contact_email ?? ""));
+      headquarters !== (profile.headquarters ?? ""));
 
   // ---------- Upload helper (owner mode) ----------
   const handleUpload = async (file: File, bucket: string, path: string) => {
@@ -306,10 +297,7 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
       const updates = {
         tagline,
         company_description: description,
-        company_website: website,
-        linkedin_url: linkedin,
         headquarters,
-        contact_email: email,
       };
 
       if (isAdminMode) {
@@ -544,53 +532,15 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <div>
-              <Label htmlFor="website">Company Website</Label>
-              <Input
-                id="website"
-                className="mt-1.5"
-                placeholder="https://example.com"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="linkedin">LinkedIn URL</Label>
-              <Input
-                id="linkedin"
-                className="mt-1.5"
-                placeholder="https://linkedin.com/company/..."
-                value={linkedin}
-                onChange={(e) => setLinkedin(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <div>
-              <Label htmlFor="headquarters">Headquarters</Label>
-              <Input
-                id="headquarters"
-                className="mt-1.5"
-                placeholder="City, State or Country"
-                value={headquarters}
-                onChange={(e) => setHeadquarters(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="contact-email">Contact Email</Label>
-              <Input
-                id="contact-email"
-                className="mt-1.5"
-                type="email"
-                placeholder="contact@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
+          <div>
+            <Label htmlFor="headquarters">Headquarters</Label>
+            <Input
+              id="headquarters"
+              className="mt-1.5"
+              placeholder="City, State or Country"
+              value={headquarters}
+              onChange={(e) => setHeadquarters(e.target.value)}
+            />
           </div>
         </div>
 

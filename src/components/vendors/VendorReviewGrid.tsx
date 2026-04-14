@@ -10,11 +10,7 @@ interface VendorReviewGridProps {
   responses: Record<string, VendorResponse | null>;
   isLocked: (entry: VendorEntry) => boolean;
   showVendorNames: (entry: VendorEntry) => boolean;
-  getVendorWebsite: (vendorName?: string) => string | null;
-  getVendorLogo: (
-    vendorName?: string,
-    vendorWebsite?: string | null,
-  ) => string | null;
+  getVendorLogo: (vendorName?: string) => string | null;
   canRespondToVendor: (vendorName?: string) => boolean;
   onAddResponse: (reviewId: string, text: string) => Promise<boolean>;
   onUpdateResponse: (responseId: string, text: string) => Promise<boolean>;
@@ -33,7 +29,6 @@ export default function VendorReviewGrid({
   responses,
   isLocked,
   showVendorNames,
-  getVendorWebsite,
   getVendorLogo,
   canRespondToVendor,
   onAddResponse,
@@ -50,8 +45,7 @@ export default function VendorReviewGrid({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
       {entries.map((entry) => {
         const vendorName = entry.vendorName || undefined;
-        const vendorWebsite = getVendorWebsite(vendorName);
-        const vendorLogo = getVendorLogo(vendorName, vendorWebsite);
+        const vendorLogo = getVendorLogo(vendorName);
 
         const hookResponse = responses[String(entry.id)] || null;
         const apiResponse = (entry as any).vendorResponse;
@@ -77,7 +71,6 @@ export default function VendorReviewGrid({
             isFullAccess={isFullAccess}
             isAuthenticated={isAuthenticated}
             vendorResponse={vendorResponse}
-            vendorWebsite={vendorWebsite}
             vendorLogo={vendorLogo}
             canRespondAsVendor={canRespondToVendor(vendorName)}
             onAddResponse={(text) => onAddResponse(String(entry.id), text)}
