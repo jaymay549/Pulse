@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Loader2, Check, ChevronRight, Search } from "lucide-react";
+import { Loader2, Check, ChevronRight, Search, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -103,6 +103,8 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+
   const provisionMutation = useMutation({
     mutationFn: async () => {
       const res = await fetchWithAuth(
@@ -122,10 +124,9 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
       if (!res.ok) throw new Error(data.error || "Failed to provision vendor");
       return data;
     },
-    onSuccess: () => {
-      toast.success(`Invite sent to ${email}`);
+    onSuccess: (data) => {
+      setGeneratedPassword(data.password);
       onSuccess();
-      handleClose();
     },
     onError: (err: Error) => {
       if (err.message.toLowerCase().includes("already")) {
@@ -143,6 +144,7 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
     setVendorSearch("");
     setTier("");
     setShowDropdown(false);
+    setGeneratedPassword(null);
     onOpenChange(false);
   };
 
@@ -306,8 +308,8 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
               </div>
             )}
 
-            {/* Step 3 — Confirm */}
-            {step === 3 && (
+            {/* Step 3 — Confirm / Password result */}
+            {step === 3 && !generatedPassword && (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between py-2 border-b border-zinc-800/50">
@@ -324,7 +326,43 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
                   </div>
                 </div>
                 <p className="text-xs text-zinc-500 text-center">
-                  An OTP invite will be sent automatically.
+                  A password will be generated for this vendor.
+                </p>
+              </div>
+            )}
+
+            {step === 3 && generatedPassword && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="text-center space-y-1">
+                  <Check className="h-8 w-8 text-green-400 mx-auto" />
+                  <p className="text-sm text-zinc-200 font-medium">Vendor provisioned</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between py-2 border-b border-zinc-800/50">
+                    <span className="text-xs text-zinc-500 uppercase tracking-wider">Email</span>
+                    <span className="text-sm text-zinc-200">{email}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-zinc-500 uppercase tracking-wider">Password</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <code className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm text-green-400 font-mono select-all">
+                        {generatedPassword}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(generatedPassword);
+                          toast.success("Password copied");
+                        }}
+                        className="p-2 rounded-md bg-zinc-800 hover:bg-zinc-700 transition-colors"
+                      >
+                        <Copy className="h-4 w-4 text-zinc-400" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-zinc-500 text-center">
+                  Share these credentials with the vendor. This password won't be shown again.
                 </p>
               </div>
             )}
@@ -345,7 +383,15 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
               <div />
             )}
 
-            {step < 3 ? (
+            {generatedPassword ? (
+              <Button
+                size="sm"
+                onClick={handleClose}
+                className="bg-green-600 hover:bg-green-500 text-white text-xs px-5"
+              >
+                Done
+              </Button>
+            ) : step < 3 ? (
               <Button
                 size="sm"
                 onClick={advance}

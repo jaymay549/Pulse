@@ -34,7 +34,7 @@ interface VendorProfileRow {
 export default function VendorDashboardPage() {
   const clerkSupabase = useClerkSupabase();
   const { user, isAuthenticated, isAdmin, isLoading: authLoading, getToken } = useClerkAuth();
-  const { isAuthenticated: isVendorAuth, user: vendorUser } = useVendorSupabaseAuth();
+  const { isAuthenticated: isVendorAuth, user: vendorUser, isLoading: vendorAuthLoading } = useVendorSupabaseAuth();
   const [activeSection, setActiveSection] = useState<DashboardSection>("intelligence");
   const [searchParams] = useSearchParams();
 
@@ -104,13 +104,13 @@ export default function VendorDashboardPage() {
       }
       return data;
     },
-    enabled: isVendorAuth && !!vendorUser?.id && !isAdminMode && !isAuthenticated,
+    enabled: isVendorAuth && !!vendorUser?.id && !isAdminMode,
   });
 
-  const isLoading = isAdminMode ? adminLoading : (isVendorAuth && !isAuthenticated ? vendorLoginLoading : ownLoading);
+  const isLoading = isAdminMode ? adminLoading : (isVendorAuth ? vendorLoginLoading : ownLoading);
   const vendorProfile = isAdminMode
     ? adminVendorProfile
-    : (isVendorAuth && !isAuthenticated && vendorLoginProfile)
+    : (isVendorAuth && vendorLoginProfile)
       ? { id: "vendor-session", vendor_name: vendorLoginProfile.vendor_name, is_approved: true }
       : ownVendorProfile;
   const vendorName = vendorProfile?.vendor_name ?? "";
@@ -127,7 +127,7 @@ export default function VendorDashboardPage() {
   // React Query cache shares data with VendorCommandCenter (same queryKey).
   const { data: dashboardIntel } = useVendorIntelligenceDashboard(vendorName);
 
-  if (authLoading || isLoading) {
+  if (authLoading || vendorAuthLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
@@ -156,6 +156,16 @@ export default function VendorDashboardPage() {
             Back to vendors
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  // Wait for vendor login query to settle before redirecting
+  const vendorQueryPending = isVendorAuth && !vendorLoginProfile && vendorLoginLoading;
+  if (vendorQueryPending) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
       </div>
     );
   }

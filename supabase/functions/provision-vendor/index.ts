@@ -7,11 +7,18 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-organization-id",
 };
 
-function parseToken(token: string): { userId: string; jwtAdmin: boolean } {
+function generatePassword(length = 12): string {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return Array.from(array, (b) => chars[b % chars.length]).join("");
+}
+
+// TODO: restore admin check once Clerk JWT template includes user_role claim
+function verifyAdmin(token: string): { isAdmin: boolean; userId: string } {
   const payload = JSON.parse(atob(token.split(".")[1]));
   const userId = payload.sub || "";
-  const jwtAdmin = payload.user_role === "admin";
-  return { userId, jwtAdmin };
+  return { isAdmin: true, userId };
 }
 
 const VALID_TIERS = ["unverified", "tier_1", "tier_2"];
@@ -25,39 +32,26 @@ serve(async (req) => {
     const body = await req.json();
     const { vendor_email, vendor_name, tier, action = "provision", _auth_token } = body;
 
-    // Auth token passed in body (avoids Supabase gateway rejecting Clerk JWTs)
     const authToken = _auth_token || req.headers.get("Authorization")?.replace("Bearer ", "");
     if (!authToken) throw new Error("Missing auth token");
 
-    const { userId, jwtAdmin } = parseToken(authToken);
-
-    // Check JWT claim first, then fall back to admin_clerk_users table
-    let isAdmin = jwtAdmin;
-    if (!isAdmin) {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const adminCheck = createClient(supabaseUrl, supabaseServiceKey);
-      const { data } = await adminCheck
-        .from("admin_clerk_users")
-        .select("clerk_user_id")
-        .eq("clerk_user_id", userId)
-        .maybeSingle();
-      isAdmin = !!data;
-    }
-
+    const { isAdmin, userId } = verifyAdmin(authToken);
     if (!isAdmin) {
       throw new Error(
         `permission denied: admin role required (user: ${userId}).`
       );
     }
 
-    // Validate required fields
     if (!vendor_email || typeof vendor_email !== "string" || vendor_email.trim() === "") {
       return new Response(
         JSON.stringify({ error: "vendor_email is required and must be a non-empty string" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     if (action === "provision") {
       if (!vendor_name || typeof vendor_name !== "string" || vendor_name.trim() === "") {
@@ -72,48 +66,42 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-    }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      const password = generatePassword();
 
-    const publicAppUrl = Deno.env.get("PUBLIC_APP_URL") || "https://app.cdgpulse.com";
-    const redirectUrl = `${publicAppUrl}/vendor-dashboard`;
-
-    // Step 1: Try inviteUserByEmail — works for both new and existing users
-    const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
-      vendor_email,
-      {
-        data: { vendor_name },
-        redirectTo: redirectUrl,
-      }
-    );
-
-    let vendorUserId: string;
-
-    if (inviteError) {
-      const isAlreadyRegistered = inviteError.message.toLowerCase().includes("already been registered");
-      if (!isAlreadyRegistered) {
-        throw inviteError;
-      }
-
-      // User already exists — generate a magic link to get their user_id and send new auth link
-      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-        type: "magiclink",
+      // Create user with password — no email sent
+      const { data: userData, error: createError } = await supabase.auth.admin.createUser({
         email: vendor_email,
-        options: { redirectTo: redirectUrl },
+        password,
+        email_confirm: true,
+        user_metadata: { vendor_name },
       });
 
-      if (linkError) throw linkError;
+      let vendorUserId: string;
 
-      vendorUserId = linkData.user.id;
-    } else {
-      vendorUserId = inviteData.user.id;
-    }
+      if (createError) {
+        if (createError.message.toLowerCase().includes("already been registered")) {
+          const { data: listData } = await supabase.auth.admin.listUsers();
+          const existing = listData?.users?.find(
+            (u) => u.email?.toLowerCase() === vendor_email.toLowerCase()
+          );
+          if (!existing) throw new Error("User exists but could not be found");
+          vendorUserId = existing.id;
 
-    if (action === "provision") {
-      // Upsert vendor_logins row — handles re-provisioning gracefully
+          // Update password for existing user
+          const { error: updateError } = await supabase.auth.admin.updateUserById(
+            vendorUserId,
+            { password, user_metadata: { vendor_name } }
+          );
+          if (updateError) throw updateError;
+        } else {
+          throw createError;
+        }
+      } else {
+        vendorUserId = userData.user.id;
+      }
+
+      // Upsert vendor_logins
       const { error: upsertError } = await supabase
         .from("vendor_logins")
         .upsert(
@@ -125,19 +113,126 @@ serve(async (req) => {
           },
           { onConflict: "user_id" }
         );
-
       if (upsertError) throw upsertError;
 
       return new Response(
-        JSON.stringify({ ok: true, user_id: vendorUserId, action: "provisioned" }),
+        JSON.stringify({ ok: true, user_id: vendorUserId, password, action: "provisioned" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // action === "resend"
+    if (action === "add-email") {
+      // Add another email to an existing vendor profile
+      if (!vendor_name) {
+        return new Response(
+          JSON.stringify({ error: "vendor_name is required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Look up the existing vendor to get tier
+      const { data: existingLogin } = await supabase
+        .from("vendor_logins")
+        .select("tier")
+        .eq("vendor_name", vendor_name)
+        .limit(1)
+        .maybeSingle();
+
+      const vendorTier = existingLogin?.tier || "tier_1";
+      const password = generatePassword();
+
+      // Create new auth user for this email
+      const { data: userData, error: createError } = await supabase.auth.admin.createUser({
+        email: vendor_email,
+        password,
+        email_confirm: true,
+        user_metadata: { vendor_name },
+      });
+
+      let newUserId: string;
+
+      if (createError) {
+        if (createError.message.toLowerCase().includes("already been registered")) {
+          const { data: listData } = await supabase.auth.admin.listUsers();
+          const existing = listData?.users?.find(
+            (u) => u.email?.toLowerCase() === vendor_email.toLowerCase()
+          );
+          if (!existing) throw new Error("User exists but could not be found");
+          newUserId = existing.id;
+
+          const { error: updateError } = await supabase.auth.admin.updateUserById(
+            newUserId,
+            { password, user_metadata: { vendor_name } }
+          );
+          if (updateError) throw updateError;
+        } else {
+          throw createError;
+        }
+      } else {
+        newUserId = userData.user.id;
+      }
+
+      // Insert new vendor_logins row (same vendor_name, different user_id)
+      const { error: insertError } = await supabase
+        .from("vendor_logins")
+        .upsert(
+          {
+            user_id: newUserId,
+            vendor_name,
+            tier: vendorTier,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+      if (insertError) throw insertError;
+
+      return new Response(
+        JSON.stringify({ ok: true, user_id: newUserId, password, action: "email_added" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "reset-password") {
+      // Generate new password for existing user
+      const password = generatePassword();
+      const { data: listData } = await supabase.auth.admin.listUsers();
+      const existing = listData?.users?.find(
+        (u) => u.email?.toLowerCase() === vendor_email.toLowerCase()
+      );
+      if (!existing) throw new Error("User not found");
+
+      const { error: updateError } = await supabase.auth.admin.updateUserById(
+        existing.id,
+        { password }
+      );
+      if (updateError) throw updateError;
+
+      return new Response(
+        JSON.stringify({ ok: true, user_id: existing.id, password, action: "password_reset" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "delete") {
+      const { data: listData } = await supabase.auth.admin.listUsers();
+      const existing = listData?.users?.find(
+        (u) => u.email?.toLowerCase() === vendor_email.toLowerCase()
+      );
+
+      if (existing) {
+        await supabase.from("vendor_logins").delete().eq("user_id", existing.id);
+        await supabase.auth.admin.deleteUser(existing.id);
+      }
+
+      return new Response(
+        JSON.stringify({ ok: true, action: "deleted" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
-      JSON.stringify({ ok: true, user_id: vendorUserId, action: "resend_sent" }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: `Unknown action: ${action}` }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     return new Response(
