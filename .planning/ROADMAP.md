@@ -89,7 +89,12 @@ Plans:
   2. Admin toggles a component from "full" to "gated" for Tier 1 and the change persists immediately — refreshing the page shows the updated setting
   3. Admin configures a "test" tier with a custom mix of visibility settings and saves it without affecting real T1/T2 configs
   4. The `tier_component_config` table contains one row per tier-component pair with the correct visibility value after admin saves
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Database: tier_component_config table, seed data (3 tiers x 11 components), upsert + get RPCs, TypeScript types
+- [ ] 04-02-PLAN.md — Admin UI: TierConfigPage with grouped visibility grid, useTierConfig hook, sidebar + route wiring
+
 **UI hint**: yes
 
 ### Phase 5: Config-Driven Gating Engine
@@ -126,6 +131,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Vendor Auth Primitives | v1.0 | 3/3 | Complete | 2026-04-13 |
 | 2. Admin Provisioning Tools | v1.0 | 2/2 | Complete | 2026-04-13 |
 | 3. Tier-Gated Data Access | v1.0 | 3/3 | Complete | 2026-04-13 |
-| 4. Tier Config Foundation | v1.1 | 0/? | Not started | - |
+| 4. Tier Config Foundation | v1.1 | 0/2 | In progress | - |
 | 5. Config-Driven Gating Engine | v1.1 | 0/? | Not started | - |
 | 6. T1/T2 Content Rules | v1.1 | 0/? | Not started | - |
