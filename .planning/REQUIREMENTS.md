@@ -3,21 +3,19 @@
 **Defined:** 2026-04-13
 **Core Value:** Vendors authenticate via Supabase magic link and see only the data their tier permits
 
-## v1 Requirements
-
-Requirements for initial release. Each maps to roadmap phases.
+## v1.0 Requirements (Complete)
 
 ### Vendor Authentication
 
-- [ ] **AUTH-01**: Vendor can enter email at `/vendor-login` and receive a magic link/OTP to authenticate
-- [ ] **AUTH-02**: Vendor clicking magic link lands authenticated on `/vendor-dashboard` with a valid Supabase Auth session
-- [ ] **AUTH-03**: Vendor Supabase Auth session is isolated from Clerk session (separate client instance, no cross-contamination)
-- [ ] **AUTH-04**: Unauthenticated users accessing `/vendor-dashboard` are redirected to `/vendor-login` via VendorAuthGuard
-- [ ] **AUTH-05**: Admin users (Clerk auth) can still access `/vendor-dashboard` without vendor auth (existing behavior preserved)
-- [ ] **AUTH-06**: Expired or invalid magic link shows clear error message with CTA to request a new link
-- [ ] **AUTH-07**: Nav bar shows a vendor login button (next to admin) for testing purposes
-- [ ] **AUTH-08**: Vendor session expiry redirects to `/vendor-login` with re-auth prompt
-- [ ] **AUTH-09**: `shouldCreateUser: false` prevents self-registration — only admin-provisioned emails can log in
+- [x] **AUTH-01**: Vendor can enter email at `/vendor-login` and receive a magic link/OTP to authenticate
+- [x] **AUTH-02**: Vendor clicking magic link lands authenticated on `/vendor-dashboard` with a valid Supabase Auth session
+- [x] **AUTH-03**: Vendor Supabase Auth session is isolated from Clerk session (separate client instance, no cross-contamination)
+- [x] **AUTH-04**: Unauthenticated users accessing `/vendor-dashboard` are redirected to `/vendor-login` via VendorAuthGuard
+- [x] **AUTH-05**: Admin users (Clerk auth) can still access `/vendor-dashboard` without vendor auth (existing behavior preserved)
+- [x] **AUTH-06**: Expired or invalid magic link shows clear error message with CTA to request a new link
+- [x] **AUTH-07**: Nav bar shows a vendor login button (next to admin) for testing purposes
+- [x] **AUTH-08**: Vendor session expiry redirects to `/vendor-login` with re-auth prompt
+- [x] **AUTH-09**: `shouldCreateUser: false` prevents self-registration — only admin-provisioned emails can log in
 
 ### Admin Vendor Management
 
@@ -38,6 +36,40 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **TIER-06**: Frontend renders locked/hidden sections for out-of-tier features (no data leaks via API)
 - [x] **TIER-07**: `vendor_tier()` SECURITY DEFINER function provides tier lookup for RLS policies without circular dependency
 
+## v1.1 Requirements
+
+Requirements for Admin-Configurable Tier Gating milestone. Each maps to roadmap phases.
+
+### Admin Tier Configuration
+
+- [ ] **ACONF-01**: Admin can view a config panel listing all vendor dashboard components per tier
+- [ ] **ACONF-02**: Admin can toggle component visibility (full / gated / hidden) for each tier
+- [ ] **ACONF-03**: Admin can configure a "test" tier with any combination of component visibility for demos/QA
+- [ ] **ACONF-04**: Tier config changes persist immediately to `tier_component_config` DB table
+
+### Data Model
+
+- [ ] **DATA-01**: `tier_component_config` table stores tier → component → visibility mappings
+- [ ] **DATA-02**: Frontend reads tier config from DB to determine what to show/blur/gate per vendor
+
+### Partial Gating (T1 Defaults)
+
+- [ ] **GATE-01**: T1 sees health score, sentiment trend, NPS, benchmarking, discussion volume, dimensional breakdown, performance breakdown, pulse briefing, verified badge, profile editing
+- [ ] **GATE-02**: T1 sees "What dealers are saying" — top 2 items only (AI-summarized), with "See all" gated to T2
+- [ ] **GATE-03**: T1 sees competitor leaderboard sorted by positivity with vendor highlighted; "Why you rank here" gates to T2
+- [ ] **GATE-04**: Gated sections show blurred/locked state with upgrade CTA (not hidden)
+
+### T2 Unlocks
+
+- [ ] **GATE-05**: T2 unlocks full AI action plan with recommendations
+- [ ] **GATE-06**: T2 unlocks all dealer comments and conversations
+- [ ] **GATE-07**: T2 unlocks audience segments, dealer signals, competitive breakdown, integrations
+
+### Dynamic Frontend Gating
+
+- [ ] **DYN-01**: Replace hardcoded `T2_ONLY_SECTIONS` with config-driven visibility from `tier_component_config`
+- [ ] **DYN-02**: Vendor dashboard components read tier config and render full/gated/hidden based on vendor's tier
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -56,9 +88,8 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ### Vendor Experience
 
-- **VEXP-01**: Locked/blurred sections showing T2 features to T1 vendors (upsell surface)
+- **VEXP-01**: Vendor can request tier upgrade from within dashboard
 - **VEXP-02**: Graceful "no access" holding page for Unverified tier vendors
-- **VEXP-03**: Vendor can request tier upgrade from within dashboard
 
 ## Out of Scope
 
@@ -71,6 +102,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | Vendor-to-vendor comparison views | Separate product decision; category benchmarks already exist |
 | Mobile-optimized vendor experience | Web-only for now; don't break on mobile but don't optimize |
 | Real-time data subscriptions | Vendor data updates daily; React Query polling sufficient |
+| T3 tier implementation | Not yet defined; free during 3-month beta |
+| RLS policy changes for tier_component_config | Frontend-only gating layer on top of existing RLS safety net |
 
 ## Traceability
 
@@ -78,34 +111,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| AUTH-04 | Phase 1 | Pending |
-| AUTH-05 | Phase 1 | Pending |
-| AUTH-06 | Phase 1 | Pending |
-| AUTH-07 | Phase 1 | Pending |
-| AUTH-08 | Phase 1 | Pending |
-| AUTH-09 | Phase 1 | Pending |
-| ADMIN-01 | Phase 2 | Complete |
-| ADMIN-02 | Phase 2 | Complete |
-| ADMIN-03 | Phase 2 | Complete |
-| ADMIN-04 | Phase 2 | Complete |
-| ADMIN-05 | Phase 2 | Complete |
-| ADMIN-06 | Phase 2 | Complete |
-| TIER-01 | Phase 3 | Complete |
-| TIER-02 | Phase 3 | Complete |
-| TIER-03 | Phase 3 | Complete |
-| TIER-04 | Phase 3 | Complete |
-| TIER-05 | Phase 3 | Complete |
-| TIER-06 | Phase 3 | Complete |
-| TIER-07 | Phase 3 | Complete |
+| AUTH-01 → AUTH-09 | Phase 1 (v1.0) | Complete |
+| ADMIN-01 → ADMIN-06 | Phase 2 (v1.0) | Complete |
+| TIER-01 → TIER-07 | Phase 3 (v1.0) | Complete |
 
 **Coverage:**
-- v1 requirements: 22 total
-- Mapped to phases: 22
-- Unmapped: 0
+- v1.1 requirements: 13 total
+- Mapped to phases: 0 (pending roadmap)
+- Unmapped: 13
 
 ---
 *Requirements defined: 2026-04-13*
-*Last updated: 2026-04-13 after roadmap creation*
+*Last updated: 2026-04-15 — v1.1 requirements added*
