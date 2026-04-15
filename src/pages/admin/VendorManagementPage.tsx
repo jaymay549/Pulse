@@ -1,7 +1,7 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, Loader2, Trash2, KeyRound, UserPlus, Copy, ChevronDown } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -199,12 +199,19 @@ const VendorManagementPage = () => {
               </tr>
             </thead>
             <tbody>
+              <LayoutGroup>
+              <AnimatePresence initial={false}>
               {groupedVendors.length === 0 ? (
-                <tr>
+                <motion.tr
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
                   <td colSpan={5} className="px-4 py-8 text-center text-zinc-500 text-sm">
                     No vendors match your search.
                   </td>
-                </tr>
+                </motion.tr>
               ) : (
                 groupedVendors.map(([vendorName, logins]) => {
                   const hasMultiple = logins.length > 1;
@@ -212,10 +219,15 @@ const VendorManagementPage = () => {
                   const primary = logins[0];
 
                   return hasMultiple ? (
-                    <>
+                    <React.Fragment key={vendorName}>
                       {/* Group header row */}
-                      <tr
-                        key={vendorName}
+                      <motion.tr
+                        layout
+                        layoutId={`vendor-${vendorName}`}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
                         className="border-b border-zinc-800/50 hover:bg-zinc-900/50 cursor-pointer"
                         onClick={() => toggleExpand(vendorName)}
                       >
@@ -241,11 +253,12 @@ const VendorManagementPage = () => {
                             </button>
                           </div>
                         </td>
-                      </tr>
+                      </motion.tr>
                       {/* Expanded email rows */}
                       <AnimatePresence>
                         {isExpanded && logins.map((vendor, i) => (
                           <motion.tr
+                            layout
                             key={vendor.id}
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: "auto", transition: { delay: i * 0.04 } }}
@@ -281,10 +294,19 @@ const VendorManagementPage = () => {
                           </motion.tr>
                         ))}
                       </AnimatePresence>
-                    </>
+                    </React.Fragment>
                   ) : (
                     /* Single email — flat row */
-                    <tr key={primary.id} className="border-b border-zinc-800/50 hover:bg-zinc-900/50">
+                    <motion.tr
+                      layout
+                      layoutId={`vendor-${primary.id}`}
+                      key={primary.id}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
+                      className="border-b border-zinc-800/50 hover:bg-zinc-900/50"
+                    >
                       <td className="px-4 py-3 text-sm text-zinc-200">{vendorName}</td>
                       <td className="px-4 py-3 text-sm text-zinc-400">{primary.email}</td>
                       <td className="px-4 py-3"><VendorTierBadge tier={primary.tier} /></td>
@@ -318,10 +340,12 @@ const VendorManagementPage = () => {
                           </button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   );
                 })
               )}
+              </AnimatePresence>
+              </LayoutGroup>
             </tbody>
           </table>
         </div>
