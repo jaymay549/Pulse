@@ -1,22 +1,18 @@
 # Roadmap: Vendor Tiering System
 
-## Overview
+## Milestones
 
-Three phases that mirror three hard dependencies: vendors can't be provisioned until auth exists, RLS can't be validated until provisioned vendors exist. Phase 1 delivers the auth primitive (vendor login, session isolation, route guard). Phase 2 delivers sales team autonomy (admin provisioning UI, tier assignment). Phase 3 delivers the revenue boundary (RLS tier gating enforced at the database level, frontend locked sections).
+- ✅ **v1.0 Vendor Auth & Tier Gating** - Phases 1-3 (shipped 2026-04-13)
+- 🚧 **v1.1 Admin-Configurable Tier Gating** - Phases 4-6 (in progress)
 
 ## Phases
 
-**Phase Numbering:**
-- Integer phases (1, 2, 3): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
-
-Decimal phases appear between their surrounding integers in numeric order.
+<details>
+<summary>✅ v1.0 Vendor Auth & Tier Gating (Phases 1-3) - SHIPPED 2026-04-13</summary>
 
 - [x] **Phase 1: Vendor Auth Primitives** - Vendor can log in via OTP and land on the dashboard with an isolated Supabase Auth session (completed 2026-04-13)
 - [x] **Phase 2: Admin Provisioning Tools** - Sales team can create, link, and tier vendor accounts without engineering involvement (completed 2026-04-13)
 - [x] **Phase 3: Tier-Gated Data Access** - RLS enforces T1/T2 data boundaries at the database level; frontend shows locked sections for out-of-tier features (completed 2026-04-13)
-
-## Phase Details
 
 ### Phase 1: Vendor Auth Primitives
 **Goal**: Vendors can authenticate via OTP email and access the vendor dashboard with a session that is completely isolated from the existing Clerk auth system
@@ -72,13 +68,64 @@ Plans:
 
 **UI hint**: yes
 
+</details>
+
+### 🚧 v1.1 Admin-Configurable Tier Gating (In Progress)
+
+**Milestone Goal:** Make tier visibility admin-configurable (not hardcoded) and implement granular T1/T2 data visibility with partial gating, blurred/locked upgrade CTAs, and a test tier for demos.
+
+- [ ] **Phase 4: Tier Config Foundation** - Admin can configure per-tier component visibility via a config table and admin panel
+- [ ] **Phase 5: Config-Driven Gating Engine** - Frontend reads tier config from DB and renders components as full, gated (blurred/locked), or hidden
+- [ ] **Phase 6: T1/T2 Content Rules** - T1 vendors see teaser content with upgrade gates; T2 vendors see everything unlocked
+
+## Phase Details
+
+### Phase 4: Tier Config Foundation
+**Goal**: Admins can define which dashboard components each tier sees, including a flexible test tier for demos, with config persisted to the database
+**Depends on**: Phase 3
+**Requirements**: DATA-01, ACONF-01, ACONF-02, ACONF-03, ACONF-04
+**Success Criteria** (what must be TRUE):
+  1. Admin opens the tier config panel and sees every vendor dashboard component listed with its current visibility setting (full / gated / hidden) for each tier
+  2. Admin toggles a component from "full" to "gated" for Tier 1 and the change persists immediately — refreshing the page shows the updated setting
+  3. Admin configures a "test" tier with a custom mix of visibility settings and saves it without affecting real T1/T2 configs
+  4. The `tier_component_config` table contains one row per tier-component pair with the correct visibility value after admin saves
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 5: Config-Driven Gating Engine
+**Goal**: The vendor dashboard dynamically renders each component as full, gated (blurred with upgrade CTA), or hidden based on the vendor's tier and the config from the database — replacing all hardcoded tier checks
+**Depends on**: Phase 4
+**Requirements**: DATA-02, DYN-01, DYN-02, GATE-04
+**Success Criteria** (what must be TRUE):
+  1. A T1 vendor viewing a component marked "gated" in config sees a blurred/locked overlay with an upgrade CTA — not a blank space or hidden element
+  2. An admin changes a component from "hidden" to "gated" in the config panel, and the next vendor page load reflects the change without a code deploy
+  3. The hardcoded `T2_ONLY_SECTIONS` constant is no longer used — all visibility decisions flow from `tier_component_config`
+  4. A T2 vendor sees all components marked "full" rendered normally with no gating artifacts
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 6: T1/T2 Content Rules
+**Goal**: T1 vendors see the correct teaser content per the CAR-13 spec (partial data with upgrade gates), and T2 vendors see all content fully unlocked
+**Depends on**: Phase 5
+**Requirements**: GATE-01, GATE-02, GATE-03, GATE-05, GATE-06, GATE-07
+**Success Criteria** (what must be TRUE):
+  1. A T1 vendor sees health score, sentiment trend, NPS, benchmarking, discussion volume, dimensional breakdown, performance breakdown, pulse briefing, verified badge, and profile editing — all rendered fully
+  2. A T1 vendor sees "What dealers are saying" with exactly 2 AI-summarized items visible and a "See all" button that prompts an upgrade gate
+  3. A T1 vendor sees the competitor leaderboard sorted by positivity with their name highlighted; clicking "Why you rank here" prompts an upgrade gate
+  4. A T2 vendor sees the full AI action plan, all dealer comments and conversations, audience segments, dealer signals, competitive breakdown, and integrations — all fully rendered with no gates
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Vendor Auth Primitives | 3/3 | Complete    | 2026-04-13 |
-| 2. Admin Provisioning Tools | 2/2 | Complete    | 2026-04-13 |
-| 3. Tier-Gated Data Access | 3/3 | Complete    | 2026-04-13 |
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Vendor Auth Primitives | v1.0 | 3/3 | Complete | 2026-04-13 |
+| 2. Admin Provisioning Tools | v1.0 | 2/2 | Complete | 2026-04-13 |
+| 3. Tier-Gated Data Access | v1.0 | 3/3 | Complete | 2026-04-13 |
+| 4. Tier Config Foundation | v1.1 | 0/? | Not started | - |
+| 5. Config-Driven Gating Engine | v1.1 | 0/? | Not started | - |
+| 6. T1/T2 Content Rules | v1.1 | 0/? | Not started | - |

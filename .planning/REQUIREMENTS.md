@@ -114,12 +114,28 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-01 → AUTH-09 | Phase 1 (v1.0) | Complete |
 | ADMIN-01 → ADMIN-06 | Phase 2 (v1.0) | Complete |
 | TIER-01 → TIER-07 | Phase 3 (v1.0) | Complete |
+| DATA-01 | Phase 4 (v1.1) | Pending |
+| ACONF-01 | Phase 4 (v1.1) | Pending |
+| ACONF-02 | Phase 4 (v1.1) | Pending |
+| ACONF-03 | Phase 4 (v1.1) | Pending |
+| ACONF-04 | Phase 4 (v1.1) | Pending |
+| DATA-02 | Phase 5 (v1.1) | Pending |
+| DYN-01 | Phase 5 (v1.1) | Pending |
+| DYN-02 | Phase 5 (v1.1) | Pending |
+| GATE-04 | Phase 5 (v1.1) | Pending |
+| GATE-01 | Phase 6 (v1.1) | Pending |
+| GATE-02 | Phase 6 (v1.1) | Pending |
+| GATE-03 | Phase 6 (v1.1) | Pending |
+| GATE-05 | Phase 6 (v1.1) | Pending |
+| GATE-06 | Phase 6 (v1.1) | Pending |
+| GATE-07 | Phase 6 (v1.1) | Pending |
 
 **Coverage:**
+- v1.0 requirements: 22 total — all complete
 - v1.1 requirements: 13 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 13
+- Mapped to phases: 13
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-13*
-*Last updated: 2026-04-15 — v1.1 requirements added*
+*Last updated: 2026-04-15 — v1.1 traceability mapped to Phases 4-6*
