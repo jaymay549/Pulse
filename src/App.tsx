@@ -33,6 +33,7 @@ const DebugPage = lazy(() => import("./pages/admin/DebugPage"));
 const ClaimsPage = lazy(() => import("./pages/admin/ClaimsPage"));
 const SalesTargetsPage = lazy(() => import("./pages/admin/SalesTargetsPage"));
 const VendorManagementPage = lazy(() => import("./pages/admin/VendorManagementPage"));
+const TierConfigPage = lazy(() => import("./pages/admin/TierConfigPage"));
 const VendorDashboardPage = lazy(() => import("./pages/VendorDashboardPage"));
 const VendorLoginPage = lazy(() => import("./pages/VendorLoginPage"));
 const VendorAuthGuard = lazy(() => import("./components/vendor-auth/VendorAuthGuard"));
@@ -98,6 +99,7 @@ const App = () => (
               <Route path="claims" element={<Suspense fallback={<AdminFallback />}><ClaimsPage /></Suspense>} />
               <Route path="sales-targets" element={<Suspense fallback={<AdminFallback />}><SalesTargetsPage /></Suspense>} />
               <Route path="vendors" element={<Suspense fallback={<AdminFallback />}><VendorManagementPage /></Suspense>} />
+              <Route path="tier-config" element={<Suspense fallback={<AdminFallback />}><TierConfigPage /></Suspense>} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
