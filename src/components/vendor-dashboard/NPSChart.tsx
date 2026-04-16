@@ -17,7 +17,7 @@ export function NPSChart({ promoterCount, passiveCount, detractorCount }: NPSCha
   const detractorPct = total > 0 ? (detractorCount / total) * 100 : 0;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full">
+    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-extrabold text-slate-900 tracking-tight">Dealer NPS</h3>

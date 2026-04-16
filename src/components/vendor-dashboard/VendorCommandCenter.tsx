@@ -1,4 +1,4 @@
-import { Loader2, Info, Target, Activity } from "lucide-react";
+import { Loader2, Info, Activity } from "lucide-react";
 import {
   useVendorIntelligenceDashboard,
   type MetricKey,
@@ -24,8 +24,8 @@ export function VendorCommandCenter({ vendorName }: VendorCommandCenterProps) {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-32 space-y-4">
-        <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
-        <p className="text-sm font-medium text-slate-500 animate-pulse">Analyzing market intelligence...</p>
+        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        <p className="text-sm text-slate-500">Analyzing market intelligence...</p>
       </div>
     );
   }
@@ -65,16 +65,11 @@ export function VendorCommandCenter({ vendorName }: VendorCommandCenterProps) {
   }
 
   return (
-    <div className="space-y-10 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Intelligence Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-slate-100">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
-              <Target className="h-5 w-5 text-white" />
-            </div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Intelligence Hub</h1>
-          </div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight mb-2">Intelligence Hub</h1>
           <div className="flex items-center gap-2 text-slate-500">
             {intel.category && (
               <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors border-none py-1">
@@ -92,7 +87,7 @@ export function VendorCommandCenter({ vendorName }: VendorCommandCenterProps) {
       </div>
 
       {/* Health Score & Analytics */}
-      <div className="space-y-8">
+      <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Primary Health Score Hero */}
           <div className="lg:col-span-2 relative group overflow-hidden rounded-2xl border border-slate-200 bg-white p-1 transition-all hover:shadow-xl hover:shadow-indigo-500/5 duration-300">

@@ -111,10 +111,10 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
   const latestSentiment = sentimentHistory?.[sentimentHistory.length - 1] ?? null;
 
   return (
-    <div className="space-y-8 pb-12 animate-in fade-in duration-700">
+    <div className="space-y-6 pb-12 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Overview</h1>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Overview</h1>
           <p className="text-slate-500 mt-1 font-medium">Daily pulse and performance snapshots</p>
         </div>
         <div className="flex items-center gap-2">
@@ -128,12 +128,7 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
       </div>
 
       {/* Pulse Briefing — health, quotes, signals, competitive, top actions */}
-      <div className="relative group">
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-5 group-hover:opacity-10 transition duration-1000 group-hover:duration-200"></div>
-        <div className="relative">
-          <PulseBriefing vendorName={vendorName} onNavigate={onNavigate} />
-        </div>
-      </div>
+      <PulseBriefing vendorName={vendorName} onNavigate={onNavigate} />
 
       {/* Analytics Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -151,7 +146,7 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
 
             return (
               <div className="space-y-6">
-                <Card className="border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-shadow">
+                <Card className="border-slate-200 shadow-sm overflow-hidden">
                   <CardHeader className="pb-2 bg-slate-50/50 border-b border-slate-100">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm font-bold flex items-center gap-2">
@@ -192,7 +187,7 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
                   </CardContent>
                 </Card>
 
-                <Card className="border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-shadow">
+                <Card className="border-slate-200 shadow-sm overflow-hidden">
                   <CardHeader className="pb-2 bg-slate-50/50 border-b border-slate-100">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm font-bold flex items-center gap-2">
@@ -251,7 +246,7 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
             </div>
 
             {!mentions || mentions.length === 0 ? (
-              <Card className="border-dashed border-2 bg-slate-50/50">
+              <Card className="border-slate-200 bg-slate-50/30">
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4 text-slate-400">
                     <MessageSquare className="h-6 w-6" />
@@ -263,9 +258,9 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
             ) : (
               <div className="space-y-3">
                 {mentions.slice(0, 6).map((mention) => (
-                  <div 
-                    key={mention.id} 
-                    className="group flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-200"
+                  <div
+                    key={mention.id}
+                    className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3.5"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <TypeBadge type={mention.type} />
@@ -280,9 +275,9 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
                   </div>
                 ))}
                 
-                <Button 
-                  variant="outline" 
-                  className="w-full border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors text-xs font-bold py-6 rounded-xl border-dashed"
+                <Button
+                  variant="ghost"
+                  className="w-full text-xs font-medium text-slate-500 hover:text-slate-700"
                   onClick={() => onNavigate("mentions")}
                 >
                   Load More Activity

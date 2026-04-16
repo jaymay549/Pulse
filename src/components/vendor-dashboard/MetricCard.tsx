@@ -1,4 +1,4 @@
-import { ArrowUp, ArrowDown, Minus, Lock, Info, Quote } from "lucide-react";
+import { ArrowUp, ArrowDown, Minus, Lock, Info } from "lucide-react";
 import {
   type MetricScore,
   type MetricKey,
@@ -82,11 +82,11 @@ export function MetricCard({ metricKey, metric, insightText }: MetricCardProps) 
   }
 
   return (
-    <div className={cn("rounded-2xl border bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full", colors.border)}>
+    <div className={cn("rounded-2xl border bg-white p-5 shadow-sm flex flex-col h-full", colors.border)}>
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="flex items-center gap-1.5 mb-1">
-            <h3 className="text-[15px] font-extrabold text-slate-900 tracking-tight">{config.label}</h3>
+            <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">{config.label}</h3>
             <InfoTooltip content={METRIC_TOOLTIP[metricKey]} />
           </div>
           <p className="text-[12px] text-slate-500 font-medium leading-tight">{config.description}</p>
@@ -129,9 +129,8 @@ export function MetricCard({ metricKey, metric, insightText }: MetricCardProps) 
 
         {/* AI insight */}
         {insightText && (
-          <div className={cn("mt-5 relative rounded-xl p-3.5 border border-transparent transition-all", colors.bg)}>
-            <Quote className={cn("absolute -top-2 -left-1 h-4 w-4 opacity-10", colors.accent)} />
-            <p className="text-[12px] leading-relaxed text-slate-700 font-medium italic relative z-10">
+          <div className={cn("mt-5 rounded-xl p-3.5 border border-transparent", colors.bg)}>
+            <p className="text-[12px] leading-relaxed text-slate-700 font-medium">
               {insightText}
             </p>
           </div>
