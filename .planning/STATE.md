@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-15)
 Phase: 07 of 6 (Tier Config Foundation)
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-04-16
+Last activity: 2026-04-16 - Completed quick task 260416-o1s: CAR-29 Admin Panel Cleanup
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -76,6 +76,12 @@ None yet.
 ### Blockers/Concerns
 
 None for v1.1 — RLS safety net already in place from v1.0, no RLS changes needed.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260416-o1s | CAR-29: Admin Panel Cleanup - Collapsible Sidebar with Active/Unused Sections | 2026-04-16 | 955cfb7 | [260416-o1s-car-29-admin-panel-cleanup-collapsible-s](./quick/260416-o1s-car-29-admin-panel-cleanup-collapsible-s/) |
 
 ## Session Continuity
 
