@@ -38,6 +38,7 @@ Vendors can securely log in via magic link and see only the data their tier perm
 - ✓ T2-gated RPCs (dimensions, actionable insights, tech stack intel) — Phase 3
 - ✓ Frontend T2 section hiding (sidebar + page conditional rendering) — Phase 3
 - ✓ Vendor isolation (cross-vendor data access blocked at DB level) — Phase 3
+- ✓ Vendor data dedup: duplicate entities merged, names normalized, health check RPC — Phase 7
 
 ### Active
 
@@ -105,4 +106,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-15 after milestone v1.1 initialization*
+*Last updated: 2026-04-16 after Phase 7 (vendor data dedup) completion*
