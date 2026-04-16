@@ -78,7 +78,7 @@ WHERE vendor_name IS DISTINCT FROM public._normalize_vendor_name(vendor_name);
 -- each canonical name is registered as a lowercase alias so
 -- resolve_vendor_family continues to resolve by exact match.
 INSERT INTO public.vendor_alias_mappings (alias_text, vendor_entity_id, confidence, source)
-SELECT lower(ve.canonical_name), ve.id, 1.0, 'normalization'
+SELECT lower(ve.canonical_name), ve.id, 1.0, 'manual'
 FROM public.vendor_entities ve
 WHERE NOT EXISTS (
   SELECT 1 FROM public.vendor_alias_mappings am
