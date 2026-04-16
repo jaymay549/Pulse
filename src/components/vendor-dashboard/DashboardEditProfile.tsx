@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Camera, ImagePlus, Loader2, X } from "lucide-react";
-import { useClerkSupabase } from "@/hooks/useClerkSupabase";
+import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -55,7 +55,7 @@ async function fileToBase64(file: File): Promise<string> {
 
 export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfileProps): JSX.Element {
   const { user, getToken } = useClerkAuth();
-  const supabase = useClerkSupabase();
+  const supabase = useVendorDataClient();
   const queryClient = useQueryClient();
   const isAdminMode = !!vendorProfileId;
 

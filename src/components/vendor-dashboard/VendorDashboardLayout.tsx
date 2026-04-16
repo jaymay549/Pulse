@@ -12,9 +12,10 @@ interface VendorDashboardLayoutProps {
   activeSection: DashboardSection;
   onNavigate: (section: DashboardSection) => void;
   children: React.ReactNode;
+  tier?: string;
 }
 
-export function VendorDashboardLayout({ vendorName, activeSection, onNavigate, children }: VendorDashboardLayoutProps) {
+export function VendorDashboardLayout({ vendorName, activeSection, onNavigate, children, tier }: VendorDashboardLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleNavigate = (section: DashboardSection) => {
@@ -50,7 +51,7 @@ export function VendorDashboardLayout({ vendorName, activeSection, onNavigate, c
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-64">
-              <VendorDashboardSidebar vendorName={vendorName} activeSection={activeSection} onNavigate={handleNavigate} />
+              <VendorDashboardSidebar vendorName={vendorName} activeSection={activeSection} onNavigate={handleNavigate} tier={tier} />
             </SheetContent>
           </Sheet>
 
@@ -67,7 +68,7 @@ export function VendorDashboardLayout({ vendorName, activeSection, onNavigate, c
       <div className="flex flex-1 min-h-0">
         {/* Desktop Sidebar — below header, scrolls independently */}
         <div className="hidden lg:flex fixed top-[53px] bottom-0 w-64 border-r bg-white shadow-sm z-30">
-          <VendorDashboardSidebar vendorName={vendorName} activeSection={activeSection} onNavigate={handleNavigate} />
+          <VendorDashboardSidebar vendorName={vendorName} activeSection={activeSection} onNavigate={handleNavigate} tier={tier} />
         </div>
 
         {/* Main Content Area */}

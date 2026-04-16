@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { useClerkSupabase } from "@/hooks/useClerkSupabase";
+import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { fetchVendorPulseFeed } from "@/hooks/useSupabaseVendorData";
 import { PulseBriefing } from "./PulseBriefing";
 import { NPSChart } from "./NPSChart";
@@ -81,7 +81,7 @@ function TypeBadge({ type }: { type: string }) {
 }
 
 export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewProps): JSX.Element {
-  const supabase = useClerkSupabase();
+  const supabase = useVendorDataClient();
 
   const { data: mentions } = useQuery({
     queryKey: ["vendor-recent-mentions", vendorName],

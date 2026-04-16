@@ -23,7 +23,15 @@ interface VendorDashboardSidebarProps {
   vendorName: string;
   activeSection: DashboardSection;
   onNavigate: (section: DashboardSection) => void;
+  tier?: string; // 'unverified' | 'tier_1' | 'tier_2' | undefined (admin mode)
 }
+
+const T2_ONLY_SECTIONS: DashboardSection[] = [
+  "mentions",
+  "dimensions",
+  "dealer-signals",
+  "demo-requests",
+];
 
 interface NavGroup {
   label: string;
@@ -59,9 +67,13 @@ const navGroups: NavGroup[] = [
   },
 ];
 
-export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate }: VendorDashboardSidebarProps) {
+export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate, tier }: VendorDashboardSidebarProps) {
   const { getLogoForVendor } = useVendorWebsites();
   const logoUrl = getLogoForVendor(vendorName);
+
+  // When tier is provided and not tier_2, hide T2-only sections.
+  // When tier is undefined (admin mode), show all sections.
+  const shouldHideT2 = tier && tier !== "tier_2";
 
   return (
     <aside className="w-64 border-r bg-white flex flex-col h-full overflow-hidden">
@@ -86,13 +98,18 @@ export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate }
 
       {/* Nav groups */}
       <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-7 custom-scrollbar">
-        {navGroups.map((group) => (
+        {navGroups.map((group) => {
+          const filteredItems = group.items.filter(
+            item => !shouldHideT2 || !T2_ONLY_SECTIONS.includes(item.id)
+          );
+          if (filteredItems.length === 0) return null;
+          return (
           <div key={group.label} className="space-y-1.5">
             <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">
               {group.label}
             </h3>
             <div className="space-y-0.5">
-              {group.items.map(({ id, icon: Icon, label }) => {
+              {filteredItems.map(({ id, icon: Icon, label }) => {
                 const isActive = activeSection === id;
                 return (
                   <button
@@ -118,7 +135,8 @@ export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate }
               })}
             </div>
           </div>
-        ))}
+          );
+        })}
       </nav>
 
       {/* Footer area */}

@@ -15,11 +15,15 @@ import {
   Bug,
   BadgeCheck,
   Target,
+  Store,
+  Sliders,
 } from "lucide-react";
 
 const navItems = [
   { to: "/admin", icon: LayoutDashboard, label: "Dashboard", end: true },
   { to: "/admin/sales-targets", icon: Target, label: "Sales Targets" },
+  { to: "/admin/vendors", icon: Store, label: "Vendor Management" },
+  { to: "/admin/tier-config", icon: Sliders, label: "Tier Config" },
   { to: "/admin/chat", icon: Sparkles, label: "AI Chat" },
   { to: "/admin/queue", icon: ListChecks, label: "Vendor Queue" },
   { to: "/admin/claims", icon: BadgeCheck, label: "Claims" },

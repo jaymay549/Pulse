@@ -32,7 +32,11 @@ const TrendsPage = lazy(() => import("./pages/admin/TrendsPage"));
 const DebugPage = lazy(() => import("./pages/admin/DebugPage"));
 const ClaimsPage = lazy(() => import("./pages/admin/ClaimsPage"));
 const SalesTargetsPage = lazy(() => import("./pages/admin/SalesTargetsPage"));
+const VendorManagementPage = lazy(() => import("./pages/admin/VendorManagementPage"));
+const TierConfigPage = lazy(() => import("./pages/admin/TierConfigPage"));
 const VendorDashboardPage = lazy(() => import("./pages/VendorDashboardPage"));
+const VendorLoginPage = lazy(() => import("./pages/VendorLoginPage"));
+const VendorAuthGuard = lazy(() => import("./components/vendor-auth/VendorAuthGuard"));
 const MarketIntelReport = lazy(() => import("./components/tech-stack/MarketIntelReport"));
 const VendorClaimPage = lazy(() => import("./pages/VendorClaimPage"));
 
@@ -63,7 +67,8 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/vendor-beta" element={<VendorBeta />} />
             <Route path="/vendor-portal/*" element={<Navigate to="/vendors" replace />} />
-            <Route path="/vendor-dashboard" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}><VendorDashboardPage /></Suspense>} />
+            <Route path="/vendor-login" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}><VendorLoginPage /></Suspense>} />
+            <Route path="/vendor-dashboard" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}><VendorAuthGuard><VendorDashboardPage /></VendorAuthGuard></Suspense>} />
             <Route path="/claim/:token" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}><VendorClaimPage /></Suspense>} />
             <Route path="/dealers-like-me" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>}><MarketIntelReport /></Suspense>} />
 
@@ -93,6 +98,8 @@ const App = () => (
               <Route path="debug" element={<Suspense fallback={<AdminFallback />}><DebugPage /></Suspense>} />
               <Route path="claims" element={<Suspense fallback={<AdminFallback />}><ClaimsPage /></Suspense>} />
               <Route path="sales-targets" element={<Suspense fallback={<AdminFallback />}><SalesTargetsPage /></Suspense>} />
+              <Route path="vendors" element={<Suspense fallback={<AdminFallback />}><VendorManagementPage /></Suspense>} />
+              <Route path="tier-config" element={<Suspense fallback={<AdminFallback />}><TierConfigPage /></Suspense>} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

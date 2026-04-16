@@ -10,7 +10,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
-import { useClerkSupabase } from "@/hooks/useClerkSupabase";
+import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { fetchVendorPulseFeed } from "@/hooks/useSupabaseVendorData";
 import { useVendorIntelligenceDashboard } from "@/hooks/useVendorIntelligenceDashboard";
 import type { VendorDimension } from "@/hooks/useSupabaseVendorData";
@@ -198,7 +198,7 @@ function QuoteCard({ mention }: { mention: RecentMention }) {
 // ── Main Component ────────────────────────────────────────────
 
 export function PulseBriefing({ vendorName, onNavigate }: PulseBriefingProps) {
-  const supabase = useClerkSupabase();
+  const supabase = useVendorDataClient();
 
   // Profile stats — same query key as DashboardOverview
   const { data: profile } = useQuery({

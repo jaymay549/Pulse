@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUp, ArrowDown, Minus, TrendingUp } from "lucide-react";
-import { useClerkSupabase } from "@/hooks/useClerkSupabase";
+import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { Badge } from "@/components/ui/badge";
 
 interface DashboardIntelProps {
@@ -78,7 +78,7 @@ function TrendBadge({ trend }: { trend: VendorTrend }) {
 }
 
 export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element {
-  const supabase = useClerkSupabase();
+  const supabase = useVendorDataClient();
 
   // Own profile stats
   const { data: ownProfile, isLoading: profileLoading } = useQuery({

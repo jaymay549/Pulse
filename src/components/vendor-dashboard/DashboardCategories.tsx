@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tags, Loader2, Check, AlertCircle } from "lucide-react";
-import { useClerkSupabase } from "@/hooks/useClerkSupabase";
+import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { categories as allCategories } from "@/hooks/useVendorFilters";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +15,7 @@ interface DashboardCategoriesProps {
 }
 
 export function DashboardCategories({ vendorName }: DashboardCategoriesProps) {
-  const supabase = useClerkSupabase();
+  const supabase = useVendorDataClient();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
