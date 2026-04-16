@@ -17,6 +17,7 @@ import {
   Target,
   Store,
   Sliders,
+  Eye,
 } from "lucide-react";
 
 const navItems = [
@@ -24,6 +25,7 @@ const navItems = [
   { to: "/admin/sales-targets", icon: Target, label: "Sales Targets" },
   { to: "/admin/vendors", icon: Store, label: "Vendor Management" },
   { to: "/admin/tier-config", icon: Sliders, label: "Tier Config" },
+  { to: "/admin/tier-preview", icon: Eye, label: "Tier Preview" },
   { to: "/admin/chat", icon: Sparkles, label: "AI Chat" },
   { to: "/admin/queue", icon: ListChecks, label: "Vendor Queue" },
   { to: "/admin/claims", icon: BadgeCheck, label: "Claims" },

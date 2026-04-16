@@ -144,5 +144,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 **Plans:** 2 plans
 
 Plans:
-- [ ] 07-01-PLAN.md — Audit RPC for duplicate detection + normalize vendor names across all tables
-- [ ] 07-02-PLAN.md — Bulk merge duplicate entities, backfill unlinked mentions, health check RPC
+- [x] 07-01-PLAN.md — Audit RPC for duplicate detection + normalize vendor names across all tables
+- [x] 07-02-PLAN.md — Bulk merge duplicate entities, backfill unlinked mentions, health check RPC
