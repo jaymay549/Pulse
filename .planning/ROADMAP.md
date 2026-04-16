@@ -92,8 +92,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Database: tier_component_config table, seed data (3 tiers x 11 components), upsert + get RPCs, TypeScript types
-- [ ] 04-02-PLAN.md — Admin UI: TierConfigPage with grouped visibility grid, useTierConfig hook, sidebar + route wiring
+- [x] 04-01-PLAN.md — Database: tier_component_config table, seed data (3 tiers x 11 components), upsert + get RPCs, TypeScript types
+- [x] 04-02-PLAN.md — Admin UI: TierConfigPage with grouped visibility grid, useTierConfig hook, sidebar + route wiring
 
 **UI hint**: yes
 
@@ -134,3 +134,15 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 4. Tier Config Foundation | v1.1 | 0/2 | In progress | - |
 | 5. Config-Driven Gating Engine | v1.1 | 0/? | Not started | - |
 | 6. T1/T2 Content Rules | v1.1 | 0/? | Not started | - |
+
+### Phase 7: De-dupe and Normalize All Vendor Tenants
+
+**Goal:** Audit and clean up all vendor tenants in the database — remove duplicates, normalize naming, and ensure each vendor has a single canonical profile before selling vendor tiers
+**Requirements**: Identify duplicates across vendor_profiles/vendor_metadata/vendor_mentions; merge into canonical records preserving richest data; normalize vendor names (casing, whitespace, abbreviations); validate parent/child relationships; ensure all vendor_mentions point to valid non-duplicate profiles
+**Depends on:** None (independent data cleanup, can run in parallel with Phases 4-6)
+**Linear:** CAR-27
+**Plans:** 2 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Audit RPC for duplicate detection + normalize vendor names across all tables
+- [ ] 07-02-PLAN.md — Bulk merge duplicate entities, backfill unlinked mentions, health check RPC
