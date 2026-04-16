@@ -5,6 +5,9 @@ import {
   DndContext,
   closestCenter,
   DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
@@ -51,9 +54,8 @@ function SortableNavItem({ item, dimmed }: SortableNavItemProps) {
               : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
           }`
         }
-        // Prevent NavLink from stealing pointer events during drag
         onClick={(e) => {
-          if (transform) e.preventDefault();
+          if (isDragging) e.preventDefault();
         }}
       >
         <item.icon className="h-4 w-4 flex-shrink-0" />
@@ -80,6 +82,10 @@ const AdminSidebar = () => {
   const { user } = useClerkAuth();
   const { activeItems, unusedItems, moveItem, reorderSection } = useAdminSidebarConfig(
     user?.id
+  );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
   const [unusedCollapsed, setUnusedCollapsed] = useState(true);
@@ -162,6 +168,7 @@ const AdminSidebar = () => {
       </div>
 
       <DndContext
+        sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
