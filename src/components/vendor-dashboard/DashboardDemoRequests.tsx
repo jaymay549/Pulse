@@ -112,8 +112,9 @@ export function DashboardDemoRequests({ vendorName }: DashboardDemoRequestsProps
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex flex-col items-center justify-center py-24 space-y-3">
         <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        <p className="text-sm text-slate-500">Loading demo requests...</p>
       </div>
     );
   }
@@ -121,29 +122,26 @@ export function DashboardDemoRequests({ vendorName }: DashboardDemoRequestsProps
   const newCount = requests?.filter((r) => r.status === "new").length ?? 0;
 
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-6">
-        <div>
-          <h1
-            className="text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2"
-            style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
-          >
-            Demo Requests
-            {newCount > 0 && (
-              <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-primary text-[10px] font-bold text-white">
-                {newCount}
-              </span>
-            )}
-          </h1>
-          <p className="text-sm text-slate-400 mt-0.5">
-            Dealers who requested a demo from your vendor profile
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+          Demo Requests
+          {newCount > 0 && (
+            <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-indigo-600 text-[10px] font-bold text-white">
+              {newCount}
+            </span>
+          )}
+        </h1>
+        <p className="text-sm text-slate-500 mt-1">
+          Dealers who requested a demo from your vendor profile
+        </p>
       </div>
 
       {!requests?.length ? (
-        <div className="rounded-2xl border border-border/50 bg-white p-10 text-center">
-          <CalendarCheck className="h-8 w-8 text-slate-300 mx-auto mb-3" />
+        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+            <CalendarCheck className="h-5 w-5 text-slate-400" />
+          </div>
           <p className="text-sm font-medium text-slate-500">No demo requests yet</p>
           <p className="text-xs text-slate-400 mt-1">
             When dealers request a demo on your profile page, they'll appear here.

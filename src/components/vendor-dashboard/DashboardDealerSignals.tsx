@@ -185,7 +185,7 @@ export function DashboardDealerSignals({ vendorName }: DashboardDealerSignalsPro
 function Header() {
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-slate-900">Dealer Signals</h1>
+      <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Dealer Signals</h1>
       <p className="mt-1 text-sm text-slate-500">
         Self-reported data from dealers who use this vendor
       </p>

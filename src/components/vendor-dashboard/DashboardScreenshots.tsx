@@ -167,10 +167,7 @@ export function DashboardScreenshots({ vendorName }: DashboardScreenshotsProps) 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-          <Image className="h-5 w-5 text-slate-400" />
-          Product Screenshots
-        </h2>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Visual Gallery</h1>
         <p className="mt-1 text-sm text-slate-500">
           Show dealers what your product looks like. Screenshots appear on your public profile
           in the order listed below.
@@ -229,13 +226,15 @@ export function DashboardScreenshots({ vendorName }: DashboardScreenshotsProps) 
 
       {/* Screenshot list */}
       {isLoading ? (
-        <div className="flex justify-center py-8">
+        <div className="flex flex-col items-center justify-center py-16 space-y-3">
           <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+          <p className="text-sm text-slate-500">Loading screenshots...</p>
         </div>
       ) : screenshots.length === 0 ? (
-        <p className="text-sm text-slate-400 text-center py-4">
-          No screenshots yet. Upload your first one above.
-        </p>
+        <div className="flex flex-col items-center justify-center py-10 space-y-2">
+          <p className="text-sm font-medium text-slate-500">No screenshots yet.</p>
+          <p className="text-xs text-slate-400">Upload your first one above.</p>
+        </div>
       ) : (
         <div className="space-y-3">
           {screenshots.map((shot, index) => (

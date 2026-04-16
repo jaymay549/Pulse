@@ -180,20 +180,20 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
   ].filter(d => d.value > 0);
 
   return (
-    <div className="space-y-8 pb-12 animate-in fade-in duration-700">
+    <div className="space-y-6 pb-12 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Discussions & Response</h1>
-          <p className="text-slate-500 mt-1 font-medium">Engage with your community and monitor brand health</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Discussions & Feedback</h1>
+          <p className="text-sm text-slate-500 mt-1">Engage with your community and monitor brand health</p>
         </div>
         <div className="flex items-center gap-2">
-           <Badge className="bg-indigo-50 text-indigo-700 border-none font-bold px-3 py-1">
-             {mentions.length} TOTAL DISCUSSIONS
+           <Badge className="bg-indigo-50 text-indigo-700 border-none font-medium px-3 py-1 text-[10px] uppercase tracking-wider">
+             {mentions.length} Discussions
            </Badge>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Sentiment Analysis Summary */}
         <div className="lg:col-span-1 space-y-6">
           <Card className="border-slate-200 shadow-sm overflow-hidden sticky top-24">
@@ -288,14 +288,14 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
 
           {/* Mentions Cards */}
           {mentions.length === 0 ? (
-             <Card className="border-dashed border-2 bg-slate-50/50 py-20">
+             <Card className="border-slate-200 bg-slate-50/30 py-20">
                <CardContent className="flex flex-col items-center justify-center text-center">
-                 <div className="h-16 w-16 rounded-full bg-white shadow-sm flex items-center justify-center mb-4 text-slate-300">
-                   <MessageSquare className="h-8 w-8" />
+                 <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                   <MessageSquare className="h-5 w-5 text-slate-400" />
                  </div>
-                 <h3 className="text-lg font-bold text-slate-900">No Discussions Found</h3>
-                 <p className="text-slate-500 max-w-xs mx-auto mt-2">
-                   We haven't detected any community discussions for **{vendorName}** yet.
+                 <p className="text-sm font-medium text-slate-500">No Discussions Found</p>
+                 <p className="text-xs text-slate-400 max-w-xs mx-auto mt-1">
+                   We haven't detected any community discussions for {vendorName} yet.
                  </p>
                </CardContent>
              </Card>
@@ -308,10 +308,10 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
 
                 return (
                   <Card key={mention.id} className={cn(
-                    "border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-all duration-200",
+                    "border-slate-200 shadow-sm overflow-hidden",
                     hasResponded && "border-emerald-100 bg-emerald-50/10"
                   )}>
-                    <CardContent className="p-6">
+                    <CardContent className="p-4">
                       <div className="flex flex-col gap-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-center gap-3">

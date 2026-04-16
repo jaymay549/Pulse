@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUp, ArrowDown, Minus, TrendingUp } from "lucide-react";
+import { ArrowUp, ArrowDown, Minus, TrendingUp, Loader2 } from "lucide-react";
 import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { Badge } from "@/components/ui/badge";
 
@@ -122,14 +122,23 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
   });
 
   if (profileLoading || competitorsLoading) {
-    return <p className="text-sm text-slate-500">Loading intel...</p>;
+    return (
+      <div className="flex flex-col items-center justify-center py-24 space-y-3">
+        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        <p className="text-sm text-slate-500">Loading intel...</p>
+      </div>
+    );
   }
 
   if (!ownProfile) {
     return (
-      <p className="text-sm text-slate-500">
-        No data available for {vendorName}.
-      </p>
+      <div className="flex flex-col items-center justify-center py-24 space-y-3">
+        <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
+          <TrendingUp className="h-5 w-5 text-slate-400" />
+        </div>
+        <p className="text-sm font-medium text-slate-500">No data available for {vendorName}.</p>
+        <p className="text-xs text-slate-400">Intel will appear once dealer discussions are recorded.</p>
+      </div>
     );
   }
 
@@ -154,17 +163,19 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
   ];
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-slate-900">Market Intel</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        Competitive intelligence from real dealer conversations
-      </p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Market Intel</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Competitive intelligence from real dealer conversations
+        </p>
+      </div>
 
       {/* Your Position card */}
-      <div className="mt-6 rounded-xl border bg-white p-6">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-slate-400" />
-          <h2 className="text-lg font-medium text-slate-900">Your Position</h2>
+          <TrendingUp className="h-4 w-4 text-slate-400" />
+          <h2 className="text-sm font-bold text-slate-900">Your Position</h2>
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-4">
@@ -198,8 +209,8 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
       </div>
 
       {/* Competitor Comparison table */}
-      <div className="mt-6 rounded-xl border bg-white p-6">
-        <h2 className="text-lg font-medium text-slate-900">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-sm font-bold text-slate-900">
           Competitor Comparison
         </h2>
         <p className="mt-1 text-sm text-slate-500">

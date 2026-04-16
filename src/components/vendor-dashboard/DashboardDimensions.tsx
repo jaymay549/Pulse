@@ -162,29 +162,43 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
   });
 
   if (dimensionsLoading) {
-    return <p className="text-sm text-slate-500">Loading dimensions...</p>;
+    return (
+      <div className="flex flex-col items-center justify-center py-24 space-y-3">
+        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        <p className="text-sm text-slate-500">Loading dimensions...</p>
+      </div>
+    );
   }
 
   if (!dimensions || dimensions.length === 0) {
     return (
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Dimensions</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          No dimensional feedback available yet for {vendorName}.
-        </p>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Feature Matrix</h1>
+          <p className="mt-1 text-sm text-slate-500">Dimensional feedback from dealer conversations</p>
+        </div>
+        <div className="flex flex-col items-center justify-center py-16 space-y-3">
+          <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
+            <Loader2 className="h-5 w-5 text-slate-400" />
+          </div>
+          <p className="text-sm font-medium text-slate-500">No dimensional feedback available yet.</p>
+          <p className="text-xs text-slate-400">Data will appear once dealers discuss specific features.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-slate-900">Dimensions</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        See how dealers rate you across key dimensions
-      </p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Feature Matrix</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          See how dealers rate you across key dimensions
+        </p>
+      </div>
 
       {/* Charts — 2 column grid */}
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Radar chart overview */}
         {dimensions.length >= 3 && (() => {
           const radarData = dimensions.map((dim) => ({
@@ -195,8 +209,8 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
           }));
 
           return (
-            <div className="rounded-xl border bg-white p-6">
-              <h2 className="text-lg font-medium text-slate-900">Dimension Overview</h2>
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-sm font-bold text-slate-900">Dimension Overview</h2>
               <p className="mt-1 text-xs text-slate-400">Positive sentiment % across all dimensions</p>
               <ResponsiveContainer width="100%" height={280}>
                 <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="75%">
@@ -230,8 +244,8 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
           }));
 
           return (
-            <div className="rounded-xl border bg-white p-6">
-              <h2 className="text-lg font-medium text-slate-900">Discussions by Dimension</h2>
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-sm font-bold text-slate-900">Discussions by Dimension</h2>
               <ResponsiveContainer width="100%" height={dimensions.length * 50 + 40}>
                 <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
@@ -266,10 +280,12 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
       </div>
 
       {/* Dimensional Breakdown — 2 column grid with hover popovers */}
-      <h2 className="mt-6 text-lg font-medium text-slate-900">Dimensional Breakdown</h2>
-      <p className="mt-1 text-xs text-slate-400">Hover a dimension to see recent discussions</p>
+      <div>
+        <h2 className="text-sm font-bold text-slate-900">Dimensional Breakdown</h2>
+        <p className="mt-1 text-xs text-slate-400">Hover a dimension to see recent discussions</p>
+      </div>
 
-      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {dimensions.map((dim) => {
           const dimConfig = VENDOR_DIMENSIONS[dim.dimension];
           const label = dimConfig?.label || dim.dimension;
