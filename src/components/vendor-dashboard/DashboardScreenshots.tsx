@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Image, Loader2, Trash2, ArrowUp, ArrowDown, UploadCloud, AlertCircle, Check } from "lucide-react";
-import { useVendorDataClient } from "@/hooks/useVendorDataClient";
+import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useVendorScreenshots, type VendorScreenshot } from "@/hooks/useVendorScreenshots";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +14,7 @@ interface DashboardScreenshotsProps {
 }
 
 export function DashboardScreenshots({ vendorName }: DashboardScreenshotsProps) {
-  const supabase = useVendorDataClient();
+  const supabase = useClerkSupabase();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);

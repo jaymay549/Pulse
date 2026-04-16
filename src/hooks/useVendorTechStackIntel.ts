@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useVendorDataClient } from "@/hooks/useVendorDataClient";
+import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -36,7 +36,7 @@ export interface VendorTechStackIntel {
 // ── Hook ─────────────────────────────────────────────────────
 
 export function useVendorTechStackIntel(vendorName: string) {
-  const supabase = useVendorDataClient();
+  const supabase = useClerkSupabase();
 
   return useQuery({
     queryKey: ["vendor-tech-stack-intel", vendorName],

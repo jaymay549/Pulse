@@ -2,10 +2,8 @@ import { useState } from "react";
 import { Navigate, useSearchParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, ShieldCheck } from "lucide-react";
-import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
-import { useVendorSupabaseAuth } from "@/hooks/useVendorSupabaseAuth";
-import { vendorSupabase } from "@/integrations/supabase/vendorClient";
+import { useClerkAuth } from "@/hooks/useClerkAuth";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -32,9 +30,8 @@ interface VendorProfileRow {
 }
 
 export default function VendorDashboardPage() {
-  const clerkSupabase = useClerkSupabase();
+  const supabase = useClerkSupabase();
   const { user, isAuthenticated, isAdmin, isLoading: authLoading, getToken } = useClerkAuth();
-  const { isAuthenticated: isVendorAuth, user: vendorUser, isLoading: vendorAuthLoading } = useVendorSupabaseAuth();
   const [activeSection, setActiveSection] = useState<DashboardSection>("intelligence");
   const [searchParams] = useSearchParams();
 
@@ -77,7 +74,7 @@ export default function VendorDashboardPage() {
   const { data: ownVendorProfile, isLoading: ownLoading } = useQuery({
     queryKey: ["my-vendor-profile", user?.id],
     queryFn: async () => {
-      const { data, error } = await clerkSupabase
+      const { data, error } = await supabase
         .from("vendor_profiles")
         .select("id, vendor_name, is_approved")
         .eq("user_id", user!.id)
@@ -89,45 +86,15 @@ export default function VendorDashboardPage() {
     enabled: isAuthenticated && !!user?.id && !isAdminMode,
   });
 
-  // Vendor Supabase Auth: resolve vendor name from vendor_logins table
-  const { data: vendorLoginProfile, isLoading: vendorLoginLoading } = useQuery({
-    queryKey: ["vendor-login-profile", vendorUser?.id],
-    queryFn: async () => {
-      const { data, error } = await vendorSupabase
-        .from("vendor_logins")
-        .select("vendor_name, tier")
-        .eq("user_id", vendorUser!.id)
-        .maybeSingle();
-      if (error) {
-        console.error("[VendorAuth] vendor_logins lookup error:", error);
-        throw error;
-      }
-      return data;
-    },
-    enabled: isVendorAuth && !!vendorUser?.id && !isAdminMode,
-  });
-
-  const isLoading = isAdminMode ? adminLoading : (isVendorAuth ? vendorLoginLoading : ownLoading);
-  const vendorProfile = isAdminMode
-    ? adminVendorProfile
-    : (isVendorAuth && vendorLoginProfile)
-      ? { id: "vendor-session", vendor_name: vendorLoginProfile.vendor_name, is_approved: true }
-      : ownVendorProfile;
+  const isLoading = isAdminMode ? adminLoading : ownLoading;
+  const vendorProfile = isAdminMode ? adminVendorProfile : ownVendorProfile;
   const vendorName = vendorProfile?.vendor_name ?? "";
-
-  // Extract tier from vendorLoginProfile (vendor session only).
-  // undefined in admin mode — admin always sees all sections.
-  const vendorTier = vendorLoginProfile?.tier;
-
-  // isT2 is true when admin mode (undefined tier) or tier_2 vendor.
-  // T2 section components only mount when this is true.
-  const isT2 = !vendorTier || vendorTier === "tier_2";
 
   // Must be called before any early returns to satisfy React's rules of hooks.
   // React Query cache shares data with VendorCommandCenter (same queryKey).
   const { data: dashboardIntel } = useVendorIntelligenceDashboard(vendorName);
 
-  if (authLoading || vendorAuthLoading || isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
@@ -160,23 +127,13 @@ export default function VendorDashboardPage() {
     );
   }
 
-  // Wait for vendor login query to settle before redirecting
-  const vendorQueryPending = isVendorAuth && !vendorLoginProfile && vendorLoginLoading;
-  if (vendorQueryPending) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-      </div>
-    );
-  }
-
-  if ((!isAuthenticated && !isVendorAuth) || !vendorProfile) {
+  if (!isAuthenticated || !vendorProfile) {
     return <Navigate to="/vendors" replace />;
   }
 
   return (
     <>
-      <VendorDashboardLayout vendorName={vendorName} activeSection={activeSection} onNavigate={setActiveSection} tier={vendorTier}>
+      <VendorDashboardLayout vendorName={vendorName} activeSection={activeSection} onNavigate={setActiveSection}>
         <div className="max-w-5xl">
           {isAdminMode && (
             <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-800">
@@ -192,14 +149,14 @@ export default function VendorDashboardPage() {
           {activeSection === "intelligence" && <VendorCommandCenter vendorName={vendorName} />}
           {activeSection === "overview" && <DashboardOverview vendorName={vendorName} onNavigate={setActiveSection} />}
           {activeSection === "segments" && <DashboardSegments vendorName={vendorName} />}
-          {activeSection === "mentions" && isT2 && <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfile.id} />}
+          {activeSection === "mentions" && <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfile.id} />}
           {activeSection === "profile" && <DashboardEditProfile vendorProfileId={isAdminMode ? vendorProfile.id : undefined} />}
           {activeSection === "intel" && <DashboardIntel vendorName={vendorName} />}
-          {activeSection === "dimensions" && isT2 && <DashboardDimensions vendorName={vendorName} />}
-          {activeSection === "demo-requests" && isT2 && <DashboardDemoRequests vendorName={vendorName} />}
+          {activeSection === "dimensions" && <DashboardDimensions vendorName={vendorName} />}
+          {activeSection === "demo-requests" && <DashboardDemoRequests vendorName={vendorName} supabase={supabase} />}
           {activeSection === "screenshots" && <DashboardScreenshots vendorName={vendorName} />}
           {activeSection === "categories" && <DashboardCategories vendorName={vendorName} />}
-          {activeSection === "dealer-signals" && isT2 && <DashboardDealerSignals vendorName={vendorName} />}
+          {activeSection === "dealer-signals" && <DashboardDealerSignals vendorName={vendorName} />}
         </div>
       </VendorDashboardLayout>
 

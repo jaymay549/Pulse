@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { useVendorDataClient } from "@/hooks/useVendorDataClient";
+import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { useFlagMention, useVendorFlags } from "@/hooks/useMentionFlags";
 import { FlagMentionModal } from "./FlagMentionModal";
@@ -74,7 +74,7 @@ function TypeBadge({ type }: { type: string }): JSX.Element {
 }
 
 export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMentionsProps): JSX.Element {
-  const supabase = useVendorDataClient();
+  const supabase = useClerkSupabase();
   const { user } = useClerkAuth();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<FilterType>("all");

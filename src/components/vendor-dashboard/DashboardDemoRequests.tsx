@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CalendarCheck, Loader2, ChevronDown } from "lucide-react";
-import { useVendorDataClient } from "@/hooks/useVendorDataClient";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
@@ -77,10 +77,10 @@ function StatusDropdown({
 
 interface DashboardDemoRequestsProps {
   vendorName: string;
+  supabase: SupabaseClient;
 }
 
-export function DashboardDemoRequests({ vendorName }: DashboardDemoRequestsProps) {
-  const supabase = useVendorDataClient();
+export function DashboardDemoRequests({ vendorName, supabase }: DashboardDemoRequestsProps) {
   const queryClient = useQueryClient();
 
   const { data: requests, isLoading } = useQuery({
