@@ -177,7 +177,7 @@ export default function VendorDashboardPage() {
   return (
     <>
       <VendorDashboardLayout vendorName={vendorName} activeSection={activeSection} onNavigate={setActiveSection} tier={vendorTier}>
-        <div className="max-w-5xl">
+        <div>
           {isAdminMode && (
             <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-800">
               <ShieldCheck className="h-4 w-4 flex-shrink-0" />

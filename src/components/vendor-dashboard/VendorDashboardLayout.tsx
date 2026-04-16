@@ -57,8 +57,8 @@ export function VendorDashboardLayout({ vendorName, activeSection, onNavigate, c
 
           {/* Breadcrumb / Title */}
           <div className="flex items-center text-sm font-medium">
-            <span className="text-slate-400">Dashboard</span>
-            <span className="mx-2 text-slate-300">/</span>
+            <span className="text-slate-300">Dashboard</span>
+            <span className="mx-2 text-slate-200">/</span>
             <span className="text-slate-900 font-semibold">{sectionLabels[activeSection]}</span>
           </div>
         </div>
@@ -74,20 +74,15 @@ export function VendorDashboardLayout({ vendorName, activeSection, onNavigate, c
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
           {/* Page Content */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8">
-            <div className="max-w-[1200px] mx-auto animate-in fade-in duration-500">
+          <main className="flex-1 p-6 sm:p-8 lg:p-10">
+            <div className="max-w-[1200px] mx-auto animate-in fade-in duration-300">
               {children}
             </div>
           </main>
 
           {/* Footer */}
-          <footer className="px-8 py-6 text-[12px] text-slate-400 border-t bg-white flex items-center justify-between">
+          <footer className="px-8 py-5 text-[11px] text-slate-300 border-t bg-white">
             <p>© 2026 CDG Pulse · Vendor Control Center</p>
-            <div className="flex gap-6">
-              <a href="#" className="hover:text-slate-600 transition-colors">Help Center</a>
-              <a href="#" className="hover:text-slate-600 transition-colors">API Docs</a>
-              <a href="#" className="hover:text-slate-600 transition-colors">Privacy</a>
-            </div>
           </footer>
         </div>
       </div>
