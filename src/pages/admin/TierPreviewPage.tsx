@@ -15,8 +15,9 @@ import {
   Tags,
   Image,
   Pencil,
+  ExternalLink,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Select,
   SelectContent,
@@ -74,139 +75,119 @@ const VIS_DOT: Record<ComponentVisibility, string> = {
   hidden: "bg-red-400/40",
 };
 
-type Vis = ComponentVisibility;
+// Section order matching the real vendor dashboard sidebar
+const SECTION_ORDER = [
+  "intelligence",
+  "overview",
+  "segments",
+  "intel",
+  "mentions",
+  "dealer-signals",
+  "demo-requests",
+  "dimensions",
+  "categories",
+  "screenshots",
+  "profile",
+];
 
-const VIS_WIRE: Record<Vis, { bg: string; border: string; text: string; badge: string }> = {
-  full: {
-    bg: "bg-emerald-500/5",
-    border: "border-emerald-500/20",
-    text: "text-emerald-400",
-    badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  },
-  gated: {
-    bg: "bg-amber-500/5",
-    border: "border-amber-500/20",
-    text: "text-amber-400",
-    badge: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-  },
-  hidden: {
-    bg: "bg-red-500/5",
-    border: "border-red-500/15",
-    text: "text-red-400/40",
-    badge: "bg-red-500/10 text-red-400/50 border-red-500/20",
-  },
+const SECTION_LABELS: Record<string, string> = {
+  intelligence: "Intelligence Hub",
+  overview: "Dashboard Overview",
+  segments: "Market Segments",
+  intel: "Competitive Intelligence",
+  mentions: "Discussions & Feedback",
+  "dealer-signals": "Dealer Signals",
+  "demo-requests": "Demo Requests",
+  dimensions: "Feature Matrix",
+  categories: "Market Positioning",
+  screenshots: "Visual Gallery",
+  profile: "Account Settings",
 };
 
-function VisBadge({ vis }: { vis: Vis }) {
-  const Icon = vis === "full" ? Eye : vis === "gated" ? Lock : EyeOff;
-  return (
-    <span className={`inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded border ${VIS_WIRE[vis].badge}`}>
-      <Icon className="h-2.5 w-2.5" />
-      {vis}
-    </span>
-  );
-}
+// ── Section wrapper with visibility overlay ──────────────────────────
 
-// ── Preview Content ────────────────────────────────────────────────────
-
-function PreviewContent({
-  componentKey,
-  configs,
-  tier,
+function SectionPreview({
+  sectionKey,
+  vis,
+  tierLabel,
   vendorName,
   vendorProfileId,
-  onNavigate,
 }: {
-  componentKey: string;
-  configs: any[];
-  tier: VendorTier;
+  sectionKey: string;
+  vis: ComponentVisibility;
+  tierLabel: string;
   vendorName: string;
   vendorProfileId: string;
-  onNavigate: (section: string) => void;
 }) {
-  const component = DASHBOARD_COMPONENTS.find((c) => c.key === componentKey);
-  if (!component) return null;
+  const Icon = COMPONENT_ICONS[sectionKey];
+  const label = SECTION_LABELS[sectionKey] || sectionKey;
 
-  const pageVis = getVisibility(configs, tier, component.key);
-  const StatusIcon = pageVis === "full" ? Eye : pageVis === "gated" ? Lock : EyeOff;
-
-  if (!vendorName) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 gap-3 text-zinc-600">
-        <BarChart3 className="h-10 w-10" />
-        <p className="text-sm">Select a vendor to preview their dashboard</p>
-      </div>
-    );
-  }
-
-  if (pageVis === "hidden") {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 gap-3 text-zinc-600">
-        <EyeOff className="h-10 w-10" />
-        <p className="text-sm">This page is hidden for {TIER_LABELS[tier]}</p>
-      </div>
-    );
-  }
-
-  const renderComponent = () => {
-    if (componentKey === "profile") {
-      return <DashboardEditProfile vendorProfileId={vendorProfileId} />;
-    }
-    if (componentKey === "intelligence") {
-      return <VendorCommandCenter vendorName={vendorName} />;
-    }
-    if (componentKey === "overview") {
-      return <DashboardOverview vendorName={vendorName} onNavigate={onNavigate} />;
-    }
-    if (componentKey === "segments") {
-      return <DashboardSegments vendorName={vendorName} />;
-    }
-    if (componentKey === "intel") {
-      return <DashboardIntel vendorName={vendorName} />;
-    }
-    if (componentKey === "mentions") {
-      return <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfileId} />;
-    }
-    if (componentKey === "dealer-signals") {
-      return <DashboardDealerSignals vendorName={vendorName} />;
-    }
-    if (componentKey === "demo-requests") {
-      return <DashboardDemoRequests vendorName={vendorName} />;
-    }
-    if (componentKey === "dimensions") {
-      return <DashboardDimensions vendorName={vendorName} />;
-    }
-    if (componentKey === "screenshots") {
-      return <DashboardScreenshots vendorName={vendorName} />;
-    }
-    if (componentKey === "categories") {
-      return <DashboardCategories vendorName={vendorName} />;
-    }
-    return null;
+  const visColors = {
+    full: { border: "border-emerald-500/20", bg: "bg-emerald-500/5", badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
+    gated: { border: "border-amber-500/30", bg: "bg-amber-500/5", badge: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
+    hidden: { border: "border-red-500/20", bg: "bg-red-500/5", badge: "bg-red-500/10 text-red-400/60 border-red-500/20" },
   };
-
-  const componentNode = renderComponent();
+  const colors = visColors[vis];
+  const VisIcon = vis === "full" ? Eye : vis === "gated" ? Lock : EyeOff;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2.5 mb-4">
-        <StatusIcon className={`h-4 w-4 ${VIS_WIRE[pageVis].text}`} />
-        <span className="text-lg font-medium text-zinc-200">{component.label}</span>
-        <VisBadge vis={pageVis} />
+    <div className={`rounded-xl border ${colors.border} overflow-hidden`}>
+      {/* Section header bar */}
+      <div className={`flex items-center gap-2.5 px-4 py-2.5 ${colors.bg}`}>
+        {Icon && <Icon className="h-4 w-4 text-zinc-400" />}
+        <span className="text-sm font-medium text-zinc-200 flex-1">{label}</span>
+        <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border ${colors.badge}`}>
+          <VisIcon className="h-3 w-3" />
+          {vis === "full" ? "Full Access" : vis === "gated" ? "Gated" : "Hidden"}
+        </span>
       </div>
 
-      {pageVis === "gated" ? (
-        <div className="relative">
-          <div className="absolute top-2 right-2 z-10 inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border bg-amber-500/15 text-amber-400 border-amber-500/30">
-            <Lock className="h-3 w-3" /> Gated
-          </div>
-          {componentNode}
+      {/* Section content */}
+      {vis === "hidden" ? (
+        <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-600 bg-zinc-900/30">
+          <EyeOff className="h-8 w-8 opacity-40" />
+          <p className="text-xs">Hidden for {tierLabel}</p>
         </div>
       ) : (
-        componentNode
+        <div className="relative bg-[#F9FAFB] rounded-b-xl">
+          {vis === "gated" && (
+            <div className="absolute inset-0 z-10 bg-amber-500/[0.03] pointer-events-none border-t border-amber-500/10" />
+          )}
+          <div className="p-4">
+            <SectionComponent sectionKey={sectionKey} vendorName={vendorName} vendorProfileId={vendorProfileId} />
+          </div>
+        </div>
       )}
     </div>
   );
+}
+
+function SectionComponent({
+  sectionKey,
+  vendorName,
+  vendorProfileId,
+}: {
+  sectionKey: string;
+  vendorName: string;
+  vendorProfileId: string;
+}) {
+  // noop navigate for overview - just scrolls to the section concept
+  const noop = () => {};
+
+  switch (sectionKey) {
+    case "intelligence": return <VendorCommandCenter vendorName={vendorName} />;
+    case "overview": return <DashboardOverview vendorName={vendorName} onNavigate={noop} />;
+    case "segments": return <DashboardSegments vendorName={vendorName} />;
+    case "intel": return <DashboardIntel vendorName={vendorName} />;
+    case "mentions": return <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfileId} />;
+    case "dealer-signals": return <DashboardDealerSignals vendorName={vendorName} />;
+    case "demo-requests": return <DashboardDemoRequests vendorName={vendorName} />;
+    case "dimensions": return <DashboardDimensions vendorName={vendorName} />;
+    case "screenshots": return <DashboardScreenshots vendorName={vendorName} />;
+    case "categories": return <DashboardCategories vendorName={vendorName} />;
+    case "profile": return <DashboardEditProfile vendorProfileId={vendorProfileId} />;
+    default: return null;
+  }
 }
 
 // ── Page ────────────────────────────────────────────────────────────────
@@ -214,7 +195,6 @@ function PreviewContent({
 const TierPreviewPage = () => {
   const { configs, isLoading, error } = useTierConfig();
   const [previewTier, setPreviewTier] = useState<VendorTier>("tier_1");
-  const [activeSection, setActiveSection] = useState<string>("intelligence");
   const [selectedVendorId, setSelectedVendorId] = useState<string>("");
 
   const supabase = useClerkSupabase();
@@ -243,6 +223,10 @@ const TierPreviewPage = () => {
   const selectedVendorName = selectedVendor?.vendor_name ?? "";
   const selectedVendorProfileId = selectedVendor?.id ?? "";
 
+  const dashboardUrl = selectedVendorName
+    ? `/vendor-dashboard?vendor=${encodeURIComponent(selectedVendorName)}`
+    : "";
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-32">
@@ -265,8 +249,11 @@ const TierPreviewPage = () => {
     );
   }
 
+  const tierLabel = TIER_LABELS[previewTier];
+
   return (
     <div className="h-full flex flex-col">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-zinc-100">Tier Preview</h1>
@@ -295,77 +282,73 @@ const TierPreviewPage = () => {
               ))}
             </SelectContent>
           </Select>
+          {dashboardUrl && (
+            <a
+              href={dashboardUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-400 text-xs hover:text-zinc-200 hover:bg-zinc-700 transition-colors"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Open dashboard
+            </a>
+          )}
         </div>
       </div>
 
+      {/* Tier summary bar */}
+      <div className="flex items-center gap-4 mb-4 px-1">
+        <span className="text-xs text-zinc-500">
+          {tierLabel}:
+        </span>
+        {(() => {
+          const counts = { full: 0, gated: 0, hidden: 0 };
+          SECTION_ORDER.forEach((key) => {
+            counts[getVisibility(configs, previewTier, key)]++;
+          });
+          return (
+            <>
+              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400">
+                <Eye className="h-3 w-3" /> {counts.full} full
+              </span>
+              <span className="inline-flex items-center gap-1 text-[11px] text-amber-400">
+                <Lock className="h-3 w-3" /> {counts.gated} gated
+              </span>
+              <span className="inline-flex items-center gap-1 text-[11px] text-red-400/60">
+                <EyeOff className="h-3 w-3" /> {counts.hidden} hidden
+              </span>
+            </>
+          );
+        })()}
+      </div>
+
+      {/* All sections stacked */}
       <motion.div
-        className="flex-1 rounded-xl border border-zinc-800/60 bg-zinc-900/50 overflow-hidden flex"
+        className="flex-1 overflow-y-auto space-y-4 pb-8"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        {/* Sidebar */}
-        <div className="w-52 border-r border-zinc-800/40 py-4 flex flex-col gap-1 bg-zinc-900/80 overflow-y-auto">
-          {GROUPS.map((group) => {
-            const components = DASHBOARD_COMPONENTS.filter((c) => c.group === group);
+        {!selectedVendorName ? (
+          <div className="flex flex-col items-center justify-center py-32 gap-3 text-zinc-600">
+            <BarChart3 className="h-10 w-10" />
+            <p className="text-sm">Select a vendor to preview their dashboard</p>
+          </div>
+        ) : (
+          SECTION_ORDER.map((sectionKey) => {
+            const vis = getVisibility(configs, previewTier, sectionKey);
             return (
-              <div key={group} className="px-3 mb-3">
-                <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider px-2.5 mb-2">
-                  {group}
-                </p>
-                {components.map((c) => {
-                  const vis = getVisibility(configs, previewTier, c.key);
-                  const Icon = COMPONENT_ICONS[c.key];
-                  const isActive = activeSection === c.key;
-                  return (
-                    <button
-                      key={c.key}
-                      onClick={() => setActiveSection(c.key)}
-                      className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] transition-all ${
-                        isActive
-                          ? "bg-zinc-800 " + VIS_NAV_STYLE[vis]
-                          : VIS_NAV_STYLE[vis] + " hover:bg-zinc-800/50"
-                      }`}
-                    >
-                      {Icon && <Icon className="h-3.5 w-3.5 flex-shrink-0 opacity-60" />}
-                      <span className="truncate flex-1 text-left">{c.label}</span>
-                      <div className="flex items-center gap-0.5 ml-auto">
-                        {TIERS.map((t) => (
-                          <div
-                            key={t}
-                            className={`h-1.5 w-1.5 rounded-full ${VIS_DOT[getVisibility(configs, t, c.key)]} ${t === previewTier ? "ring-1 ring-white/30" : ""}`}
-                          />
-                        ))}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`${activeSection}-${previewTier}-${selectedVendorId}`}
-              initial={{ opacity: 0, x: 8 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -8 }}
-              transition={{ duration: 0.15 }}
-            >
-              <PreviewContent
-                componentKey={activeSection}
-                configs={configs}
-                tier={previewTier}
+              <SectionPreview
+                key={sectionKey}
+                sectionKey={sectionKey}
+                vis={vis}
+                tierLabel={tierLabel}
                 vendorName={selectedVendorName}
                 vendorProfileId={selectedVendorProfileId}
-                onNavigate={setActiveSection}
               />
-            </motion.div>
-          </AnimatePresence>
-        </div>
+            );
+          })
+        )}
       </motion.div>
     </div>
   );
