@@ -16,6 +16,7 @@ import {
 import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { VENDOR_DIMENSIONS } from "@/types/admin";
 import type { VendorDimension } from "@/hooks/useSupabaseVendorData";
+import { Loader2 } from "lucide-react";
 import {
   HoverCard,
   HoverCardTrigger,

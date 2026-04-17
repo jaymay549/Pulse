@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Loader2,
   Eye,
@@ -16,15 +16,10 @@ import {
   Image,
   Pencil,
   ExternalLink,
+  Search,
+  X,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { useTierConfig, getVisibility } from "@/hooks/useTierConfig";
 import {
@@ -194,10 +189,24 @@ function SectionComponent({
 
 const TierPreviewPage = () => {
   const { configs, isLoading, error } = useTierConfig();
-  const [previewTier, setPreviewTier] = useState<VendorTier>("tier_1");
   const [selectedVendorId, setSelectedVendorId] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [tierOverride, setTierOverride] = useState<VendorTier | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const supabase = useClerkSupabase();
+
+  // Fetch vendor tiers from admin RPC (vendor_logins has RLS)
+  const { data: vendorLogins = [] } = useQuery({
+    queryKey: ["admin-vendor-logins-tiers"],
+    queryFn: async () => {
+      const { data, error: rpcErr } = await supabase.rpc("admin_list_vendor_logins" as never);
+      if (rpcErr) throw rpcErr;
+      return (data ?? []) as { vendor_name: string; tier: string }[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   const { data: vendors = [] } = useQuery({
     queryKey: ["tier-preview-vendors"],
@@ -212,6 +221,12 @@ const TierPreviewPage = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  const filteredVendors = useMemo(() => {
+    if (!searchQuery.trim()) return vendors;
+    const q = searchQuery.toLowerCase();
+    return vendors.filter((v) => v.vendor_name.toLowerCase().includes(q));
+  }, [vendors, searchQuery]);
+
   // Default to first vendor when vendors load
   useEffect(() => {
     if (vendors.length > 0 && !selectedVendorId) {
@@ -219,9 +234,32 @@ const TierPreviewPage = () => {
     }
   }, [vendors, selectedVendorId]);
 
+  // Focus search input when opened
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchOpen]);
+
   const selectedVendor = vendors.find((v) => v.id === selectedVendorId);
   const selectedVendorName = selectedVendor?.vendor_name ?? "";
   const selectedVendorProfileId = selectedVendor?.id ?? "";
+
+  // Resolve vendor's actual tier from vendor_logins
+  const vendorActualTier = useMemo(() => {
+    if (!selectedVendorName) return null;
+    const login = vendorLogins.find(
+      (vl) => vl.vendor_name?.toLowerCase() === selectedVendorName.toLowerCase()
+    );
+    return (login?.tier as VendorTier) || null;
+  }, [selectedVendorName, vendorLogins]);
+
+  // Reset tier override when vendor changes
+  useEffect(() => {
+    setTierOverride(null);
+  }, [selectedVendorId]);
+
+  const previewTier: VendorTier = tierOverride ?? vendorActualTier ?? "tier_1";
 
   const dashboardUrl = selectedVendorName
     ? `/vendor-dashboard?vendor=${encodeURIComponent(selectedVendorName)}`
@@ -249,7 +287,7 @@ const TierPreviewPage = () => {
     );
   }
 
-  const tierLabel = TIER_LABELS[previewTier];
+  const tierLabel = TIER_LABELS[previewTier] || "Tier 1 ($12K)";
 
   return (
     <div className="h-full flex flex-col">
@@ -262,26 +300,50 @@ const TierPreviewPage = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={selectedVendorId} onValueChange={setSelectedVendorId}>
-            <SelectTrigger className="w-56 h-9 bg-zinc-800 border-zinc-700 text-zinc-300">
-              <SelectValue placeholder="Select vendor..." />
-            </SelectTrigger>
-            <SelectContent>
-              {vendors.map((v) => (
-                <SelectItem key={v.id} value={v.id}>{v.vendor_name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={previewTier} onValueChange={(v: VendorTier) => setPreviewTier(v)}>
-            <SelectTrigger className="w-44 h-9 bg-zinc-800 border-zinc-700 text-zinc-300">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TIERS.map((t) => (
-                <SelectItem key={t} value={t}>{TIER_LABELS[t]}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Search bar */}
+          <div className="relative">
+            <div className="flex items-center gap-2 h-9 bg-zinc-800 border border-zinc-700 rounded-md px-3 w-72">
+              <Search className="h-3.5 w-3.5 text-zinc-500 flex-shrink-0" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setIsSearchOpen(true);
+                }}
+                onFocus={() => setIsSearchOpen(true)}
+                placeholder="Search vendors..."
+                className="bg-transparent border-none outline-none text-sm text-zinc-300 placeholder:text-zinc-600 w-full"
+              />
+              {searchQuery && (
+                <button onClick={() => { setSearchQuery(""); setIsSearchOpen(false); }} className="text-zinc-500 hover:text-zinc-300">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            {isSearchOpen && filteredVendors.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto">
+                {filteredVendors.map((v) => (
+                  <button
+                    key={v.id}
+                    onClick={() => {
+                      setSelectedVendorId(v.id);
+                      setSearchQuery("");
+                      setIsSearchOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                      v.id === selectedVendorId
+                        ? "bg-zinc-700 text-zinc-100"
+                        : "text-zinc-400 hover:bg-zinc-700/50 hover:text-zinc-200"
+                    }`}
+                  >
+                    {v.vendor_name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           {dashboardUrl && (
             <a
               href={dashboardUrl}
@@ -296,31 +358,33 @@ const TierPreviewPage = () => {
         </div>
       </div>
 
-      {/* Tier summary bar */}
-      <div className="flex items-center gap-4 mb-4 px-1">
-        <span className="text-xs text-zinc-500">
-          {tierLabel}:
-        </span>
-        {(() => {
-          const counts = { full: 0, gated: 0, hidden: 0 };
-          SECTION_ORDER.forEach((key) => {
-            counts[getVisibility(configs, previewTier, key)]++;
-          });
-          return (
-            <>
-              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400">
-                <Eye className="h-3 w-3" /> {counts.full} full
-              </span>
-              <span className="inline-flex items-center gap-1 text-[11px] text-amber-400">
-                <Lock className="h-3 w-3" /> {counts.gated} gated
-              </span>
-              <span className="inline-flex items-center gap-1 text-[11px] text-red-400/60">
-                <EyeOff className="h-3 w-3" /> {counts.hidden} hidden
-              </span>
-            </>
-          );
-        })()}
-      </div>
+      {/* Selected vendor indicator + tier selector */}
+      {selectedVendorName && (
+        <div className="flex items-center gap-3 mb-4 px-1">
+          <span className="text-sm font-medium text-zinc-300">{selectedVendorName}</span>
+          {vendorActualTier && (
+            <span className="text-xs text-zinc-500">
+              Actual tier: {TIER_LABELS[vendorActualTier] || vendorActualTier}
+            </span>
+          )}
+          <div className="flex items-center gap-1 ml-auto">
+            <span className="text-xs text-zinc-500 mr-1">Preview as:</span>
+            {TIERS.map((t) => (
+              <button
+                key={t}
+                onClick={() => setTierOverride(t === previewTier && !tierOverride ? null : t)}
+                className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
+                  t === previewTier
+                    ? "bg-zinc-700 border-zinc-600 text-zinc-200"
+                    : "bg-zinc-800/50 border-zinc-700/50 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600"
+                }`}
+              >
+                {TIER_LABELS[t] || t}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* All sections stacked */}
       <motion.div

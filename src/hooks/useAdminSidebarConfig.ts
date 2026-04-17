@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useClerkSupabase } from "./useClerkSupabase";
 import {
   LayoutDashboard,
   ListChecks,
@@ -50,6 +52,8 @@ export const NAV_ITEMS: NavItem[] = [
 
 const DEFAULT_UNUSED_IDS = ["send", "prompts", "trends", "debug"];
 
+const QUERY_KEY = ["admin-sidebar-config"];
+
 interface SidebarConfig {
   activeIds: string[];
   unusedIds: string[];
@@ -63,8 +67,12 @@ function getDefaultConfig(): SidebarConfig {
   };
 }
 
-function getStorageKey(userId: string): string {
-  return `admin-sidebar-config-${userId}`;
+/** Add any new NAV_ITEMS not present in the stored config */
+function withForwardCompat(config: SidebarConfig): SidebarConfig {
+  const knownIds = new Set([...config.activeIds, ...config.unusedIds]);
+  const newIds = NAV_ITEMS.map((i) => i.id).filter((id) => !knownIds.has(id));
+  if (newIds.length === 0) return config;
+  return { activeIds: [...config.activeIds, ...newIds], unusedIds: config.unusedIds };
 }
 
 function resolveItems(ids: string[]): NavItem[] {
@@ -74,67 +82,76 @@ function resolveItems(ids: string[]): NavItem[] {
 }
 
 /**
- * Hook that manages the admin sidebar configuration with localStorage persistence.
- * Keyed by Clerk userId so each admin gets their own layout.
+ * Hook that manages the admin sidebar configuration with Supabase persistence.
+ * The config is shared across all admins — any admin's reorder is visible to everyone.
  */
 export function useAdminSidebarConfig(userId: string | undefined) {
-  const [config, setConfig] = useState<SidebarConfig>(() => {
-    // Initial load from localStorage if userId is available
-    if (userId) {
-      try {
-        const stored = localStorage.getItem(getStorageKey(userId));
-        if (stored) {
-          const parsed = JSON.parse(stored) as SidebarConfig;
-          // Forward-compatibility: add any new items not in stored config
-          const knownIds = new Set([...parsed.activeIds, ...parsed.unusedIds]);
-          const newIds = NAV_ITEMS.map((i) => i.id).filter((id) => !knownIds.has(id));
-          if (newIds.length > 0) {
-            return {
-              activeIds: [...parsed.activeIds, ...newIds],
-              unusedIds: parsed.unusedIds,
-            };
-          }
-          return parsed;
-        }
-      } catch {
-        // Ignore parse errors, fall through to default
-      }
-    }
-    return getDefaultConfig();
+  const supabase = useClerkSupabase();
+  const queryClient = useQueryClient();
+
+  // Local optimistic state so drag-and-drop feels instant
+  const [localConfig, setLocalConfig] = useState<SidebarConfig>(getDefaultConfig);
+  const hasAppliedRemote = useRef(false);
+
+  // Fetch shared config from Supabase
+  const { data: remoteConfig } = useQuery({
+    queryKey: QUERY_KEY,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_sidebar_config")
+        .select("active_ids, unused_ids")
+        .eq("id", 1)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) return null;
+      return withForwardCompat({
+        activeIds: data.active_ids as string[],
+        unusedIds: data.unused_ids as string[],
+      });
+    },
+    enabled: !!userId,
+    staleTime: 30 * 1000, // refetch every 30s to pick up other admins' changes
+    refetchOnWindowFocus: true,
   });
 
-  // Re-read from localStorage when userId becomes available (e.g., after auth loads)
+  // Sync remote → local when remote data arrives
   useEffect(() => {
-    if (!userId) return;
-    try {
-      const stored = localStorage.getItem(getStorageKey(userId));
-      if (stored) {
-        const parsed = JSON.parse(stored) as SidebarConfig;
-        const knownIds = new Set([...parsed.activeIds, ...parsed.unusedIds]);
-        const newIds = NAV_ITEMS.map((i) => i.id).filter((id) => !knownIds.has(id));
-        setConfig({
-          activeIds: newIds.length > 0 ? [...parsed.activeIds, ...newIds] : parsed.activeIds,
-          unusedIds: parsed.unusedIds,
-        });
-      } else {
-        setConfig(getDefaultConfig());
-      }
-    } catch {
-      setConfig(getDefaultConfig());
+    if (remoteConfig) {
+      setLocalConfig(remoteConfig);
+      hasAppliedRemote.current = true;
     }
-  }, [userId]);
+  }, [remoteConfig]);
+
+  // Upsert mutation
+  const { mutate: saveConfig } = useMutation({
+    mutationFn: async (config: SidebarConfig) => {
+      const { error } = await supabase
+        .from("admin_sidebar_config")
+        .upsert(
+          {
+            id: 1,
+            active_ids: config.activeIds,
+            unused_ids: config.unusedIds,
+            updated_at: new Date().toISOString(),
+            updated_by: userId ?? null,
+          },
+          { onConflict: "id" }
+        );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+    },
+  });
 
   const persist = useCallback(
     (newConfig: SidebarConfig) => {
       if (userId) {
-        try {
-          localStorage.setItem(getStorageKey(userId), JSON.stringify(newConfig));
-        } catch {
-          // Ignore storage errors (e.g., private browsing quota)
-        }
+        saveConfig(newConfig);
       }
     },
-    [userId]
+    [userId, saveConfig]
   );
 
   /**
@@ -142,7 +159,7 @@ export function useAdminSidebarConfig(userId: string | undefined) {
    */
   const moveItem = useCallback(
     (itemId: string, toSection: "active" | "unused", newIndex?: number) => {
-      setConfig((prev) => {
+      setLocalConfig((prev) => {
         const nextActive = prev.activeIds.filter((id) => id !== itemId);
         const nextUnused = prev.unusedIds.filter((id) => id !== itemId);
 
@@ -173,7 +190,7 @@ export function useAdminSidebarConfig(userId: string | undefined) {
    */
   const reorderSection = useCallback(
     (section: "active" | "unused", orderedIds: string[]) => {
-      setConfig((prev) => {
+      setLocalConfig((prev) => {
         const next =
           section === "active"
             ? { ...prev, activeIds: orderedIds }
@@ -186,8 +203,8 @@ export function useAdminSidebarConfig(userId: string | undefined) {
   );
 
   return {
-    activeItems: resolveItems(config.activeIds),
-    unusedItems: resolveItems(config.unusedIds),
+    activeItems: resolveItems(localConfig.activeIds),
+    unusedItems: resolveItems(localConfig.unusedIds),
     moveItem,
     reorderSection,
   };

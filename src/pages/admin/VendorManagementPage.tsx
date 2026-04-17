@@ -1,14 +1,20 @@
 import React, { useState, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, Loader2, Trash2, KeyRound, UserPlus, Copy, ChevronDown } from "lucide-react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
-import { VendorTierBadge } from "@/components/admin/vendor-management/VendorTierBadge";
 import { VendorWizardDialog } from "@/components/admin/vendor-management/VendorWizardDialog";
 
 interface VendorLogin {
@@ -34,6 +40,74 @@ function relativeDate(dateStr: string): string {
 }
 
 const EMAIL_REGEX = /.+@.+\..+/;
+
+const TIER_OPTIONS = [
+  { value: "unverified", label: "Unverified", style: "text-zinc-400" },
+  { value: "tier_1", label: "Tier 1", style: "text-green-400" },
+  { value: "tier_2", label: "Tier 2", style: "text-purple-400" },
+];
+
+const TIER_TRIGGER_STYLE: Record<string, string> = {
+  unverified: "bg-zinc-800 border-zinc-700 text-zinc-400",
+  tier_1: "bg-green-900/30 border-green-700/40 text-green-300",
+  tier_2: "bg-purple-900/30 border-purple-700/40 text-purple-300",
+};
+
+function TierSelect({
+  tier,
+  vendorName,
+  supabase,
+  queryClient,
+}: {
+  tier: string;
+  vendorName: string;
+  supabase: any;
+  queryClient: any;
+}) {
+  const mutation = useMutation({
+    mutationFn: async (newTier: string) => {
+      const { error } = await supabase.rpc("admin_update_vendor_tier" as never, {
+        p_vendor_name: vendorName,
+        p_tier: newTier,
+      } as never);
+      if (error) throw error;
+    },
+    onMutate: async (newTier) => {
+      await queryClient.cancelQueries({ queryKey: ["admin-vendor-logins"] });
+      const previous = queryClient.getQueryData<VendorLogin[]>(["admin-vendor-logins"]);
+      queryClient.setQueryData<VendorLogin[]>(["admin-vendor-logins"], (old = []) =>
+        old.map((v) => (v.vendor_name === vendorName ? { ...v, tier: newTier } : v))
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(["admin-vendor-logins"], context.previous);
+      toast.error("Failed to update tier");
+    },
+    onSuccess: () => {
+      toast.success(`${vendorName} tier updated`);
+      queryClient.invalidateQueries({ queryKey: ["admin-vendor-logins"] });
+    },
+  });
+
+  return (
+    <Select value={tier} onValueChange={(v) => mutation.mutate(v)}>
+      <SelectTrigger
+        className={`w-28 h-7 text-xs border ${TIER_TRIGGER_STYLE[tier] ?? TIER_TRIGGER_STYLE.unverified}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="bg-zinc-900 border-zinc-700">
+        {TIER_OPTIONS.map((opt) => (
+          <SelectItem key={opt.value} value={opt.value} className="text-zinc-300 focus:bg-zinc-800 focus:text-zinc-100">
+            <span className={opt.style}>{opt.label}</span>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 const VendorManagementPage = () => {
   const supabase = useClerkSupabase();
@@ -240,7 +314,7 @@ const VendorManagementPage = () => {
                         <td className="px-4 py-3 text-sm text-zinc-500">
                           {logins.length} emails
                         </td>
-                        <td className="px-4 py-3"><VendorTierBadge tier={primary.tier} /></td>
+                        <td className="px-4 py-3"><TierSelect tier={primary.tier} vendorName={vendorName} supabase={supabase} queryClient={queryClient} /></td>
                         <td className="px-4 py-3 text-xs text-zinc-500" />
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1">
@@ -309,7 +383,7 @@ const VendorManagementPage = () => {
                     >
                       <td className="px-4 py-3 text-sm text-zinc-200">{vendorName}</td>
                       <td className="px-4 py-3 text-sm text-zinc-400">{primary.email}</td>
-                      <td className="px-4 py-3"><VendorTierBadge tier={primary.tier} /></td>
+                      <td className="px-4 py-3"><TierSelect tier={primary.tier} vendorName={vendorName} supabase={supabase} queryClient={queryClient} /></td>
                       <td className="px-4 py-3 text-xs text-zinc-500">
                         {primary.last_sign_in_at ? relativeDate(primary.last_sign_in_at) : "Never"}
                       </td>
