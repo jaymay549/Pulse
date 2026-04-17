@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-15)
 Phase: 07 of 6 (Tier Config Foundation)
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-04-16 - Completed quick task 260416-o1s: CAR-29 Admin Panel Cleanup
+Last activity: 2026-04-17 - Completed quick task 260417-ff7: Replace wireframe placeholders in TierPreviewPage with actual vendor dashboard components
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -82,6 +82,7 @@ None for v1.1 — RLS safety net already in place from v1.0, no RLS changes need
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260416-o1s | CAR-29: Admin Panel Cleanup - Collapsible Sidebar with Active/Unused Sections | 2026-04-16 | 955cfb7 | [260416-o1s-car-29-admin-panel-cleanup-collapsible-s](./quick/260416-o1s-car-29-admin-panel-cleanup-collapsible-s/) |
+| 260417-ff7 | Replace wireframe placeholders in TierPreviewPage with actual vendor dashboard components and add vendor name selector | 2026-04-17 | b70ce87 | [260417-ff7-replace-wireframe-placeholders-in-tierpr](./quick/260417-ff7-replace-wireframe-placeholders-in-tierpr/) |
 
 ## Session Continuity
 
