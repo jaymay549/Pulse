@@ -24,11 +24,23 @@ import { DashboardCategories } from "@/components/vendor-dashboard/DashboardCate
 import { DashboardDealerSignals } from "@/components/vendor-dashboard/DashboardDealerSignals";
 import { VendorDashboardLayout, type DashboardSection } from "@/components/vendor-dashboard/VendorDashboardLayout";
 import { useVendorIntelligenceDashboard } from "@/hooks/useVendorIntelligenceDashboard";
+import { useTierConfigReadonly, getVisibility } from "@/hooks/useTierConfig";
+import type { VendorTier, ComponentVisibility } from "@/types/tier-config";
 
 interface VendorProfileRow {
   id: string;
   vendor_name: string;
   is_approved: boolean;
+}
+
+function getSectionVisibility(
+  configs: ReturnType<typeof useTierConfigReadonly>["configs"],
+  tier: string | undefined,
+  sectionKey: string,
+): ComponentVisibility {
+  // Admin mode (no tier) or unknown tier: show everything
+  if (!tier) return "full";
+  return getVisibility(configs, tier as VendorTier, sectionKey);
 }
 
 export default function VendorDashboardPage() {
@@ -119,9 +131,8 @@ export default function VendorDashboardPage() {
   // undefined in admin mode — admin always sees all sections.
   const vendorTier = vendorLoginProfile?.tier;
 
-  // isT2 is true when admin mode (undefined tier) or tier_2 vendor.
-  // T2 section components only mount when this is true.
-  const isT2 = !vendorTier || vendorTier === "tier_2";
+  // Fetch tier component config via anon client (works for vendor magic-link sessions).
+  const { configs: tierConfigs } = useTierConfigReadonly();
 
   // Must be called before any early returns to satisfy React's rules of hooks.
   // React Query cache shares data with VendorCommandCenter (same queryKey).
@@ -189,17 +200,17 @@ export default function VendorDashboardPage() {
               </span>
             </div>
           )}
-          {activeSection === "intelligence" && <VendorCommandCenter vendorName={vendorName} />}
-          {activeSection === "overview" && <DashboardOverview vendorName={vendorName} onNavigate={setActiveSection} />}
-          {activeSection === "segments" && <DashboardSegments vendorName={vendorName} />}
-          {activeSection === "mentions" && isT2 && <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfile.id} />}
-          {activeSection === "profile" && <DashboardEditProfile vendorProfileId={isAdminMode ? vendorProfile.id : undefined} />}
-          {activeSection === "intel" && <DashboardIntel vendorName={vendorName} />}
-          {activeSection === "dimensions" && isT2 && <DashboardDimensions vendorName={vendorName} />}
-          {activeSection === "demo-requests" && isT2 && <DashboardDemoRequests vendorName={vendorName} />}
-          {activeSection === "screenshots" && <DashboardScreenshots vendorName={vendorName} />}
-          {activeSection === "categories" && <DashboardCategories vendorName={vendorName} />}
-          {activeSection === "dealer-signals" && isT2 && <DashboardDealerSignals vendorName={vendorName} />}
+          {activeSection === "intelligence" && getSectionVisibility(tierConfigs, vendorTier, "intelligence") !== "hidden" && <VendorCommandCenter vendorName={vendorName} />}
+          {activeSection === "overview" && getSectionVisibility(tierConfigs, vendorTier, "overview") !== "hidden" && <DashboardOverview vendorName={vendorName} onNavigate={setActiveSection} />}
+          {activeSection === "segments" && getSectionVisibility(tierConfigs, vendorTier, "segments") !== "hidden" && <DashboardSegments vendorName={vendorName} />}
+          {activeSection === "mentions" && getSectionVisibility(tierConfigs, vendorTier, "mentions") !== "hidden" && <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfile.id} />}
+          {activeSection === "profile" && getSectionVisibility(tierConfigs, vendorTier, "profile") !== "hidden" && <DashboardEditProfile vendorProfileId={isAdminMode ? vendorProfile.id : undefined} />}
+          {activeSection === "intel" && getSectionVisibility(tierConfigs, vendorTier, "intel") !== "hidden" && <DashboardIntel vendorName={vendorName} />}
+          {activeSection === "dimensions" && getSectionVisibility(tierConfigs, vendorTier, "dimensions") !== "hidden" && <DashboardDimensions vendorName={vendorName} />}
+          {activeSection === "demo-requests" && getSectionVisibility(tierConfigs, vendorTier, "demo-requests") !== "hidden" && <DashboardDemoRequests vendorName={vendorName} />}
+          {activeSection === "screenshots" && getSectionVisibility(tierConfigs, vendorTier, "screenshots") !== "hidden" && <DashboardScreenshots vendorName={vendorName} />}
+          {activeSection === "categories" && getSectionVisibility(tierConfigs, vendorTier, "categories") !== "hidden" && <DashboardCategories vendorName={vendorName} />}
+          {activeSection === "dealer-signals" && getSectionVisibility(tierConfigs, vendorTier, "dealer-signals") !== "hidden" && <DashboardDealerSignals vendorName={vendorName} />}
         </div>
       </VendorDashboardLayout>
 

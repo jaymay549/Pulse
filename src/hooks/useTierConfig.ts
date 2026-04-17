@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type {
   TierComponentConfig,
@@ -88,6 +89,26 @@ export function useTierConfig() {
   });
 
   return { configs, isLoading, error, updateVisibility };
+}
+
+/**
+ * Read-only tier config hook that uses the anon Supabase client.
+ *
+ * Use this in vendor-facing pages where Clerk auth is not available
+ * (magic-link vendor sessions). The tier_component_config table has
+ * no RLS so the anon client can read it without a Clerk JWT.
+ */
+export function useTierConfigReadonly() {
+  const { data: configs = [], isLoading, error } = useQuery<TierComponentConfig[]>({
+    queryKey: QUERY_KEY,
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("get_tier_component_config");
+      if (error) throw error;
+      return data as TierComponentConfig[];
+    },
+    staleTime: 5 * 60 * 1000, // 5 min — config rarely changes
+  });
+  return { configs, isLoading, error };
 }
 
 /**
