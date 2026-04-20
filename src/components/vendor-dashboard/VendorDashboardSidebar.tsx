@@ -12,6 +12,7 @@ import {
   Image,
   Tags,
   Users,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DashboardSection } from "./VendorDashboardLayout";
@@ -119,6 +120,7 @@ export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate, 
                 <div className="space-y-0.5">
                   {filteredItems.map(({ id, icon: Icon, label }) => {
                     const isActive = activeSection === id;
+                    const isGated = tier ? getVisibility(tierConfigs, tier as VendorTier, id) === "gated" : false;
                     return (
                       <button
                         key={id}
@@ -127,16 +129,19 @@ export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate, 
                           "group w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors text-left",
                           isActive
                             ? "bg-indigo-50 text-indigo-700"
-                            : "text-slate-600 hover:text-slate-900 hover:bg-slate-50",
+                            : isGated
+                              ? "text-slate-400 hover:text-slate-500 hover:bg-slate-50"
+                              : "text-slate-600 hover:text-slate-900 hover:bg-slate-50",
                         )}
                       >
                         <Icon
                           className={cn(
                             "h-4 w-4 flex-shrink-0 transition-colors",
-                            isActive ? "text-indigo-600" : "text-slate-400 group-hover:text-slate-600",
+                            isActive ? "text-indigo-600" : isGated ? "text-slate-300" : "text-slate-400 group-hover:text-slate-600",
                           )}
                         />
                         {label}
+                        {isGated && <Lock className="h-3 w-3 ml-auto text-slate-300" />}
                       </button>
                     );
                   })}

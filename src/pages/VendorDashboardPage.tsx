@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Navigate, useSearchParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Loader2, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Loader2, ShieldCheck, Eye, EyeOff, Lock } from "lucide-react";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useVendorSupabaseAuth } from "@/hooks/useVendorSupabaseAuth";
@@ -48,6 +48,7 @@ export default function VendorDashboardPage() {
   const { user, isAuthenticated, isAdmin, isLoading: authLoading, getToken } = useClerkAuth();
   const { isAuthenticated: isVendorAuth, user: vendorUser, isLoading: vendorAuthLoading } = useVendorSupabaseAuth();
   const [activeSection, setActiveSection] = useState<DashboardSection>("intelligence");
+  const [adminVendorView, setAdminVendorView] = useState(false);
   const [searchParams] = useSearchParams();
 
   // Admin can manage any vendor via ?vendor=VendorName
@@ -127,9 +128,28 @@ export default function VendorDashboardPage() {
       : ownVendorProfile;
   const vendorName = vendorProfile?.vendor_name ?? "";
 
-  // Extract tier from vendorLoginProfile (vendor session only).
-  // undefined in admin mode — admin always sees all sections.
-  const vendorTier = vendorLoginProfile?.tier;
+  // Admin mode: look up vendor's actual tier from vendor_logins via RPC
+  const { data: adminVendorLogins = [] } = useQuery({
+    queryKey: ["admin-vendor-logins-tiers"],
+    queryFn: async () => {
+      const { data, error: rpcErr } = await clerkSupabase.rpc("admin_list_vendor_logins" as never);
+      if (rpcErr) throw rpcErr;
+      return (data ?? []) as { vendor_name: string; tier: string }[];
+    },
+    enabled: isAdminMode,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const adminResolvedTier = isAdminMode && adminVendorView
+    ? (adminVendorLogins.find(
+        (vl) => vl.vendor_name?.toLowerCase() === adminVendorParam?.toLowerCase()
+      )?.tier || "tier_1")
+    : undefined;
+
+  // In admin vendor-view mode, use the vendor's actual tier.
+  // In admin full-access mode, tier is undefined (sees everything).
+  // In vendor session, use vendorLoginProfile tier.
+  const vendorTier = adminResolvedTier || vendorLoginProfile?.tier;
 
   // Fetch tier component config via anon client (works for vendor magic-link sessions).
   const { configs: tierConfigs } = useTierConfigReadonly();
@@ -185,6 +205,33 @@ export default function VendorDashboardPage() {
     return <Navigate to="/vendors" replace />;
   }
 
+  const renderSection = (sectionKey: string, component: React.ReactNode) => {
+    if (activeSection !== sectionKey) return null;
+    const vis = getSectionVisibility(tierConfigs, vendorTier, sectionKey);
+    if (vis === "hidden") return null;
+    if (vis === "gated") {
+      return (
+        <div className="relative">
+          <div className="pointer-events-none select-none blur-[6px] opacity-70">
+            {component}
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px] rounded-xl">
+            <div className="flex flex-col items-center gap-3 text-center px-6 py-8 bg-white rounded-xl shadow-lg border border-slate-200 max-w-sm">
+              <div className="flex items-center justify-center h-10 w-10 rounded-full bg-amber-100">
+                <Lock className="h-5 w-5 text-amber-600" />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900">Premium Feature</h3>
+              <p className="text-xs text-slate-500">
+                Upgrade your plan to unlock this section and get full access to all insights.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return component;
+  };
+
   return (
     <>
       <VendorDashboardLayout vendorName={vendorName} activeSection={activeSection} onNavigate={setActiveSection} tier={vendorTier}>
@@ -192,25 +239,36 @@ export default function VendorDashboardPage() {
           {isAdminMode && (
             <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-800">
               <ShieldCheck className="h-4 w-4 flex-shrink-0" />
-              <span>
+              <span className="flex-1">
                 Admin mode &mdash; editing <strong>{vendorName}</strong>.{" "}
                 <Link to={`/vendors/${encodeURIComponent(vendorName)}`} className="underline hover:no-underline">
                   View public profile
                 </Link>
               </span>
+              <button
+                onClick={() => setAdminVendorView(!adminVendorView)}
+                className={`ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                  adminVendorView
+                    ? "bg-amber-600 text-white hover:bg-amber-700"
+                    : "bg-white text-amber-700 border border-amber-300 hover:bg-amber-100"
+                }`}
+              >
+                {adminVendorView ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                {adminVendorView ? "Vendor View" : "Full Access"}
+              </button>
             </div>
           )}
-          {activeSection === "intelligence" && getSectionVisibility(tierConfigs, vendorTier, "intelligence") !== "hidden" && <VendorCommandCenter vendorName={vendorName} />}
-          {activeSection === "overview" && getSectionVisibility(tierConfigs, vendorTier, "overview") !== "hidden" && <DashboardOverview vendorName={vendorName} onNavigate={setActiveSection} />}
-          {activeSection === "segments" && getSectionVisibility(tierConfigs, vendorTier, "segments") !== "hidden" && <DashboardSegments vendorName={vendorName} />}
-          {activeSection === "mentions" && getSectionVisibility(tierConfigs, vendorTier, "mentions") !== "hidden" && <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfile.id} />}
-          {activeSection === "profile" && getSectionVisibility(tierConfigs, vendorTier, "profile") !== "hidden" && <DashboardEditProfile vendorProfileId={isAdminMode ? vendorProfile.id : undefined} />}
-          {activeSection === "intel" && getSectionVisibility(tierConfigs, vendorTier, "intel") !== "hidden" && <DashboardIntel vendorName={vendorName} />}
-          {activeSection === "dimensions" && getSectionVisibility(tierConfigs, vendorTier, "dimensions") !== "hidden" && <DashboardDimensions vendorName={vendorName} />}
-          {activeSection === "demo-requests" && getSectionVisibility(tierConfigs, vendorTier, "demo-requests") !== "hidden" && <DashboardDemoRequests vendorName={vendorName} />}
-          {activeSection === "screenshots" && getSectionVisibility(tierConfigs, vendorTier, "screenshots") !== "hidden" && <DashboardScreenshots vendorName={vendorName} />}
-          {activeSection === "categories" && getSectionVisibility(tierConfigs, vendorTier, "categories") !== "hidden" && <DashboardCategories vendorName={vendorName} />}
-          {activeSection === "dealer-signals" && getSectionVisibility(tierConfigs, vendorTier, "dealer-signals") !== "hidden" && <DashboardDealerSignals vendorName={vendorName} />}
+          {renderSection("intelligence", <VendorCommandCenter vendorName={vendorName} />)}
+          {renderSection("overview", <DashboardOverview vendorName={vendorName} onNavigate={setActiveSection} />)}
+          {renderSection("segments", <DashboardSegments vendorName={vendorName} />)}
+          {renderSection("mentions", <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfile.id} />)}
+          {renderSection("profile", <DashboardEditProfile vendorProfileId={isAdminMode ? vendorProfile.id : undefined} />)}
+          {renderSection("intel", <DashboardIntel vendorName={vendorName} />)}
+          {renderSection("dimensions", <DashboardDimensions vendorName={vendorName} />)}
+          {renderSection("demo-requests", <DashboardDemoRequests vendorName={vendorName} />)}
+          {renderSection("screenshots", <DashboardScreenshots vendorName={vendorName} />)}
+          {renderSection("categories", <DashboardCategories vendorName={vendorName} />)}
+          {renderSection("dealer-signals", <DashboardDealerSignals vendorName={vendorName} />)}
         </div>
       </VendorDashboardLayout>
 
