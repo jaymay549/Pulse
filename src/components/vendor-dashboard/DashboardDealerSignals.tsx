@@ -5,6 +5,7 @@ import {
   getSentimentColor,
   getSwitchingRiskLevel,
 } from "@/hooks/useVendorTechStackIntel";
+import { GatedCard } from "./GatedCard";
 
 interface DashboardDealerSignalsProps {
   vendorName: string;
@@ -58,118 +59,126 @@ export function DashboardDealerSignals({ vendorName }: DashboardDealerSignalsPro
       <Header />
 
       {/* KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          label="Dealers Using"
-          value={data.adoption_count}
-          icon={<Users className="h-4 w-4 text-blue-500" />}
-          subtitle={
-            data.category_market_share
-              ? `${data.category_market_share.share_pct}% of ${data.category} dealers`
-              : undefined
-          }
-        />
-        <KpiCard
-          label="Avg Sentiment"
-          value={data.avg_sentiment !== null ? `${data.avg_sentiment}/10` : "—"}
-          icon={<BarChart3 className="h-4 w-4 text-violet-500" />}
-          valueColor={getSentimentColor(data.avg_sentiment)}
-        />
-        <KpiCard
-          label="Switching Risk"
-          value={`${data.switching_risk_pct}%`}
-          icon={<AlertTriangle className="h-4 w-4 text-amber-500" />}
-          subtitle={risk.label}
-          valueColor={risk.color}
-        />
-        <KpiCard
-          label="At Risk"
-          value={totalAtRisk}
-          icon={<TrendingDown className="h-4 w-4 text-red-500" />}
-          subtitle={`${data.status_breakdown.exploring} exploring, ${data.status_breakdown.left} left`}
-        />
-      </div>
+      <GatedCard componentKey="dealer-signals.kpi_cards">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KpiCard
+            label="Dealers Using"
+            value={data.adoption_count}
+            icon={<Users className="h-4 w-4 text-blue-500" />}
+            subtitle={
+              data.category_market_share
+                ? `${data.category_market_share.share_pct}% of ${data.category} dealers`
+                : undefined
+            }
+          />
+          <KpiCard
+            label="Avg Sentiment"
+            value={data.avg_sentiment !== null ? `${data.avg_sentiment}/10` : "—"}
+            icon={<BarChart3 className="h-4 w-4 text-violet-500" />}
+            valueColor={getSentimentColor(data.avg_sentiment)}
+          />
+          <KpiCard
+            label="Switching Risk"
+            value={`${data.switching_risk_pct}%`}
+            icon={<AlertTriangle className="h-4 w-4 text-amber-500" />}
+            subtitle={risk.label}
+            valueColor={risk.color}
+          />
+          <KpiCard
+            label="At Risk"
+            value={totalAtRisk}
+            icon={<TrendingDown className="h-4 w-4 text-red-500" />}
+            subtitle={`${data.status_breakdown.exploring} exploring, ${data.status_breakdown.left} left`}
+          />
+        </div>
+      </GatedCard>
 
       {/* Status Breakdown */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5">
-        <h3 className="text-sm font-semibold text-slate-900 mb-4">
-          Dealer Status Breakdown
-        </h3>
-        <StatusBar breakdown={data.status_breakdown} total={data.adoption_count} />
-        <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
-          <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-            Stable ({data.status_breakdown.stable})
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-            Exploring ({data.status_breakdown.exploring})
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
-            Left ({data.status_breakdown.left})
-          </span>
+      <GatedCard componentKey="dealer-signals.status_breakdown">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
+          <h3 className="text-sm font-semibold text-slate-900 mb-4">
+            Dealer Status Breakdown
+          </h3>
+          <StatusBar breakdown={data.status_breakdown} total={data.adoption_count} />
+          <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+              Stable ({data.status_breakdown.stable})
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+              Exploring ({data.status_breakdown.exploring})
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
+              Left ({data.status_breakdown.left})
+            </span>
+          </div>
         </div>
-      </div>
+      </GatedCard>
 
       {/* Exit Reasons */}
       {data.exit_reasons.length > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <h3 className="text-sm font-semibold text-slate-900 mb-4">
-            Why Dealers Are Leaving
-          </h3>
-          <div className="space-y-3">
-            {data.exit_reasons.map((er) => {
-              const maxCount = data.exit_reasons[0].count;
-              const pct = maxCount > 0 ? (er.count / maxCount) * 100 : 0;
-              return (
-                <div key={er.reason}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-slate-700">
-                      {getReasonLabel(er.reason)}
-                    </span>
-                    <span className="text-xs font-medium text-slate-500">
-                      {er.count} dealer{er.count !== 1 ? "s" : ""}
-                    </span>
+        <GatedCard componentKey="dealer-signals.exit_reasons">
+          <div className="rounded-xl border border-slate-200 bg-white p-5">
+            <h3 className="text-sm font-semibold text-slate-900 mb-4">
+              Why Dealers Are Leaving
+            </h3>
+            <div className="space-y-3">
+              {data.exit_reasons.map((er) => {
+                const maxCount = data.exit_reasons[0].count;
+                const pct = maxCount > 0 ? (er.count / maxCount) * 100 : 0;
+                return (
+                  <div key={er.reason}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-slate-700">
+                        {getReasonLabel(er.reason)}
+                      </span>
+                      <span className="text-xs font-medium text-slate-500">
+                        {er.count} dealer{er.count !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-red-400 transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-red-400 transition-all"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </GatedCard>
       )}
 
       {/* Market Share */}
       {data.category_market_share && (
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <h3 className="text-sm font-semibold text-slate-900 mb-2">
-            Category Market Share
-          </h3>
-          <p className="text-xs text-slate-500 mb-3">
-            Based on {data.category_market_share.category_total} dealers reporting
-            a {data.category} vendor
-          </p>
-          <div className="flex items-end gap-3">
-            <span className="text-3xl font-bold text-slate-900">
-              {data.category_market_share.share_pct}%
-            </span>
-            <span className="text-sm text-slate-500 mb-1">
-              of dealers in {data.category}
-            </span>
+        <GatedCard componentKey="dealer-signals.market_share">
+          <div className="rounded-xl border border-slate-200 bg-white p-5">
+            <h3 className="text-sm font-semibold text-slate-900 mb-2">
+              Category Market Share
+            </h3>
+            <p className="text-xs text-slate-500 mb-3">
+              Based on {data.category_market_share.category_total} dealers reporting
+              a {data.category} vendor
+            </p>
+            <div className="flex items-end gap-3">
+              <span className="text-3xl font-bold text-slate-900">
+                {data.category_market_share.share_pct}%
+              </span>
+              <span className="text-sm text-slate-500 mb-1">
+                of dealers in {data.category}
+              </span>
+            </div>
+            <div className="mt-3 h-3 w-full rounded-full bg-slate-100 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-blue-500 transition-all"
+                style={{ width: `${data.category_market_share.share_pct}%` }}
+              />
+            </div>
           </div>
-          <div className="mt-3 h-3 w-full rounded-full bg-slate-100 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-blue-500 transition-all"
-              style={{ width: `${data.category_market_share.share_pct}%` }}
-            />
-          </div>
-        </div>
+        </GatedCard>
       )}
 
       {/* Privacy note */}

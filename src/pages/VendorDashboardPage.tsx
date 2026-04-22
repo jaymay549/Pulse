@@ -6,6 +6,7 @@ import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useVendorSupabaseAuth } from "@/hooks/useVendorSupabaseAuth";
 import { vendorSupabase } from "@/integrations/supabase/vendorClient";
+import { supabase } from "@/integrations/supabase/client";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -23,6 +24,7 @@ import { DashboardScreenshots } from "@/components/vendor-dashboard/DashboardScr
 import { DashboardCategories } from "@/components/vendor-dashboard/DashboardCategories";
 import { DashboardDealerSignals } from "@/components/vendor-dashboard/DashboardDealerSignals";
 import { VendorDashboardLayout, type DashboardSection } from "@/components/vendor-dashboard/VendorDashboardLayout";
+import { VendorTierProvider } from "@/components/vendor-dashboard/GatedCard";
 import { useVendorIntelligenceDashboard } from "@/hooks/useVendorIntelligenceDashboard";
 import { useTierConfigReadonly, getVisibility } from "@/hooks/useTierConfig";
 import type { VendorTier, ComponentVisibility } from "@/types/tier-config";
@@ -128,28 +130,35 @@ export default function VendorDashboardPage() {
       : ownVendorProfile;
   const vendorName = vendorProfile?.vendor_name ?? "";
 
-  // Admin mode: look up vendor's actual tier from vendor_logins via RPC
-  const { data: adminVendorLogins = [] } = useQuery({
-    queryKey: ["admin-vendor-logins-tiers"],
+  // Resolve vendor tier via fuzzy-match RPC (handles name mismatches between tables).
+  // Enabled for: admin vendor-view mode, and Clerk-authenticated vendor owners.
+  // Magic-link sessions already have the tier from vendorLoginProfile.
+  const needsTierLookup = (isAdminMode && adminVendorView && !!vendorName)
+    || (!isAdminMode && !isVendorAuth && !!vendorName);
+  const { data: resolvedTier } = useQuery({
+    queryKey: ["vendor-tier-lookup", vendorName],
     queryFn: async () => {
-      const { data, error: rpcErr } = await clerkSupabase.rpc("admin_list_vendor_logins" as never);
-      if (rpcErr) throw rpcErr;
-      return (data ?? []) as { vendor_name: string; tier: string }[];
+      const { data, error } = await (supabase.rpc as any)("get_vendor_tier", {
+        p_vendor_name: vendorName,
+      });
+      if (error) {
+        console.error("[VendorDashboard] tier lookup error:", error);
+        return null;
+      }
+      return data as string | null;
     },
-    enabled: isAdminMode,
+    enabled: needsTierLookup,
     staleTime: 5 * 60 * 1000,
   });
 
-  const adminResolvedTier = isAdminMode && adminVendorView
-    ? (adminVendorLogins.find(
-        (vl) => vl.vendor_name?.toLowerCase() === adminVendorParam?.toLowerCase()
-      )?.tier || "tier_1")
-    : undefined;
-
-  // In admin vendor-view mode, use the vendor's actual tier.
-  // In admin full-access mode, tier is undefined (sees everything).
-  // In vendor session, use vendorLoginProfile tier.
-  const vendorTier = adminResolvedTier || vendorLoginProfile?.tier;
+  // Tier resolution priority:
+  // 1. Admin vendor-view mode: use resolved tier from RPC
+  // 2. Admin full-access mode: undefined (sees everything)
+  // 3. Magic-link vendor session: use vendorLoginProfile.tier
+  // 4. Clerk-authenticated vendor owner: use resolved tier from RPC
+  const vendorTier = (isAdminMode && !adminVendorView)
+    ? undefined
+    : vendorLoginProfile?.tier || resolvedTier || undefined;
 
   // Fetch tier component config via anon client (works for vendor magic-link sessions).
   const { configs: tierConfigs } = useTierConfigReadonly();
@@ -209,31 +218,12 @@ export default function VendorDashboardPage() {
     if (activeSection !== sectionKey) return null;
     const vis = getSectionVisibility(tierConfigs, vendorTier, sectionKey);
     if (vis === "hidden") return null;
-    if (vis === "gated") {
-      return (
-        <div className="relative">
-          <div className="pointer-events-none select-none blur-[6px] opacity-70">
-            {component}
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px] rounded-xl">
-            <div className="flex flex-col items-center gap-3 text-center px-6 py-8 bg-white rounded-xl shadow-lg border border-slate-200 max-w-sm">
-              <div className="flex items-center justify-center h-10 w-10 rounded-full bg-amber-100">
-                <Lock className="h-5 w-5 text-amber-600" />
-              </div>
-              <h3 className="text-sm font-semibold text-slate-900">Premium Feature</h3>
-              <p className="text-xs text-slate-500">
-                Upgrade your plan to unlock this section and get full access to all insights.
-              </p>
-            </div>
-          </div>
-        </div>
-      );
-    }
     return component;
   };
 
   return (
     <>
+      <VendorTierProvider value={vendorTier}>
       <VendorDashboardLayout vendorName={vendorName} activeSection={activeSection} onNavigate={setActiveSection} tier={vendorTier}>
         <div>
           {isAdminMode && (
@@ -271,6 +261,7 @@ export default function VendorDashboardPage() {
           {renderSection("dealer-signals", <DashboardDealerSignals vendorName={vendorName} />)}
         </div>
       </VendorDashboardLayout>
+      </VendorTierProvider>
 
       {/* Floating AI chat — persists across all tabs */}
       <DashboardAIChat vendorName={vendorName} dashboardIntel={dashboardIntel ?? null} />

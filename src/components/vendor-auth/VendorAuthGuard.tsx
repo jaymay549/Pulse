@@ -8,7 +8,7 @@ interface VendorAuthGuardProps {
 }
 
 const VendorAuthGuard = ({ children }: VendorAuthGuardProps) => {
-  const { isLoading: clerkLoading, isAdmin } = useClerkAuth();
+  const { isLoading: clerkLoading, isAdmin, isAuthenticated } = useClerkAuth();
   const { isLoading: vendorLoading, isAuthenticated: isVendorAuth } = useVendorSupabaseAuth();
 
   // Show loading while either auth system is initializing
@@ -23,10 +23,14 @@ const VendorAuthGuard = ({ children }: VendorAuthGuardProps) => {
   // AUTH-05: Admin bypass — Clerk admin can always access vendor dashboard
   if (isAdmin) return <>{children}</>;
 
-  // AUTH-04: Vendor auth — valid vendor Supabase session passes
+  // AUTH-04: Vendor auth — valid vendor Supabase magic-link session passes
   if (isVendorAuth) return <>{children}</>;
 
-  // Neither: redirect to vendor login
+  // AUTH-06: Clerk-authenticated vendor owners — VendorDashboardPage handles
+  // its own authorization check (vendor_profiles lookup + redirect if not found).
+  if (isAuthenticated) return <>{children}</>;
+
+  // None of the above: redirect to vendor login
   return <Navigate to="/vendor-login" replace />;
 };
 

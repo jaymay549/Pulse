@@ -4,6 +4,7 @@ import { CalendarCheck, Loader2, ChevronDown } from "lucide-react";
 import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { GatedCard } from "./GatedCard";
 
 interface DemoRequest {
   id: string;
@@ -148,6 +149,7 @@ export function DashboardDemoRequests({ vendorName }: DashboardDemoRequestsProps
           </p>
         </div>
       ) : (
+        <GatedCard componentKey="demo-requests.request_cards">
         <div className="space-y-3">
           {requests.map((req) => (
             <div
@@ -165,17 +167,19 @@ export function DashboardDemoRequests({ vendorName }: DashboardDemoRequestsProps
                       <span className="text-[11px] text-slate-400">· {req.location}</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                    <a
-                      href={`mailto:${req.requester_email}`}
-                      className="text-xs text-primary hover:underline"
-                    >
-                      {req.requester_email}
-                    </a>
-                    {req.requester_phone && (
-                      <span className="text-xs text-slate-400">{req.requester_phone}</span>
-                    )}
-                  </div>
+                  <GatedCard componentKey="demo-requests.contact_info">
+                    <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                      <a
+                        href={`mailto:${req.requester_email}`}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        {req.requester_email}
+                      </a>
+                      {req.requester_phone && (
+                        <span className="text-xs text-slate-400">{req.requester_phone}</span>
+                      )}
+                    </div>
+                  </GatedCard>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <span className="text-[11px] text-slate-400">
@@ -199,6 +203,7 @@ export function DashboardDemoRequests({ vendorName }: DashboardDemoRequestsProps
             </div>
           ))}
         </div>
+        </GatedCard>
       )}
     </div>
   );

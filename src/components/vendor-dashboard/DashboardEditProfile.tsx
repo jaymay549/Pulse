@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { GatedCard } from "./GatedCard";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -389,6 +390,7 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
       {/* ---- Section A: Brand Assets ---- */}
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
         {/* Banner */}
+        <GatedCard componentKey="profile.banner_logo">
         <div className="relative">
           <div
             className="h-[200px] w-full rounded-t-xl bg-slate-200 bg-cover bg-top"
@@ -457,8 +459,10 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
             onChange={onLogoChange}
           />
         </div>
+        </GatedCard>
 
         {/* Screenshots Gallery */}
+        <GatedCard componentKey="profile.screenshots">
         <div className="p-6 pt-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium text-slate-900">
@@ -516,9 +520,11 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
             </div>
           )}
         </div>
+        </GatedCard>
       </div>
 
       {/* ---- Section B: Profile Details Form ---- */}
+      <GatedCard componentKey="profile.details_form">
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-sm font-bold text-slate-900">Profile Details</h2>
         <p className="mt-1 text-sm text-slate-500">
@@ -615,6 +621,7 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
           </Button>
         </div>
       </div>
+      </GatedCard>
     </div>
   );
 }

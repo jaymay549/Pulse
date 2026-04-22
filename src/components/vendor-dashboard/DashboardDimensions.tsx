@@ -17,6 +17,7 @@ import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { VENDOR_DIMENSIONS } from "@/types/admin";
 import type { VendorDimension } from "@/hooks/useSupabaseVendorData";
 import { Loader2 } from "lucide-react";
+import { GatedCard } from "./GatedCard";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -210,26 +211,28 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
           }));
 
           return (
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-sm font-bold text-slate-900">Dimension Overview</h2>
-              <p className="mt-1 text-xs text-slate-400">Positive sentiment % across all dimensions</p>
-              <ResponsiveContainer width="100%" height={280}>
-                <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="75%">
-                  <PolarGrid stroke="#e2e8f0" />
-                  <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 11, fill: "#475569" }} />
-                  <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10, fill: "#94a3b8" }} />
-                  <Radar
-                    name="Positive %"
-                    dataKey="score"
-                    stroke="#10b981"
-                    fill="#10b981"
-                    fillOpacity={0.2}
-                    strokeWidth={2}
-                    dot={{ r: 4, fill: "#10b981", stroke: "#fff", strokeWidth: 2 }}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
+            <GatedCard componentKey="dimensions.radar_chart">
+              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="text-sm font-bold text-slate-900">Dimension Overview</h2>
+                <p className="mt-1 text-xs text-slate-400">Positive sentiment % across all dimensions</p>
+                <ResponsiveContainer width="100%" height={280}>
+                  <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="75%">
+                    <PolarGrid stroke="#e2e8f0" />
+                    <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 11, fill: "#475569" }} />
+                    <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10, fill: "#94a3b8" }} />
+                    <Radar
+                      name="Positive %"
+                      dataKey="score"
+                      stroke="#10b981"
+                      fill="#10b981"
+                      fillOpacity={0.2}
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: "#10b981", stroke: "#fff", strokeWidth: 2 }}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            </GatedCard>
           );
         })()}
 
@@ -245,37 +248,39 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
           }));
 
           return (
-            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-sm font-bold text-slate-900">Discussions by Dimension</h2>
-              <ResponsiveContainer width="100%" height={dimensions.length * 50 + 40}>
-                <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
-                  <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12, fill: "#475569" }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
-                  />
-                  <Bar dataKey="positive" stackId="dim" fill="#10b981" radius={[0, 0, 0, 0]} name="Positive" />
-                  <Bar dataKey="neutral" stackId="dim" fill="#94a3b8" radius={[0, 0, 0, 0]} name="Neutral" />
-                  <Bar dataKey="mixed" stackId="dim" fill="#f59e0b" radius={[0, 0, 0, 0]} name="Mixed" />
-                  <Bar dataKey="negative" stackId="dim" fill="#ef4444" radius={[0, 4, 4, 0]} name="Negative" />
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="mt-2 flex gap-4 text-xs text-slate-400">
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" /> Positive
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-slate-400" /> Neutral
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" /> Mixed
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-red-500" /> Negative
-                </span>
+            <GatedCard componentKey="dimensions.bar_chart">
+              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="text-sm font-bold text-slate-900">Discussions by Dimension</h2>
+                <ResponsiveContainer width="100%" height={dimensions.length * 50 + 40}>
+                  <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12, fill: "#475569" }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
+                    />
+                    <Bar dataKey="positive" stackId="dim" fill="#10b981" radius={[0, 0, 0, 0]} name="Positive" />
+                    <Bar dataKey="neutral" stackId="dim" fill="#94a3b8" radius={[0, 0, 0, 0]} name="Neutral" />
+                    <Bar dataKey="mixed" stackId="dim" fill="#f59e0b" radius={[0, 0, 0, 0]} name="Mixed" />
+                    <Bar dataKey="negative" stackId="dim" fill="#ef4444" radius={[0, 4, 4, 0]} name="Negative" />
+                  </BarChart>
+                </ResponsiveContainer>
+                <div className="mt-2 flex gap-4 text-xs text-slate-400">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" /> Positive
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-slate-400" /> Neutral
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" /> Mixed
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-red-500" /> Negative
+                  </span>
+                </div>
               </div>
-            </div>
+            </GatedCard>
           );
         })()}
       </div>
@@ -286,6 +291,7 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
         <p className="mt-1 text-xs text-slate-400">Hover a dimension to see recent discussions</p>
       </div>
 
+      <GatedCard componentKey="dimensions.dimension_cards">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {dimensions.map((dim) => {
           const dimConfig = VENDOR_DIMENSIONS[dim.dimension];
@@ -352,6 +358,7 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
           );
         })}
       </div>
+      </GatedCard>
     </div>
   );
 }

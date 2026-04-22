@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp, BarChart2, MessageSquare, Clock } from "lucide-react";
+import { GatedCard } from "./GatedCard";
 
 interface DashboardOverviewProps {
   vendorName: string;
@@ -128,7 +129,9 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
       </div>
 
       {/* Pulse Briefing — health, quotes, signals, competitive, top actions */}
-      <PulseBriefing vendorName={vendorName} onNavigate={onNavigate} />
+      <GatedCard componentKey="overview.pulse_briefing">
+        <PulseBriefing vendorName={vendorName} onNavigate={onNavigate} />
+      </GatedCard>
 
       {/* Analytics Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -146,81 +149,85 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
 
             return (
               <div className="space-y-6">
-                <Card className="border-slate-200 shadow-sm overflow-hidden">
-                  <CardHeader className="pb-2 bg-slate-50/50 border-b border-slate-100">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-bold flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-emerald-500" />
-                        Sentiment Trend
-                      </CardTitle>
-                      <Badge variant="outline" className="text-[10px] font-bold tracking-widest uppercase">Last {sentimentHistory.length} Months</Badge>
-                    </div>
-                    <CardDescription className="text-xs font-medium">Monthly positive sentiment percentage</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <ResponsiveContainer width="100%" height={240}>
-                      <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="sentimentGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.01} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 500 }} axisLine={false} tickLine={false} />
-                        <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "#94a3b8", fontWeight: 500 }} axisLine={false} tickLine={false} unit="%" />
-                        <Tooltip
-                          contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
-                          formatter={(value: number) => [`${value}%`, "Positive"]}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="positive"
-                          stroke="#10b981"
-                          strokeWidth={3}
-                          fill="url(#sentimentGrad)"
-                          dot={{ r: 4, fill: "#10b981", strokeWidth: 2, stroke: "#fff" }}
-                          activeDot={{ r: 6, strokeWidth: 0 }}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-slate-200 shadow-sm overflow-hidden">
-                  <CardHeader className="pb-2 bg-slate-50/50 border-b border-slate-100">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-bold flex items-center gap-2">
-                        <BarChart2 className="h-4 w-4 text-indigo-500" />
-                        Discussion Volume
-                      </CardTitle>
-                      <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wider">
-                        <span className="flex items-center gap-1.5 text-emerald-600">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500" /> Positive
-                        </span>
-                        <span className="flex items-center gap-1.5 text-amber-600">
-                          <span className="h-2 w-2 rounded-full bg-amber-500" /> Concerns
-                        </span>
+                <GatedCard componentKey="overview.sentiment_trend">
+                  <Card className="border-slate-200 shadow-sm overflow-hidden">
+                    <CardHeader className="pb-2 bg-slate-50/50 border-b border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-emerald-500" />
+                          Sentiment Trend
+                        </CardTitle>
+                        <Badge variant="outline" className="text-[10px] font-bold tracking-widest uppercase">Last {sentimentHistory.length} Months</Badge>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <ResponsiveContainer width="100%" height={200}>
-                      <BarChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 500 }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 10, fill: "#94a3b8", fontWeight: 500 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                        <Tooltip
-                          cursor={{ fill: '#f8fafc' }}
-                          contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
-                          formatter={(value: number, name: string) => [value, name === "positiveCount" ? "Positive" : "Concerns"]}
-                        />
-                        <Bar dataKey="positiveCount" stackId="mentions" fill="#10b981" radius={[0, 0, 0, 0]} name="Positive" barSize={32} />
-                        <Bar dataKey="warningCount" stackId="mentions" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Concerns" barSize={32} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
+                      <CardDescription className="text-xs font-medium">Monthly positive sentiment percentage</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                      <ResponsiveContainer width="100%" height={240}>
+                        <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="sentimentGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
+                              <stop offset="95%" stopColor="#10b981" stopOpacity={0.01} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 500 }} axisLine={false} tickLine={false} />
+                          <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "#94a3b8", fontWeight: 500 }} axisLine={false} tickLine={false} unit="%" />
+                          <Tooltip
+                            contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
+                            formatter={(value: number) => [`${value}%`, "Positive"]}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="positive"
+                            stroke="#10b981"
+                            strokeWidth={3}
+                            fill="url(#sentimentGrad)"
+                            dot={{ r: 4, fill: "#10b981", strokeWidth: 2, stroke: "#fff" }}
+                            activeDot={{ r: 6, strokeWidth: 0 }}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </GatedCard>
+
+                <GatedCard componentKey="overview.discussion_volume">
+                  <Card className="border-slate-200 shadow-sm overflow-hidden">
+                    <CardHeader className="pb-2 bg-slate-50/50 border-b border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                          <BarChart2 className="h-4 w-4 text-indigo-500" />
+                          Discussion Volume
+                        </CardTitle>
+                        <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wider">
+                          <span className="flex items-center gap-1.5 text-emerald-600">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500" /> Positive
+                          </span>
+                          <span className="flex items-center gap-1.5 text-amber-600">
+                            <span className="h-2 w-2 rounded-full bg-amber-500" /> Concerns
+                          </span>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 500 }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fontSize: 10, fill: "#94a3b8", fontWeight: 500 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                          <Tooltip
+                            cursor={{ fill: '#f8fafc' }}
+                            contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
+                            formatter={(value: number, name: string) => [value, name === "positiveCount" ? "Positive" : "Concerns"]}
+                          />
+                          <Bar dataKey="positiveCount" stackId="mentions" fill="#10b981" radius={[0, 0, 0, 0]} name="Positive" barSize={32} />
+                          <Bar dataKey="warningCount" stackId="mentions" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Concerns" barSize={32} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </GatedCard>
               </div>
             );
           })()}
@@ -228,12 +235,15 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
 
         {/* Right: NPS & Activity */}
         <div className="lg:col-span-1 space-y-8">
-          <NPSChart 
-            promoterCount={latestSentiment?.promoter_count ?? 0}
-            passiveCount={latestSentiment?.passive_count ?? 0}
-            detractorCount={latestSentiment?.detractor_count ?? 0}
-          />
+          <GatedCard componentKey="overview.nps">
+            <NPSChart
+              promoterCount={latestSentiment?.promoter_count ?? 0}
+              passiveCount={latestSentiment?.passive_count ?? 0}
+              detractorCount={latestSentiment?.detractor_count ?? 0}
+            />
+          </GatedCard>
 
+          <GatedCard componentKey="overview.recent_activity">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
@@ -285,6 +295,7 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
               </div>
             )}
           </div>
+          </GatedCard>
         </div>
       </div>
     </div>

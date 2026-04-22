@@ -4,6 +4,7 @@ import { Image, Loader2, Trash2, ArrowUp, ArrowDown, UploadCloud, AlertCircle, C
 import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { useVendorScreenshots, type VendorScreenshot } from "@/hooks/useVendorScreenshots";
 import { cn } from "@/lib/utils";
+import { GatedCard } from "./GatedCard";
 
 const MAX_SCREENSHOTS = 8;
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -183,6 +184,7 @@ export function DashboardScreenshots({ vendorName }: DashboardScreenshotsProps) 
       )}
 
       {/* Upload area */}
+      <GatedCard componentKey="screenshots.upload">
       <div>
         <input
           ref={fileInputRef}
@@ -223,8 +225,10 @@ export function DashboardScreenshots({ vendorName }: DashboardScreenshotsProps) 
           {screenshots.length} / {MAX_SCREENSHOTS} screenshots
         </p>
       </div>
+      </GatedCard>
 
       {/* Screenshot list */}
+      <GatedCard componentKey="screenshots.gallery">
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-16 space-y-3">
           <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
@@ -327,6 +331,7 @@ export function DashboardScreenshots({ vendorName }: DashboardScreenshotsProps) 
           ))}
         </div>
       )}
+      </GatedCard>
     </div>
   );
 }

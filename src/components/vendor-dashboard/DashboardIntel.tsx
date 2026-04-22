@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowUp, ArrowDown, Minus, TrendingUp, Loader2 } from "lucide-react";
 import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { Badge } from "@/components/ui/badge";
+import { GatedCard } from "./GatedCard";
 
 interface DashboardIntelProps {
   vendorName: string;
@@ -172,43 +173,46 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
       </div>
 
       {/* Your Position card */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-slate-400" />
-          <h2 className="text-sm font-bold text-slate-900">Your Position</h2>
-        </div>
+      <GatedCard componentKey="intel.your_position">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-slate-400" />
+            <h2 className="text-sm font-bold text-slate-900">Your Position</h2>
+          </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-4">
-          {/* Total Discussions */}
-          <div className="rounded-lg border bg-slate-50 p-4">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-slate-900">
-                {stats.totalMentions}
-              </span>
-              {trend && <TrendBadge trend={trend} />}
+          <div className="mt-4 grid grid-cols-3 gap-4">
+            {/* Total Discussions */}
+            <div className="rounded-lg border bg-slate-50 p-4">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-slate-900">
+                  {stats.totalMentions}
+                </span>
+                {trend && <TrendBadge trend={trend} />}
+              </div>
+              <p className="mt-1 text-xs text-slate-500">Total Discussions</p>
             </div>
-            <p className="mt-1 text-xs text-slate-500">Total Discussions</p>
-          </div>
 
-          {/* Positive % */}
-          <div className="rounded-lg border bg-slate-50 p-4">
-            <span className={`text-2xl font-bold ${sentimentColor(positivePct)}`}>
-              {positivePct}%
-            </span>
-            <p className="mt-1 text-xs text-slate-500">Positive Sentiment</p>
-          </div>
+            {/* Positive % */}
+            <div className="rounded-lg border bg-slate-50 p-4">
+              <span className={`text-2xl font-bold ${sentimentColor(positivePct)}`}>
+                {positivePct}%
+              </span>
+              <p className="mt-1 text-xs text-slate-500">Positive Sentiment</p>
+            </div>
 
-          {/* Concerns */}
-          <div className="rounded-lg border bg-slate-50 p-4">
-            <span className="text-2xl font-bold text-red-500">
-              {stats.warningCount}
-            </span>
-            <p className="mt-1 text-xs text-slate-500">Concerns</p>
+            {/* Concerns */}
+            <div className="rounded-lg border bg-slate-50 p-4">
+              <span className="text-2xl font-bold text-red-500">
+                {stats.warningCount}
+              </span>
+              <p className="mt-1 text-xs text-slate-500">Concerns</p>
+            </div>
           </div>
         </div>
-      </div>
+      </GatedCard>
 
       {/* Competitor Comparison table */}
+      <GatedCard componentKey="intel.competitor_table">
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-sm font-bold text-slate-900">
           Competitor Comparison
@@ -268,6 +272,7 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
           </table>
         </div>
       </div>
+      </GatedCard>
     </div>
   );
 }

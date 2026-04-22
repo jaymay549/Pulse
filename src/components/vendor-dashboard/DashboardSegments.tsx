@@ -6,6 +6,7 @@ import {
   type SegmentAxis,
   type SegmentBucket,
 } from "@/hooks/useVendorSegmentIntel";
+import { GatedCard } from "./GatedCard";
 
 interface DashboardSegmentsProps {
   vendorName: string;
@@ -278,32 +279,38 @@ export function DashboardSegments({ vendorName }: DashboardSegmentsProps) {
       </div>
 
       {/* Axis tabs */}
-      <div className="flex gap-1 border-b border-border/50">
-        {activeAxes.map((axis) => {
-          const cfg = AXIS_CONFIG[axis];
-          const isActive = tab === axis;
-          return (
-            <button
-              key={axis}
-              type="button"
-              onClick={() => setActiveTab(axis)}
-              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
-                isActive
-                  ? "border-slate-900 text-slate-900"
-                  : "border-transparent text-slate-400 hover:text-slate-700"
-              }`}
-            >
-              {cfg.label}
-              <span className="ml-1.5 text-[11px] text-slate-400">
-                ({intel.axes[axis].length})
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      <GatedCard componentKey="segments.axis_summary">
+        <div className="flex gap-1 border-b border-border/50">
+          {activeAxes.map((axis) => {
+            const cfg = AXIS_CONFIG[axis];
+            const isActive = tab === axis;
+            return (
+              <button
+                key={axis}
+                type="button"
+                onClick={() => setActiveTab(axis)}
+                className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                  isActive
+                    ? "border-slate-900 text-slate-900"
+                    : "border-transparent text-slate-400 hover:text-slate-700"
+                }`}
+              >
+                {cfg.label}
+                <span className="ml-1.5 text-[11px] text-slate-400">
+                  ({intel.axes[axis].length})
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </GatedCard>
 
       {/* Active axis panel */}
-      {tab && <AxisPanel buckets={intel.axes[tab]} />}
+      {tab && (
+        <GatedCard componentKey="segments.bucket_cards">
+          <AxisPanel buckets={intel.axes[tab]} />
+        </GatedCard>
+      )}
     </div>
   );
 }
