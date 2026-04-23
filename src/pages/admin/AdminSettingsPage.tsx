@@ -309,7 +309,7 @@ function VendorMetadataSection() {
     while (remaining > 0 && !stopRef.current) {
       setEnrichProgress(`Enriching... ${totalEnriched} done, ${remaining} remaining`);
       try {
-        const result = await callEnrichFunction({ batch_size: 5 });
+        const result = await callEnrichFunction({ batch_size: 50 });
         totalEnriched += result.enriched || 0;
         remaining = result.remaining || 0;
 

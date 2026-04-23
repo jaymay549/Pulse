@@ -55,6 +55,7 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
   const [vendorSearch, setVendorSearch] = useState("");
   const [tier, setTier] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState<Record<string, string>>({});
   const searchRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -87,6 +88,36 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
 
   const selectedProfile = vendorProfiles.find((v) => v.vendor_name === vendorName);
 
+  // Resolve entity ID from vendor name
+  const { data: entityData } = useQuery({
+    queryKey: ["wizard-vendor-entity", vendorName],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("resolve_vendor_family" as never, {
+        p_vendor_name: vendorName,
+      } as never);
+      if (error) throw error;
+      const rows = data as Array<{ vendor_entity_id: string | null; vendor_product_line_id: string | null }>;
+      return rows?.[0]?.vendor_entity_id ?? null;
+    },
+    enabled: !!vendorName,
+  });
+
+  // Fetch product lines for the resolved entity
+  const { data: productLines = [] } = useQuery({
+    queryKey: ["wizard-product-lines", entityData],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendor_product_lines")
+        .select("id, name, slug")
+        .eq("vendor_entity_id", entityData!)
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; name: string; slug: string }>;
+    },
+    enabled: !!entityData,
+  });
+
   // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -117,6 +148,10 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
             vendor_name: vendorName,
             tier,
             action: "provision",
+            product_subscriptions: Object.entries(selectedProducts).map(([slug, productTier]) => ({
+              product_line_slug: slug,
+              tier: productTier,
+            })),
           }),
         }
       );
@@ -145,22 +180,24 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
     setTier("");
     setShowDropdown(false);
     setGeneratedPassword(null);
+    setSelectedProducts({});
     onOpenChange(false);
   };
 
   const isEmailValid = EMAIL_REGEX.test(email);
   const isVendorNameValid = vendorName.trim() !== "" && vendorProfiles.some((v) => v.vendor_name === vendorName);
 
+  const steps = ["Email", "Profile", "Tier", "Products", "Confirm"];
+
   const canAdvance =
     (step === 0 && isEmailValid) ||
     (step === 1 && isVendorNameValid) ||
-    (step === 2 && !!tier);
+    (step === 2 && !!tier) ||
+    (step === 3 && Object.keys(selectedProducts).length > 0);
 
   const advance = () => {
-    if (step < 3 && canAdvance) setStep(step + 1);
+    if (step < steps.length - 1 && canAdvance) setStep(step + 1);
   };
-
-  const steps = ["Email", "Profile", "Tier", "Confirm"];
 
   return (
     <Dialog open={open} onOpenChange={(val) => { if (!val) handleClose(); }}>
@@ -169,7 +206,7 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
         <div className="h-0.5 bg-zinc-800">
           <div
             className="h-full bg-blue-500 transition-all duration-500 ease-out"
-            style={{ width: `${((step + 1) / 4) * 100}%` }}
+            style={{ width: `${((step + 1) / steps.length) * 100}%` }}
           />
         </div>
 
@@ -308,8 +345,72 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
               </div>
             )}
 
-            {/* Step 3 — Confirm / Password result */}
-            {step === 3 && !generatedPassword && (
+            {/* Step 3 — Products */}
+            {step === 3 && (
+              <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
+                <p className="text-sm text-zinc-400">Product line subscriptions</p>
+                {productLines.length === 0 ? (
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4 text-center">
+                    <p className="text-sm text-zinc-500">
+                      {entityData ? "No product lines configured for this vendor." : "Resolving vendor entity..."}
+                    </p>
+                    <p className="text-xs text-zinc-600 mt-1">Contact engineering to add product lines.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                    {productLines.map((pl) => {
+                      const isChecked = pl.slug in selectedProducts;
+                      return (
+                        <div
+                          key={pl.slug}
+                          className={`flex items-center justify-between px-3 py-2.5 rounded-lg border transition-all duration-200 ${
+                            isChecked
+                              ? "border-blue-500/50 bg-blue-600/10"
+                              : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"
+                          }`}
+                        >
+                          <label className="flex items-center gap-3 cursor-pointer flex-1 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                setSelectedProducts((prev) => {
+                                  if (e.target.checked) {
+                                    return { ...prev, [pl.slug]: tier || "unverified" };
+                                  } else {
+                                    const { [pl.slug]: _, ...rest } = prev;
+                                    return rest;
+                                  }
+                                });
+                              }}
+                              className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-blue-500 focus:ring-blue-500/30"
+                            />
+                            <span className="text-sm text-zinc-200 truncate">{pl.name}</span>
+                          </label>
+                          {isChecked && (
+                            <select
+                              value={selectedProducts[pl.slug]}
+                              onChange={(e) => setSelectedProducts((prev) => ({ ...prev, [pl.slug]: e.target.value }))}
+                              className="text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 rounded px-2 py-1 ml-2"
+                            >
+                              <option value="unverified">Unverified</option>
+                              <option value="tier_1">Tier 1</option>
+                              <option value="tier_2">Tier 2</option>
+                            </select>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {Object.keys(selectedProducts).length > 0 && (
+                  <p className="text-xs text-blue-400">{Object.keys(selectedProducts).length} product line(s) selected</p>
+                )}
+              </div>
+            )}
+
+            {/* Step 4 — Confirm / Password result */}
+            {step === 4 && !generatedPassword && (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between py-2 border-b border-zinc-800/50">
@@ -319,6 +420,10 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
                   <div className="flex items-center justify-between py-2 border-b border-zinc-800/50">
                     <span className="text-xs text-zinc-500 uppercase tracking-wider">Profile</span>
                     <span className="text-sm text-zinc-200">{vendorName}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-zinc-800/50">
+                    <span className="text-xs text-zinc-500 uppercase tracking-wider">Products</span>
+                    <span className="text-sm text-zinc-200">{Object.keys(selectedProducts).length} product line(s)</span>
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-xs text-zinc-500 uppercase tracking-wider">Tier</span>
@@ -331,7 +436,7 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
               </div>
             )}
 
-            {step === 3 && generatedPassword && (
+            {step === 4 && generatedPassword && (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="text-center space-y-1">
                   <Check className="h-8 w-8 text-green-400 mx-auto" />
@@ -391,7 +496,7 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
               >
                 Done
               </Button>
-            ) : step < 3 ? (
+            ) : step < steps.length - 1 ? (
               <Button
                 size="sm"
                 onClick={advance}

@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { useVendorDataClient } from "@/hooks/useVendorDataClient";
+import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { useFlagMention, useVendorFlags } from "@/hooks/useMentionFlags";
 import { FlagMentionModal } from "./FlagMentionModal";
@@ -19,7 +19,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { GatedCard } from "./GatedCard";
 
 interface DashboardMentionsProps {
   vendorName: string;
@@ -75,7 +74,7 @@ function TypeBadge({ type }: { type: string }): JSX.Element {
 }
 
 export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMentionsProps): JSX.Element {
-  const supabase = useVendorDataClient();
+  const supabase = useClerkSupabase();
   const { user } = useClerkAuth();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<FilterType>("all");
@@ -181,23 +180,22 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
   ].filter(d => d.value > 0);
 
   return (
-    <div className="space-y-6 pb-12 animate-in fade-in duration-500">
+    <div className="space-y-8 pb-12 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Discussions & Feedback</h1>
-          <p className="text-sm text-slate-500 mt-1">Engage with your community and monitor brand health</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Discussions & Response</h1>
+          <p className="text-slate-500 mt-1 font-medium">Engage with your community and monitor brand health</p>
         </div>
         <div className="flex items-center gap-2">
-           <Badge className="bg-indigo-50 text-indigo-700 border-none font-medium px-3 py-1 text-[10px] uppercase tracking-wider">
-             {mentions.length} Discussions
+           <Badge className="bg-indigo-50 text-indigo-700 border-none font-bold px-3 py-1">
+             {mentions.length} TOTAL DISCUSSIONS
            </Badge>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left: Sentiment Analysis Summary */}
         <div className="lg:col-span-1 space-y-6">
-          <GatedCard componentKey="mentions.sentiment_card">
           <Card className="border-slate-200 shadow-sm overflow-hidden sticky top-24">
             <CardHeader className="pb-2 bg-slate-50/50 border-b border-slate-100">
               <CardTitle className="text-sm font-bold flex items-center gap-2">
@@ -257,7 +255,6 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
               </div>
             </CardContent>
           </Card>
-          </GatedCard>
         </div>
 
         {/* Right: Mentions List */}
@@ -290,16 +287,15 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
           </div>
 
           {/* Mentions Cards */}
-          <GatedCard componentKey="mentions.mention_cards">
           {mentions.length === 0 ? (
-             <Card className="border-slate-200 bg-slate-50/30 py-20">
+             <Card className="border-dashed border-2 bg-slate-50/50 py-20">
                <CardContent className="flex flex-col items-center justify-center text-center">
-                 <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                   <MessageSquare className="h-5 w-5 text-slate-400" />
+                 <div className="h-16 w-16 rounded-full bg-white shadow-sm flex items-center justify-center mb-4 text-slate-300">
+                   <MessageSquare className="h-8 w-8" />
                  </div>
-                 <p className="text-sm font-medium text-slate-500">No Discussions Found</p>
-                 <p className="text-xs text-slate-400 max-w-xs mx-auto mt-1">
-                   We haven't detected any community discussions for {vendorName} yet.
+                 <h3 className="text-lg font-bold text-slate-900">No Discussions Found</h3>
+                 <p className="text-slate-500 max-w-xs mx-auto mt-2">
+                   We haven't detected any community discussions for **{vendorName}** yet.
                  </p>
                </CardContent>
              </Card>
@@ -312,10 +308,10 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
 
                 return (
                   <Card key={mention.id} className={cn(
-                    "border-slate-200 shadow-sm overflow-hidden",
+                    "border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-all duration-200",
                     hasResponded && "border-emerald-100 bg-emerald-50/10"
                   )}>
-                    <CardContent className="p-4">
+                    <CardContent className="p-6">
                       <div className="flex flex-col gap-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-center gap-3">
@@ -353,45 +349,43 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
                           </p>
                         </div>
 
-                        <GatedCard componentKey="mentions.respond">
-                          <div className="mt-2 pt-4 border-t border-slate-100">
-                            {hasResponded ? (
-                              <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 w-fit px-3 py-1.5 rounded-lg border border-emerald-100">
-                                <CheckCircle2 className="h-4 w-4" />
-                                <span className="text-[13px] font-bold uppercase tracking-tight">Response Sent</span>
-                              </div>
-                            ) : (
-                              <div className="space-y-4">
-                                <div className="relative">
-                                  <Textarea
-                                    className="w-full bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all min-h-[100px] text-[14px] leading-relaxed"
-                                    placeholder="Type your official response here..."
-                                    value={replyText}
-                                    onChange={(e) => setReplies((prev) => ({ ...prev, [mention.id]: e.target.value }))}
-                                  />
-                                  <div className="absolute bottom-3 right-3 flex items-center gap-3">
-                                     <span className={cn("text-[11px] font-bold", replyText.length > 500 ? "text-red-500" : "text-slate-400")}>
-                                       {replyText.length} characters
-                                     </span>
-                                  </div>
-                                </div>
-                                <div className="flex justify-end">
-                                  <Button
-                                    size="sm"
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold gap-2 px-6 shadow-md shadow-indigo-100"
-                                    disabled={!replyText.trim() || replyMutation.isPending}
-                                    onClick={() =>
-                                      replyMutation.mutate({ mentionId: mention.id, responseText: replyText.trim() })
-                                    }
-                                  >
-                                    {replyMutation.isPending ? "Posting..." : "Post Official Response"}
-                                    <Send className="h-3.5 w-3.5" />
-                                  </Button>
+                        <div className="mt-2 pt-4 border-t border-slate-100">
+                          {hasResponded ? (
+                            <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 w-fit px-3 py-1.5 rounded-lg border border-emerald-100">
+                              <CheckCircle2 className="h-4 w-4" />
+                              <span className="text-[13px] font-bold uppercase tracking-tight">Response Sent</span>
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              <div className="relative">
+                                <Textarea
+                                  className="w-full bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all min-h-[100px] text-[14px] leading-relaxed"
+                                  placeholder="Type your official response here..."
+                                  value={replyText}
+                                  onChange={(e) => setReplies((prev) => ({ ...prev, [mention.id]: e.target.value }))}
+                                />
+                                <div className="absolute bottom-3 right-3 flex items-center gap-3">
+                                   <span className={cn("text-[11px] font-bold", replyText.length > 500 ? "text-red-500" : "text-slate-400")}>
+                                     {replyText.length} characters
+                                   </span>
                                 </div>
                               </div>
-                            )}
-                          </div>
-                        </GatedCard>
+                              <div className="flex justify-end">
+                                <Button
+                                  size="sm"
+                                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold gap-2 px-6 shadow-md shadow-indigo-100"
+                                  disabled={!replyText.trim() || replyMutation.isPending}
+                                  onClick={() =>
+                                    replyMutation.mutate({ mentionId: mention.id, responseText: replyText.trim() })
+                                  }
+                                >
+                                  {replyMutation.isPending ? "Posting..." : "Post Official Response"}
+                                  <Send className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -399,7 +393,6 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
               })}
             </div>
           )}
-          </GatedCard>
         </div>
       </div>
 

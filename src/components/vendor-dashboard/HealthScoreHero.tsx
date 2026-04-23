@@ -52,9 +52,13 @@ export function HealthScoreHero({ score, history }: HealthScoreHeroProps) {
 
   return (
     <div className="relative overflow-hidden bg-white p-6 sm:p-8">
-      <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+      {/* Background accents */}
+      <div className="absolute top-0 right-0 -mt-20 -mr-20 h-64 w-64 rounded-full bg-indigo-50/50 blur-3xl transition-all group-hover:bg-indigo-100/50" />
+      <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-64 w-64 rounded-full bg-blue-50/30 blur-3xl transition-all group-hover:bg-blue-100/30" />
+
+      <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-10">
         {/* Score display */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-8">
           <div className="relative flex h-32 w-32 items-center justify-center shrink-0">
             {/* Circular progress */}
             <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
@@ -132,12 +136,12 @@ export function HealthScoreHero({ score, history }: HealthScoreHeroProps) {
               </div>
             </div>
 
-            <div className={cn("inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[12px] font-medium", statusBg, statusBorder, statusTextColor)}>
-              <StatusIcon className="h-3 w-3" />
+            <div className={cn("inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[13px] font-bold", statusBg, statusBorder, statusTextColor)}>
+              <StatusIcon className="h-3.5 w-3.5" />
               {statusLabel}
             </div>
-
-            <p className="max-w-md text-[13px] leading-relaxed text-slate-400">
+            
+            <p className="max-w-md text-[14px] leading-relaxed text-slate-500 font-medium italic">
               {score === null
                 ? "Our engine is currently gathering dealer feedback. Need 5+ discussions across all dimensions to generate your first score."
                 : score >= 75
@@ -162,7 +166,7 @@ export function HealthScoreHero({ score, history }: HealthScoreHeroProps) {
 
           return (
             <div className="flex flex-col items-end gap-3 self-end lg:self-center">
-              <div className="w-full sm:w-[240px]">
+              <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 w-full sm:w-[240px]">
                 <div className="flex items-center justify-between mb-3 px-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Growth Trend</span>
                   <span className="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded">90D</span>

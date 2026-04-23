@@ -16,15 +16,12 @@ import {
 } from "@/hooks/useTechStackProfile";
 import { computeTechStackCompletion } from "@/hooks/useTechStackCompletion";
 import { TechStackWizard } from "./TechStackWizard";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const STALE_DAYS = 90;
 
-const HIDDEN_PATHS = ["/vendor-dashboard", "/admin"];
-
 export function ProfileProgressBar() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { isAuthenticated, isLoading: isAuthLoading, user } = useClerkAuth();
   const { data: techData, isSuccess: isTechDataLoaded } = useTechStackEntries();
   const confirmMutation = useConfirmTechStack();
@@ -58,9 +55,6 @@ export function ProfileProgressBar() {
       }
     }
   }, [isAuthenticated, isTechDataLoaded, techData]);
-
-  // Hide on vendor dashboard and admin routes
-  if (HIDDEN_PATHS.some((p) => location.pathname.startsWith(p))) return null;
 
   if (!isAuthenticated || !user) return null;
 

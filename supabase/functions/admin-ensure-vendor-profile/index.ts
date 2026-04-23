@@ -7,11 +7,11 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-organization-id",
 };
 
-// TODO: restore strict admin check once Clerk JWT template includes user_role claim
 function verifyAdmin(token: string): { isAdmin: boolean; userId: string } {
   const payload = JSON.parse(atob(token.split(".")[1]));
   const userId = payload.sub || "";
-  return { isAdmin: true, userId };
+  const isAdmin = payload.user_role === "admin";
+  return { isAdmin, userId };
 }
 
 serve(async (req) => {

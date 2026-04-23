@@ -1,4 +1,4 @@
-import { Loader2, Info, Activity } from "lucide-react";
+import { Loader2, Info, Target, Activity } from "lucide-react";
 import {
   useVendorIntelligenceDashboard,
   type MetricKey,
@@ -9,7 +9,6 @@ import { MetricCard } from "./MetricCard";
 import { MetricsBenchmarkChart } from "./MetricsBenchmarkChart";
 import { FeatureGapList } from "./FeatureGapList";
 import { TrendDeepDive } from "./TrendDeepDive";
-import { GatedCard } from "./GatedCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -25,8 +24,8 @@ export function VendorCommandCenter({ vendorName }: VendorCommandCenterProps) {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-32 space-y-4">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-        <p className="text-sm text-slate-500">Analyzing market intelligence...</p>
+        <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
+        <p className="text-sm font-medium text-slate-500 animate-pulse">Analyzing market intelligence...</p>
       </div>
     );
   }
@@ -66,11 +65,16 @@ export function VendorCommandCenter({ vendorName }: VendorCommandCenterProps) {
   }
 
   return (
-    <div className="space-y-8 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-10 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Intelligence Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-slate-100">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight mb-2">Intelligence Hub</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
+              <Target className="h-5 w-5 text-white" />
+            </div>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Intelligence Hub</h1>
+          </div>
           <div className="flex items-center gap-2 text-slate-500">
             {intel.category && (
               <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors border-none py-1">
@@ -88,103 +92,91 @@ export function VendorCommandCenter({ vendorName }: VendorCommandCenterProps) {
       </div>
 
       {/* Health Score & Analytics */}
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Primary Health Score Hero */}
-          <GatedCard componentKey="intelligence.health_score">
-            <div className="lg:col-span-2 relative group overflow-hidden rounded-2xl border border-slate-200 bg-white p-1 transition-all hover:shadow-xl hover:shadow-indigo-500/5 duration-300">
-              <HealthScoreHero
-                score={metrics?.health_score ?? null}
-                history={intel.sentiment_history}
-              />
-            </div>
-          </GatedCard>
+          <div className="lg:col-span-2 relative group overflow-hidden rounded-2xl border border-slate-200 bg-white p-1 transition-all hover:shadow-xl hover:shadow-indigo-500/5 duration-300">
+            <HealthScoreHero
+              score={metrics?.health_score ?? null}
+              history={intel.sentiment_history}
+            />
+          </div>
 
           {/* NPS Chart */}
-          <GatedCard componentKey="intelligence.nps_chart">
-            <div className="lg:col-span-1">
-              <NPSChart
-                promoterCount={latestSentiment?.promoter_count ?? 0}
-                passiveCount={latestSentiment?.passive_count ?? 0}
-                detractorCount={latestSentiment?.detractor_count ?? 0}
-              />
-            </div>
-          </GatedCard>
+          <div className="lg:col-span-1">
+            <NPSChart 
+              promoterCount={latestSentiment?.promoter_count ?? 0}
+              passiveCount={latestSentiment?.passive_count ?? 0}
+              detractorCount={latestSentiment?.detractor_count ?? 0}
+            />
+          </div>
         </div>
 
         {/* Performance Metrics Cards */}
-        <GatedCard componentKey="intelligence.performance_metrics">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">
-                Sentiment Analysis & Reliability
-              </h2>
-              <div className="h-px flex-1 bg-slate-100 ml-4 mr-2" />
-            </div>
-
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {METRIC_KEYS.map((key) => (
-                <MetricCard
-                  key={key}
-                  metricKey={key}
-                  metric={
-                    metrics?.[key] ?? { score: null, data: null }
-                  }
-                  insightText={insightMap[key]}
-                />
-              ))}
-            </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">
+              Sentiment Analysis & Reliability
+            </h2>
+            <div className="h-px flex-1 bg-slate-100 ml-4 mr-2" />
           </div>
-        </GatedCard>
+          
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {METRIC_KEYS.map((key) => (
+              <MetricCard
+                key={key}
+                metricKey={key}
+                metric={
+                  metrics?.[key] ?? { score: null, data: null }
+                }
+                insightText={insightMap[key]}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Comparative Benchmarks */}
       {metrics && (
-        <GatedCard componentKey="intelligence.benchmarking">
-          <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-            <div className="bg-slate-50/50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                <Activity className="h-4 w-4 text-indigo-500" />
-                Comparative Benchmarking
-              </h3>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Live Marketplace Data</span>
-            </div>
-            <div className="p-6 sm:p-8">
-              <MetricsBenchmarkChart
-                metrics={metrics}
-                benchmarks={intel.benchmarks}
-                percentiles={intel.percentiles}
-              />
-            </div>
+        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+          <div className="bg-slate-50/50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+              <Activity className="h-4 w-4 text-indigo-500" />
+              Comparative Benchmarking
+            </h3>
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Live Marketplace Data</span>
           </div>
-        </GatedCard>
+          <div className="p-6 sm:p-8">
+            <MetricsBenchmarkChart
+              metrics={metrics}
+              benchmarks={intel.benchmarks}
+              percentiles={intel.percentiles}
+            />
+          </div>
+        </div>
       )}
 
       {/* Insights & Actions Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Action Plan / Feature Gaps */}
-        <GatedCard componentKey="intelligence.recommended_actions">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-slate-900">Recommended Actions</h2>
-              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[10px] uppercase font-bold tracking-wider px-1.5 h-5">Priority High</Badge>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm h-full">
-              <FeatureGapList gaps={intel.feature_gaps} />
-            </div>
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-bold text-slate-900">Recommended Actions</h2>
+            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[10px] uppercase font-bold tracking-wider px-1.5 h-5">Priority High</Badge>
           </div>
-        </GatedCard>
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm h-full">
+            <FeatureGapList gaps={intel.feature_gaps} />
+          </div>
+        </div>
 
         {/* Trend Analysis */}
         {metrics && (
-          <GatedCard componentKey="intelligence.momentum">
-            <div className="space-y-4">
-              <h2 className="text-sm font-bold text-slate-900">Historical Momentum</h2>
-              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 h-full">
-                <TrendDeepDive metrics={metrics} history={intel.sentiment_history} />
-              </div>
+          <div className="space-y-4">
+            <h2 className="text-sm font-bold text-slate-900">Historical Momentum</h2>
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 h-full">
+              <TrendDeepDive metrics={metrics} history={intel.sentiment_history} />
             </div>
-          </GatedCard>
+          </div>
         )}
       </div>
     </div>

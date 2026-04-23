@@ -13,11 +13,9 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { useVendorDataClient } from "@/hooks/useVendorDataClient";
+import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { VENDOR_DIMENSIONS } from "@/types/admin";
 import type { VendorDimension } from "@/hooks/useSupabaseVendorData";
-import { Loader2 } from "lucide-react";
-import { GatedCard } from "./GatedCard";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -94,7 +92,7 @@ function TypeBadge({ type }: { type: string }) {
 }
 
 export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): JSX.Element {
-  const supabase = useVendorDataClient();
+  const supabase = useClerkSupabase();
 
   // Fetch dimension aggregates
   const { data: dimensions, isLoading: dimensionsLoading } = useQuery<VendorDimension[]>({
@@ -164,43 +162,29 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
   });
 
   if (dimensionsLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 space-y-3">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-        <p className="text-sm text-slate-500">Loading dimensions...</p>
-      </div>
-    );
+    return <p className="text-sm text-slate-500">Loading dimensions...</p>;
   }
 
   if (!dimensions || dimensions.length === 0) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Feature Matrix</h1>
-          <p className="mt-1 text-sm text-slate-500">Dimensional feedback from dealer conversations</p>
-        </div>
-        <div className="flex flex-col items-center justify-center py-16 space-y-3">
-          <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
-            <Loader2 className="h-5 w-5 text-slate-400" />
-          </div>
-          <p className="text-sm font-medium text-slate-500">No dimensional feedback available yet.</p>
-          <p className="text-xs text-slate-400">Data will appear once dealers discuss specific features.</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900">Dimensions</h1>
+        <p className="mt-2 text-sm text-slate-500">
+          No dimensional feedback available yet for {vendorName}.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Feature Matrix</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          See how dealers rate you across key dimensions
-        </p>
-      </div>
+    <div>
+      <h1 className="text-2xl font-semibold text-slate-900">Dimensions</h1>
+      <p className="mt-1 text-sm text-slate-500">
+        See how dealers rate you across key dimensions
+      </p>
 
       {/* Charts — 2 column grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Radar chart overview */}
         {dimensions.length >= 3 && (() => {
           const radarData = dimensions.map((dim) => ({
@@ -211,28 +195,26 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
           }));
 
           return (
-            <GatedCard componentKey="dimensions.radar_chart">
-              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="text-sm font-bold text-slate-900">Dimension Overview</h2>
-                <p className="mt-1 text-xs text-slate-400">Positive sentiment % across all dimensions</p>
-                <ResponsiveContainer width="100%" height={280}>
-                  <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="75%">
-                    <PolarGrid stroke="#e2e8f0" />
-                    <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 11, fill: "#475569" }} />
-                    <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10, fill: "#94a3b8" }} />
-                    <Radar
-                      name="Positive %"
-                      dataKey="score"
-                      stroke="#10b981"
-                      fill="#10b981"
-                      fillOpacity={0.2}
-                      strokeWidth={2}
-                      dot={{ r: 4, fill: "#10b981", stroke: "#fff", strokeWidth: 2 }}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-            </GatedCard>
+            <div className="rounded-xl border bg-white p-6">
+              <h2 className="text-lg font-medium text-slate-900">Dimension Overview</h2>
+              <p className="mt-1 text-xs text-slate-400">Positive sentiment % across all dimensions</p>
+              <ResponsiveContainer width="100%" height={280}>
+                <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="75%">
+                  <PolarGrid stroke="#e2e8f0" />
+                  <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 11, fill: "#475569" }} />
+                  <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10, fill: "#94a3b8" }} />
+                  <Radar
+                    name="Positive %"
+                    dataKey="score"
+                    stroke="#10b981"
+                    fill="#10b981"
+                    fillOpacity={0.2}
+                    strokeWidth={2}
+                    dot={{ r: 4, fill: "#10b981", stroke: "#fff", strokeWidth: 2 }}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
           );
         })()}
 
@@ -248,51 +230,46 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
           }));
 
           return (
-            <GatedCard componentKey="dimensions.bar_chart">
-              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="text-sm font-bold text-slate-900">Discussions by Dimension</h2>
-                <ResponsiveContainer width="100%" height={dimensions.length * 50 + 40}>
-                  <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12, fill: "#475569" }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
-                    />
-                    <Bar dataKey="positive" stackId="dim" fill="#10b981" radius={[0, 0, 0, 0]} name="Positive" />
-                    <Bar dataKey="neutral" stackId="dim" fill="#94a3b8" radius={[0, 0, 0, 0]} name="Neutral" />
-                    <Bar dataKey="mixed" stackId="dim" fill="#f59e0b" radius={[0, 0, 0, 0]} name="Mixed" />
-                    <Bar dataKey="negative" stackId="dim" fill="#ef4444" radius={[0, 4, 4, 0]} name="Negative" />
-                  </BarChart>
-                </ResponsiveContainer>
-                <div className="mt-2 flex gap-4 text-xs text-slate-400">
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" /> Positive
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-sm bg-slate-400" /> Neutral
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" /> Mixed
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-sm bg-red-500" /> Negative
-                  </span>
-                </div>
+            <div className="rounded-xl border bg-white p-6">
+              <h2 className="text-lg font-medium text-slate-900">Discussions by Dimension</h2>
+              <ResponsiveContainer width="100%" height={dimensions.length * 50 + 40}>
+                <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12, fill: "#475569" }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
+                  />
+                  <Bar dataKey="positive" stackId="dim" fill="#10b981" radius={[0, 0, 0, 0]} name="Positive" />
+                  <Bar dataKey="neutral" stackId="dim" fill="#94a3b8" radius={[0, 0, 0, 0]} name="Neutral" />
+                  <Bar dataKey="mixed" stackId="dim" fill="#f59e0b" radius={[0, 0, 0, 0]} name="Mixed" />
+                  <Bar dataKey="negative" stackId="dim" fill="#ef4444" radius={[0, 4, 4, 0]} name="Negative" />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="mt-2 flex gap-4 text-xs text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" /> Positive
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-slate-400" /> Neutral
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" /> Mixed
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-red-500" /> Negative
+                </span>
               </div>
-            </GatedCard>
+            </div>
           );
         })()}
       </div>
 
       {/* Dimensional Breakdown — 2 column grid with hover popovers */}
-      <div>
-        <h2 className="text-sm font-bold text-slate-900">Dimensional Breakdown</h2>
-        <p className="mt-1 text-xs text-slate-400">Hover a dimension to see recent discussions</p>
-      </div>
+      <h2 className="mt-6 text-lg font-medium text-slate-900">Dimensional Breakdown</h2>
+      <p className="mt-1 text-xs text-slate-400">Hover a dimension to see recent discussions</p>
 
-      <GatedCard componentKey="dimensions.dimension_cards">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
         {dimensions.map((dim) => {
           const dimConfig = VENDOR_DIMENSIONS[dim.dimension];
           const label = dimConfig?.label || dim.dimension;
@@ -358,7 +335,6 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
           );
         })}
       </div>
-      </GatedCard>
     </div>
   );
 }
