@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tags, Loader2, Check, AlertCircle } from "lucide-react";
-import { useVendorDataClient } from "@/hooks/useVendorDataClient";
+import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { categories as allCategories } from "@/hooks/useVendorFilters";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +15,7 @@ interface DashboardCategoriesProps {
 }
 
 export function DashboardCategories({ vendorName }: DashboardCategoriesProps) {
-  const supabase = useVendorDataClient();
+  const supabase = useClerkSupabase();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +70,10 @@ export function DashboardCategories({ vendorName }: DashboardCategoriesProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Market Positioning</h1>
+        <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+          <Tags className="h-5 w-5 text-slate-400" />
+          Categories
+        </h2>
         <p className="mt-1 text-sm text-slate-500">
           Select up to {MAX_CATEGORIES} categories that describe your product. These appear on your
           public profile and help dealers find you.
@@ -86,9 +89,8 @@ export function DashboardCategories({ vendorName }: DashboardCategoriesProps) {
       )}
 
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-16 space-y-3">
+        <div className="flex justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-          <p className="text-sm text-slate-500">Loading categories...</p>
         </div>
       ) : (
         <>

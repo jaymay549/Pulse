@@ -6,7 +6,6 @@ import {
   type SegmentAxis,
   type SegmentBucket,
 } from "@/hooks/useVendorSegmentIntel";
-import { GatedCard } from "./GatedCard";
 
 interface DashboardSegmentsProps {
   vendorName: string;
@@ -225,9 +224,8 @@ export function DashboardSegments({ vendorName }: DashboardSegmentsProps) {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 space-y-3">
+      <div className="flex items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-        <p className="text-sm text-slate-500">Loading segments...</p>
       </div>
     );
   }
@@ -242,19 +240,14 @@ export function DashboardSegments({ vendorName }: DashboardSegmentsProps) {
 
   if (intel.total_attributed < 3 || activeAxes.length === 0) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Market Segments</h1>
-          <p className="mt-1 text-sm text-slate-500">Sentiment by dealer type and segment</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-          <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto">
-            <Users className="h-5 w-5 text-slate-400" />
-          </div>
-          <p className="mt-3 text-sm font-medium text-slate-500">
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900">Audience Segments</h1>
+        <div className="mt-6 rounded-xl border border-border/50 bg-white p-10 text-center">
+          <Users className="mx-auto h-8 w-8 text-slate-300" />
+          <p className="mt-3 text-sm text-slate-500">
             Segment insights will appear as more dealer feedback is attributed.
           </p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-[12px] text-slate-400">
             {intel.total_attributed} attributed discussion{intel.total_attributed !== 1 ? "s" : ""} so far
           </p>
         </div>
@@ -263,10 +256,10 @@ export function DashboardSegments({ vendorName }: DashboardSegmentsProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Market Segments</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">Audience Segments</h1>
         <p className="mt-1 text-sm text-slate-500">
           How sentiment varies across different types of dealers —{" "}
           {intel.total_attributed} attributed discussion{intel.total_attributed !== 1 ? "s" : ""}
@@ -279,38 +272,32 @@ export function DashboardSegments({ vendorName }: DashboardSegmentsProps) {
       </div>
 
       {/* Axis tabs */}
-      <GatedCard componentKey="segments.axis_summary">
-        <div className="flex gap-1 border-b border-border/50">
-          {activeAxes.map((axis) => {
-            const cfg = AXIS_CONFIG[axis];
-            const isActive = tab === axis;
-            return (
-              <button
-                key={axis}
-                type="button"
-                onClick={() => setActiveTab(axis)}
-                className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
-                  isActive
-                    ? "border-slate-900 text-slate-900"
-                    : "border-transparent text-slate-400 hover:text-slate-700"
-                }`}
-              >
-                {cfg.label}
-                <span className="ml-1.5 text-[11px] text-slate-400">
-                  ({intel.axes[axis].length})
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </GatedCard>
+      <div className="flex gap-1 border-b border-border/50">
+        {activeAxes.map((axis) => {
+          const cfg = AXIS_CONFIG[axis];
+          const isActive = tab === axis;
+          return (
+            <button
+              key={axis}
+              type="button"
+              onClick={() => setActiveTab(axis)}
+              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                isActive
+                  ? "border-slate-900 text-slate-900"
+                  : "border-transparent text-slate-400 hover:text-slate-700"
+              }`}
+            >
+              {cfg.label}
+              <span className="ml-1.5 text-[11px] text-slate-400">
+                ({intel.axes[axis].length})
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
       {/* Active axis panel */}
-      {tab && (
-        <GatedCard componentKey="segments.bucket_cards">
-          <AxisPanel buckets={intel.axes[tab]} />
-        </GatedCard>
-      )}
+      {tab && <AxisPanel buckets={intel.axes[tab]} />}
     </div>
   );
 }

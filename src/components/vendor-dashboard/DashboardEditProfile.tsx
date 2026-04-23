@@ -2,13 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Camera, ImagePlus, Loader2, X } from "lucide-react";
-import { useVendorDataClient } from "@/hooks/useVendorDataClient";
+import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { GatedCard } from "./GatedCard";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -56,7 +55,7 @@ async function fileToBase64(file: File): Promise<string> {
 
 export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfileProps): JSX.Element {
   const { user, getToken } = useClerkAuth();
-  const supabase = useVendorDataClient();
+  const supabase = useClerkSupabase();
   const queryClient = useQueryClient();
   const isAdminMode = !!vendorProfileId;
 
@@ -364,33 +363,27 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
   // ---------- Loading state ----------
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 space-y-3">
+      <div className="flex items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-        <p className="text-sm text-slate-500">Loading profile...</p>
       </div>
     );
   }
 
   if (!profile) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 space-y-3">
-        <p className="text-sm font-medium text-slate-500">No approved profile found.</p>
-      </div>
-    );
+    return <p className="text-sm text-slate-500">No approved profile found.</p>;
   }
 
   // ---------- Render ----------
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Account Settings</h1>
-        <p className="mt-1 text-sm text-slate-500">Manage your brand assets and company information</p>
-      </div>
+    <div>
+      <h1 className="text-2xl font-semibold text-slate-900">Edit Profile</h1>
+      <p className="mt-1 text-sm text-slate-500">
+        Manage your brand assets and company information
+      </p>
 
       {/* ---- Section A: Brand Assets ---- */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="mt-6 rounded-xl border bg-white">
         {/* Banner */}
-        <GatedCard componentKey="profile.banner_logo">
         <div className="relative">
           <div
             className="h-[200px] w-full rounded-t-xl bg-slate-200 bg-cover bg-top"
@@ -459,10 +452,8 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
             onChange={onLogoChange}
           />
         </div>
-        </GatedCard>
 
         {/* Screenshots Gallery */}
-        <GatedCard componentKey="profile.screenshots">
         <div className="p-6 pt-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium text-slate-900">
@@ -520,13 +511,11 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
             </div>
           )}
         </div>
-        </GatedCard>
       </div>
 
       {/* ---- Section B: Profile Details Form ---- */}
-      <GatedCard componentKey="profile.details_form">
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-sm font-bold text-slate-900">Profile Details</h2>
+      <div className="mt-6 rounded-xl border bg-white p-6">
+        <h2 className="text-lg font-medium text-slate-900">Profile Details</h2>
         <p className="mt-1 text-sm text-slate-500">
           Update your company information visible to the community
         </p>
@@ -621,7 +610,6 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
           </Button>
         </div>
       </div>
-      </GatedCard>
     </div>
   );
 }

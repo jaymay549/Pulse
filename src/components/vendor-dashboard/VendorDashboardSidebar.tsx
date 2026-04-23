@@ -1,39 +1,29 @@
-import {
-  BarChart3,
-  MessageSquare,
-  Layers,
-  Pencil,
-  TrendingUp,
-  ExternalLink,
-  ArrowLeft,
-  Activity,
-  PieChart,
-  CalendarCheck,
-  Image,
-  Tags,
+import { 
+  BarChart3, 
+  MessageSquare, 
+  Layers, 
+  Pencil, 
+  TrendingUp, 
+  ExternalLink, 
+  ArrowLeft, 
+  Activity, 
+  PieChart, 
+  CalendarCheck, 
+  Image, 
+  Tags, 
   Users,
-  Lock,
+  LayoutDashboard
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DashboardSection } from "./VendorDashboardLayout";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useVendorWebsites } from "@/hooks/useVendorWebsites";
-import { useTierConfigReadonly, getVisibility } from "@/hooks/useTierConfig";
-import type { VendorTier } from "@/types/tier-config";
 
 interface VendorDashboardSidebarProps {
   vendorName: string;
   activeSection: DashboardSection;
   onNavigate: (section: DashboardSection) => void;
-  tier?: string;
 }
-
 
 interface NavGroup {
   label: string;
@@ -69,112 +59,84 @@ const navGroups: NavGroup[] = [
   },
 ];
 
-export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate, tier }: VendorDashboardSidebarProps) {
+export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate }: VendorDashboardSidebarProps) {
   const { getLogoForVendor } = useVendorWebsites();
   const logoUrl = getLogoForVendor(vendorName);
-  const { configs: tierConfigs } = useTierConfigReadonly();
 
   return (
-    <aside className="w-60 bg-white border-r border-slate-200 flex flex-col h-full">
-      {/* Brand */}
-      <div className="px-5 py-4">
-        <div className="flex items-center gap-3">
+    <aside className="w-64 border-r bg-white flex flex-col h-full overflow-hidden">
+      {/* Brand area */}
+      <div className="px-6 py-5">
+        <div className="flex items-center gap-2.5">
           {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt={vendorName}
-              className="h-9 w-9 rounded-lg object-contain bg-white ring-1 ring-slate-200 shadow-sm"
-            />
+            <img src={logoUrl} alt={vendorName} className="h-8 w-8 rounded-lg object-contain bg-white ring-1 ring-slate-200 shadow-sm" />
           ) : (
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm">
-              <Activity className="h-5 w-5" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-600/10">
+              <LayoutDashboard className="h-5 w-5" />
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-slate-900 truncate">{vendorName}</p>
-            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
-              Control Center
-            </p>
+            <p className="text-sm font-bold text-slate-900 truncate leading-tight">{vendorName}</p>
+            <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">Control Center</p>
           </div>
         </div>
       </div>
 
       <Separator className="bg-slate-100" />
 
-      {/* Nav */}
-      <ScrollArea className="flex-1">
-        <nav className="px-3 py-4 space-y-6">
-          {navGroups.map((group) => {
-            const filteredItems = group.items.filter((item) => {
-              // No tier (admin mode) — show everything
-              if (!tier) return true;
-              const vis = getVisibility(tierConfigs, tier as VendorTier, item.id);
-              return vis !== "hidden";
-            });
-            if (filteredItems.length === 0) return null;
-            return (
-              <div key={group.label}>
-                <p className="px-3 mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                  {group.label}
-                </p>
-                <div className="space-y-0.5">
-                  {filteredItems.map(({ id, icon: Icon, label }) => {
-                    const isActive = activeSection === id;
-                    const isGated = tier ? getVisibility(tierConfigs, tier as VendorTier, id) === "gated" : false;
-                    return (
-                      <button
-                        key={id}
-                        onClick={() => onNavigate(id)}
-                        className={cn(
-                          "group w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors text-left",
-                          isActive
-                            ? "bg-indigo-50 text-indigo-700"
-                            : isGated
-                              ? "text-slate-400 hover:text-slate-500 hover:bg-slate-50"
-                              : "text-slate-600 hover:text-slate-900 hover:bg-slate-50",
-                        )}
-                      >
-                        <Icon
-                          className={cn(
-                            "h-4 w-4 flex-shrink-0 transition-colors",
-                            isActive ? "text-indigo-600" : isGated ? "text-slate-300" : "text-slate-400 group-hover:text-slate-600",
-                          )}
-                        />
-                        {label}
-                        {isGated && <Lock className="h-3 w-3 ml-auto text-slate-300" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </nav>
-      </ScrollArea>
+      {/* Nav groups */}
+      <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-7 custom-scrollbar">
+        {navGroups.map((group) => (
+          <div key={group.label} className="space-y-1.5">
+            <h3 className="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">
+              {group.label}
+            </h3>
+            <div className="space-y-0.5">
+              {group.items.map(({ id, icon: Icon, label }) => {
+                const isActive = activeSection === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => onNavigate(id)}
+                    className={cn(
+                      "group w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 text-left relative",
+                      isActive
+                        ? "bg-indigo-50/60 text-indigo-700 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                    )}
+                  >
+                    <Icon className={cn(
+                      "h-[18px] w-[18px] flex-shrink-0 transition-colors",
+                      isActive ? "text-indigo-600" : "text-slate-400 group-hover:text-slate-600"
+                    )} />
+                    {label}
+                    {isActive && (
+                      <div className="absolute right-2 h-1 w-1 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
 
-      {/* Footer */}
-      <div className="p-3 border-t border-slate-100 space-y-0.5">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <a
-              href={`/vendors/${encodeURIComponent(vendorName)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors"
-            >
-              <ExternalLink className="h-4 w-4" />
-              View as Member
-            </a>
-          </TooltipTrigger>
-          <TooltipContent side="right" className="text-xs">
-            Open public vendor profile
-          </TooltipContent>
-        </Tooltip>
+      {/* Footer area */}
+      <div className="p-4 bg-slate-50/50 border-t border-slate-100 space-y-1">
+        <a
+          href={`/vendors/${encodeURIComponent(vendorName)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-500 hover:text-slate-800 hover:bg-white hover:shadow-sm transition-all duration-200"
+        >
+          <ExternalLink className="h-4 w-4 text-slate-400" />
+          View as Member
+        </a>
         <a
           href="/vendors"
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-500 hover:text-slate-800 hover:bg-white hover:shadow-sm transition-all duration-200"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4 text-slate-400" />
           Back to CDG Pulse
         </a>
       </div>
