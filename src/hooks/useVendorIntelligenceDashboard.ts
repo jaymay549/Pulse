@@ -103,15 +103,15 @@ export interface VendorDashboardIntel {
 
 // ── Hook ─────────────────────────────────────────────────────
 
-export function useVendorIntelligenceDashboard(vendorName: string) {
+export function useVendorIntelligenceDashboard(vendorName: string, productLineSlug?: string | null) {
   const supabase = useClerkSupabase();
 
   return useQuery({
-    queryKey: ["vendor-dashboard-intel", vendorName],
+    queryKey: ["vendor-dashboard-intel", vendorName, productLineSlug ?? null],
     queryFn: async (): Promise<VendorDashboardIntel> => {
       const { data, error } = await supabase.rpc(
         "get_vendor_dashboard_intel" as never,
-        { p_vendor_name: vendorName } as never
+        { p_vendor_name: vendorName, p_product_line_slug: productLineSlug ?? null } as never
       );
 
       if (error) {

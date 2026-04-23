@@ -156,10 +156,10 @@ Plans:
 **Plans:** 5 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — Database: vendor_product_subscriptions table, SECURITY DEFINER functions, admin RPCs, Edge Function extension
-- [ ] 08-02-PLAN.md — Admin: Wizard product line step, vendor detail panel for subscription CRUD, badge counts
-- [ ] 08-03-PLAN.md — Vendor dashboard: ActiveProductLine context, header switcher, product-specific tier resolution
+- [x] 08-01-PLAN.md — Database: vendor_product_subscriptions table, SECURITY DEFINER functions, admin RPCs, Edge Function extension
+- [x] 08-02-PLAN.md — Admin: Wizard product line step, vendor detail panel for subscription CRUD, badge counts
+- [x] 08-03-PLAN.md — Vendor dashboard: ActiveProductLine context, header switcher, product-specific tier resolution
 - [ ] 08-04-PLAN.md — RPC threading: All dashboard components pass active product line slug, queryKey updates
-- [ ] 08-05-PLAN.md — [BLOCKING] Database schema push to live Supabase
+- [x] 08-05-PLAN.md — [BLOCKING] Database schema push to live Supabase
 
 **UI hint**: yes

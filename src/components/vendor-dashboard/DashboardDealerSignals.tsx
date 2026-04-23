@@ -5,13 +5,16 @@ import {
   getSentimentColor,
   getSwitchingRiskLevel,
 } from "@/hooks/useVendorTechStackIntel";
+import { useActiveProductLine } from "@/hooks/useActiveProductLine";
 
 interface DashboardDealerSignalsProps {
   vendorName: string;
 }
 
 export function DashboardDealerSignals({ vendorName }: DashboardDealerSignalsProps) {
-  const { data, isLoading, isError } = useVendorTechStackIntel(vendorName);
+  const { activeProductLine } = useActiveProductLine();
+  const productLineSlug = activeProductLine?.slug ?? null;
+  const { data, isLoading, isError } = useVendorTechStackIntel(vendorName, productLineSlug);
 
   if (isLoading) {
     return (

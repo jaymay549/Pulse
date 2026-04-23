@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tags, Loader2, Check, AlertCircle } from "lucide-react";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
+import { useActiveProductLine } from "@/hooks/useActiveProductLine";
 import { categories as allCategories } from "@/hooks/useVendorFilters";
 import { cn } from "@/lib/utils";
 
@@ -17,12 +18,14 @@ interface DashboardCategoriesProps {
 export function DashboardCategories({ vendorName }: DashboardCategoriesProps) {
   const supabase = useClerkSupabase();
   const queryClient = useQueryClient();
+  const { activeProductLine } = useActiveProductLine();
+  const productLineSlug = activeProductLine?.slug ?? null;
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
   const { data: selected = [], isLoading } = useQuery<string[]>({
-    queryKey: ["vendor-categories", vendorName],
+    queryKey: ["vendor-categories", vendorName, productLineSlug],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vendor_profiles" as never)
@@ -57,7 +60,7 @@ export function DashboardCategories({ vendorName }: DashboardCategoriesProps) {
         .eq("vendor_name", vendorName as never);
       if (updateError) throw updateError;
 
-      queryClient.setQueryData(["vendor-categories", vendorName], updated);
+      queryClient.setQueryData(["vendor-categories", vendorName, productLineSlug], updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
     } catch (err: unknown) {

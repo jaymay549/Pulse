@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { fetchVendorPulseFeed } from "@/hooks/useSupabaseVendorData";
+import { useActiveProductLine } from "@/hooks/useActiveProductLine";
 import { PulseBriefing } from "./PulseBriefing";
 import { NPSChart } from "./NPSChart";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -82,11 +83,13 @@ function TypeBadge({ type }: { type: string }) {
 
 export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewProps): JSX.Element {
   const supabase = useClerkSupabase();
+  const { activeProductLine } = useActiveProductLine();
+  const productLineSlug = activeProductLine?.slug ?? null;
 
   const { data: mentions } = useQuery({
-    queryKey: ["vendor-recent-mentions", vendorName],
+    queryKey: ["vendor-recent-mentions", vendorName, productLineSlug],
     queryFn: async () => {
-      const result = await fetchVendorPulseFeed({ vendorName, pageSize: 10 });
+      const result = await fetchVendorPulseFeed({ vendorName, pageSize: 10, productLineSlug });
       return result.mentions.map((m) => ({
         id: String(m.id),
         quote: m.quote ?? "",
@@ -97,7 +100,7 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
   });
 
   const { data: sentimentHistory = [] } = useQuery({
-    queryKey: ["vendor-sentiment-history", vendorName],
+    queryKey: ["vendor-sentiment-history", vendorName, productLineSlug],
     queryFn: async () => {
       const { data, error } = await supabase.rpc(
         "get_vendor_sentiment_history" as never,
