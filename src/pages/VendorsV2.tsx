@@ -1152,12 +1152,19 @@ const VendorsV2 = () => {
                 )}
 
                 {isAuthenticated && isAdmin && (
-                  <Link to="/admin">
-                    <Button variant="outline" size="sm" className="hidden sm:flex text-xs">
-                      <Shield className="h-3.5 w-3.5 mr-1.5" />
-                      Admin
-                    </Button>
-                  </Link>
+                  <>
+                    <Link to="/vendor-login">
+                      <Button variant="outline" size="sm" className="hidden sm:flex text-xs">
+                        Vendor Login
+                      </Button>
+                    </Link>
+                    <Link to="/admin">
+                      <Button variant="outline" size="sm" className="hidden sm:flex text-xs">
+                        <Shield className="h-3.5 w-3.5 mr-1.5" />
+                        Admin
+                      </Button>
+                    </Link>
+                  </>
                 )}
 
                 {isAuthenticated && (
