@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Navigate, useSearchParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Loader2, ShieldCheck, Eye, EyeOff, Lock } from "lucide-react";
+import { AlertTriangle, Loader2, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useVendorSupabaseAuth } from "@/hooks/useVendorSupabaseAuth";
 import { vendorSupabase } from "@/integrations/supabase/vendorClient";
 import { supabase } from "@/integrations/supabase/client";
+import { ActiveProductLineProvider, useActiveProductLine } from "@/hooks/useActiveProductLine";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -44,6 +45,108 @@ function getSectionVisibility(
   if (!tier) return "full";
   return getVisibility(configs, tier as VendorTier, sectionKey);
 }
+
+// ── Inner component: consumes ActiveProductLineContext ──────────────────────
+// Must be rendered inside ActiveProductLineProvider so useActiveProductLine() works.
+
+interface VendorDashboardInnerProps {
+  vendorName: string;
+  vendorProfile: VendorProfileRow;
+  vendorLoginProfile: { vendor_name: string; tier: string } | null | undefined;
+  resolvedTier: string | null | undefined;
+  tierConfigs: ReturnType<typeof useTierConfigReadonly>["configs"];
+  isAdminMode: boolean;
+  adminVendorView: boolean;
+  setAdminVendorView: (v: boolean) => void;
+  activeSection: DashboardSection;
+  setActiveSection: (s: DashboardSection) => void;
+  dashboardIntel: any;
+  isVendorAuth: boolean;
+}
+
+function VendorDashboardInner({
+  vendorName,
+  vendorProfile,
+  vendorLoginProfile,
+  resolvedTier,
+  tierConfigs,
+  isAdminMode,
+  adminVendorView,
+  setAdminVendorView,
+  activeSection,
+  setActiveSection,
+  dashboardIntel,
+}: VendorDashboardInnerProps) {
+  const { activeProductLine } = useActiveProductLine();
+
+  // Tier resolution priority (per D-02, D-12):
+  // 1. Admin full-access mode: undefined (sees everything)
+  // 2. Product-specific tier (when product line is active) — per D-12
+  // 3. Account-level tier from vendor_logins.tier — per D-02 fallback
+  // 4. Resolved tier from RPC lookup
+  const vendorTier = (isAdminMode && !adminVendorView)
+    ? undefined
+    : activeProductLine?.tier
+      || vendorLoginProfile?.tier
+      || resolvedTier
+      || undefined;
+
+  const renderSection = (sectionKey: string, component: React.ReactNode) => {
+    if (activeSection !== sectionKey) return null;
+    const vis = getSectionVisibility(tierConfigs, vendorTier, sectionKey);
+    if (vis === "hidden") return null;
+    return component;
+  };
+
+  return (
+    <>
+      <VendorTierProvider value={vendorTier}>
+        <VendorDashboardLayout vendorName={vendorName} activeSection={activeSection} onNavigate={setActiveSection} tier={vendorTier}>
+          <div>
+            {isAdminMode && (
+              <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-800">
+                <ShieldCheck className="h-4 w-4 flex-shrink-0" />
+                <span className="flex-1">
+                  Admin mode &mdash; editing <strong>{vendorName}</strong>.{" "}
+                  <Link to={`/vendors/${encodeURIComponent(vendorName)}`} className="underline hover:no-underline">
+                    View public profile
+                  </Link>
+                </span>
+                <button
+                  onClick={() => setAdminVendorView(!adminVendorView)}
+                  className={`ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                    adminVendorView
+                      ? "bg-amber-600 text-white hover:bg-amber-700"
+                      : "bg-white text-amber-700 border border-amber-300 hover:bg-amber-100"
+                  }`}
+                >
+                  {adminVendorView ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  {adminVendorView ? "Vendor View" : "Full Access"}
+                </button>
+              </div>
+            )}
+            {renderSection("intelligence", <VendorCommandCenter vendorName={vendorName} />)}
+            {renderSection("overview", <DashboardOverview vendorName={vendorName} onNavigate={setActiveSection} />)}
+            {renderSection("segments", <DashboardSegments vendorName={vendorName} />)}
+            {renderSection("mentions", <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfile.id} />)}
+            {renderSection("profile", <DashboardEditProfile vendorProfileId={isAdminMode ? vendorProfile.id : undefined} />)}
+            {renderSection("intel", <DashboardIntel vendorName={vendorName} />)}
+            {renderSection("dimensions", <DashboardDimensions vendorName={vendorName} />)}
+            {renderSection("demo-requests", <DashboardDemoRequests vendorName={vendorName} />)}
+            {renderSection("screenshots", <DashboardScreenshots vendorName={vendorName} />)}
+            {renderSection("categories", <DashboardCategories vendorName={vendorName} />)}
+            {renderSection("dealer-signals", <DashboardDealerSignals vendorName={vendorName} />)}
+          </div>
+        </VendorDashboardLayout>
+      </VendorTierProvider>
+
+      {/* Floating AI chat — persists across all tabs */}
+      <DashboardAIChat vendorName={vendorName} dashboardIntel={dashboardIntel ?? null} />
+    </>
+  );
+}
+
+// ── Main page component ─────────────────────────────────────────────────────
 
 export default function VendorDashboardPage() {
   const clerkSupabase = useClerkSupabase();
@@ -151,15 +254,6 @@ export default function VendorDashboardPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Tier resolution priority:
-  // 1. Admin vendor-view mode: use resolved tier from RPC
-  // 2. Admin full-access mode: undefined (sees everything)
-  // 3. Magic-link vendor session: use vendorLoginProfile.tier
-  // 4. Clerk-authenticated vendor owner: use resolved tier from RPC
-  const vendorTier = (isAdminMode && !adminVendorView)
-    ? undefined
-    : vendorLoginProfile?.tier || resolvedTier || undefined;
-
   // Fetch tier component config via anon client (works for vendor magic-link sessions).
   const { configs: tierConfigs } = useTierConfigReadonly();
 
@@ -214,57 +308,22 @@ export default function VendorDashboardPage() {
     return <Navigate to="/vendors" replace />;
   }
 
-  const renderSection = (sectionKey: string, component: React.ReactNode) => {
-    if (activeSection !== sectionKey) return null;
-    const vis = getSectionVisibility(tierConfigs, vendorTier, sectionKey);
-    if (vis === "hidden") return null;
-    return component;
-  };
-
   return (
-    <>
-      <VendorTierProvider value={vendorTier}>
-      <VendorDashboardLayout vendorName={vendorName} activeSection={activeSection} onNavigate={setActiveSection} tier={vendorTier}>
-        <div>
-          {isAdminMode && (
-            <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-800">
-              <ShieldCheck className="h-4 w-4 flex-shrink-0" />
-              <span className="flex-1">
-                Admin mode &mdash; editing <strong>{vendorName}</strong>.{" "}
-                <Link to={`/vendors/${encodeURIComponent(vendorName)}`} className="underline hover:no-underline">
-                  View public profile
-                </Link>
-              </span>
-              <button
-                onClick={() => setAdminVendorView(!adminVendorView)}
-                className={`ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                  adminVendorView
-                    ? "bg-amber-600 text-white hover:bg-amber-700"
-                    : "bg-white text-amber-700 border border-amber-300 hover:bg-amber-100"
-                }`}
-              >
-                {adminVendorView ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                {adminVendorView ? "Vendor View" : "Full Access"}
-              </button>
-            </div>
-          )}
-          {renderSection("intelligence", <VendorCommandCenter vendorName={vendorName} />)}
-          {renderSection("overview", <DashboardOverview vendorName={vendorName} onNavigate={setActiveSection} />)}
-          {renderSection("segments", <DashboardSegments vendorName={vendorName} />)}
-          {renderSection("mentions", <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfile.id} />)}
-          {renderSection("profile", <DashboardEditProfile vendorProfileId={isAdminMode ? vendorProfile.id : undefined} />)}
-          {renderSection("intel", <DashboardIntel vendorName={vendorName} />)}
-          {renderSection("dimensions", <DashboardDimensions vendorName={vendorName} />)}
-          {renderSection("demo-requests", <DashboardDemoRequests vendorName={vendorName} />)}
-          {renderSection("screenshots", <DashboardScreenshots vendorName={vendorName} />)}
-          {renderSection("categories", <DashboardCategories vendorName={vendorName} />)}
-          {renderSection("dealer-signals", <DashboardDealerSignals vendorName={vendorName} />)}
-        </div>
-      </VendorDashboardLayout>
-      </VendorTierProvider>
-
-      {/* Floating AI chat — persists across all tabs */}
-      <DashboardAIChat vendorName={vendorName} dashboardIntel={dashboardIntel ?? null} />
-    </>
+    <ActiveProductLineProvider isVendorAuth={isVendorAuth} vendorUserId={vendorUser?.id}>
+      <VendorDashboardInner
+        vendorName={vendorName}
+        vendorProfile={vendorProfile!}
+        vendorLoginProfile={vendorLoginProfile}
+        resolvedTier={resolvedTier}
+        tierConfigs={tierConfigs}
+        isAdminMode={isAdminMode}
+        adminVendorView={adminVendorView}
+        setAdminVendorView={setAdminVendorView}
+        activeSection={activeSection}
+        setActiveSection={setActiveSection}
+        dashboardIntel={dashboardIntel}
+        isVendorAuth={isVendorAuth}
+      />
+    </ActiveProductLineProvider>
   );
 }

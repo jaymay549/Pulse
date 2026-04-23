@@ -3,6 +3,7 @@ import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { VendorDashboardSidebar } from "./VendorDashboardSidebar";
 import { Button } from "@/components/ui/button";
+import { VendorProductLineSwitcher } from "./VendorProductLineSwitcher";
 
 export type DashboardSection = "intelligence" | "overview" | "segments" | "mentions" | "profile" | "intel" | "dimensions" | "demo-requests" | "screenshots" | "categories" | "dealer-signals";
 
@@ -57,6 +58,11 @@ export function VendorDashboardLayout({ vendorName, activeSection, onNavigate, c
           <span className="text-slate-400">Dashboard</span>
           <span className="mx-2 text-slate-300">/</span>
           <span className="text-slate-800 font-medium">{sectionLabels[activeSection]}</span>
+        </div>
+
+        {/* Product line switcher */}
+        <div className="ml-auto">
+          <VendorProductLineSwitcher />
         </div>
       </header>
 
