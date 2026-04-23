@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Admin-Configurable Tier Gating
 status: planning
-stopped_at: v1.1 roadmap created (Phases 4-6)
-last_updated: "2026-04-16T16:23:07.898Z"
-last_activity: 2026-04-16
+stopped_at: Phase 8 context gathered
+last_updated: "2026-04-23T16:37:59.751Z"
+last_activity: "2026-04-17 - Completed quick task 260417-kw5: Wire up vendor dashboard to use dynamic tier_component_config instead of hardcoded T2_ONLY_SECTIONS"
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 2
   total_plans: 4
   completed_plans: 4
@@ -73,6 +73,10 @@ Recent decisions affecting current work:
 
 None yet.
 
+### Roadmap Evolution
+
+- Phase 8 added: Parent/Child Company Filtering — per-product-line subscriptions with tier-per-product, admin provisioning of child products, product line dropdown in vendor dashboard, and RPC filtering by product line. Implements CAR-20.
+
 ### Blockers/Concerns
 
 None for v1.1 — RLS safety net already in place from v1.0, no RLS changes needed.
@@ -87,6 +91,6 @@ None for v1.1 — RLS safety net already in place from v1.0, no RLS changes need
 
 ## Session Continuity
 
-Last session: 2026-04-15
-Stopped at: v1.1 roadmap created (Phases 4-6)
-Resume file: None
+Last session: 2026-04-23T16:37:59.743Z
+Stopped at: Phase 8 context gathered
+Resume file: .planning/phases/08-parent-child-company-filtering-per-product-line-subscription/08-CONTEXT.md
