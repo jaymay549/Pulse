@@ -16,6 +16,7 @@ import {
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { VendorWizardDialog } from "@/components/admin/vendor-management/VendorWizardDialog";
+import { VendorProductSubscriptionsPanel } from "@/components/admin/vendor-management/VendorProductSubscriptionsPanel";
 
 interface VendorLogin {
   id: string;
@@ -127,6 +128,9 @@ const VendorManagementPage = () => {
   // Password result dialog
   const [passwordResult, setPasswordResult] = useState<{ email: string; password: string } | null>(null);
 
+  // Detail panel for product subscriptions
+  const [detailVendor, setDetailVendor] = useState<string | null>(null);
+
   const { data: vendors = [], isLoading } = useQuery<VendorLogin[]>({
     queryKey: ["admin-vendor-logins"],
     queryFn: async () => {
@@ -135,6 +139,32 @@ const VendorManagementPage = () => {
       return (data ?? []) as VendorLogin[];
     },
   });
+
+  // Product count per vendor_login_id (then mapped to vendor_name via vendors list)
+  const { data: rawProductCounts = {} } = useQuery<Record<string, number>>({
+    queryKey: ["admin-vendor-product-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendor_product_subscriptions" as any)
+        .select("vendor_login_id");
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const row of (data ?? []) as Array<{ vendor_login_id: string }>) {
+        counts[row.vendor_login_id] = (counts[row.vendor_login_id] || 0) + 1;
+      }
+      return counts;
+    },
+  });
+
+  // Map counts from vendor_login_id to vendor_name using the vendors list
+  const productCounts = useMemo(() => {
+    const byName: Record<string, number> = {};
+    for (const v of vendors) {
+      const c = rawProductCounts[v.id];
+      if (c) byName[v.vendor_name] = (byName[v.vendor_name] || 0) + c;
+    }
+    return byName;
+  }, [vendors, rawProductCounts]);
 
   const filteredVendors = vendors.filter((v) => {
     if (!search) return true;
@@ -314,7 +344,17 @@ const VendorManagementPage = () => {
                         <td className="px-4 py-3 text-sm text-zinc-500">
                           {logins.length} emails
                         </td>
-                        <td className="px-4 py-3"><TierSelect tier={primary.tier} vendorName={vendorName} supabase={supabase} queryClient={queryClient} /></td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <TierSelect tier={primary.tier} vendorName={vendorName} supabase={supabase} queryClient={queryClient} />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setDetailVendor(vendorName); }}
+                              className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200 transition-colors"
+                            >
+                              {productCounts[vendorName] || 0} products
+                            </button>
+                          </div>
+                        </td>
                         <td className="px-4 py-3 text-xs text-zinc-500" />
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1">
@@ -383,7 +423,17 @@ const VendorManagementPage = () => {
                     >
                       <td className="px-4 py-3 text-sm text-zinc-200">{vendorName}</td>
                       <td className="px-4 py-3 text-sm text-zinc-400">{primary.email}</td>
-                      <td className="px-4 py-3"><TierSelect tier={primary.tier} vendorName={vendorName} supabase={supabase} queryClient={queryClient} /></td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <TierSelect tier={primary.tier} vendorName={vendorName} supabase={supabase} queryClient={queryClient} />
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDetailVendor(vendorName); }}
+                            className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200 transition-colors"
+                          >
+                            {productCounts[vendorName] || 0} products
+                          </button>
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-xs text-zinc-500">
                         {primary.last_sign_in_at ? relativeDate(primary.last_sign_in_at) : "Never"}
                       </td>
@@ -430,6 +480,13 @@ const VendorManagementPage = () => {
         open={wizardOpen}
         onOpenChange={setWizardOpen}
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ["admin-vendor-logins"] })}
+      />
+
+      {/* Product Subscriptions Detail Panel */}
+      <VendorProductSubscriptionsPanel
+        open={!!detailVendor}
+        onOpenChange={(open) => { if (!open) setDetailVendor(null); }}
+        vendorName={detailVendor || ""}
       />
 
       {/* Password Result Dialog */}
