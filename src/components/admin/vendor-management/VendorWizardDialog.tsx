@@ -193,7 +193,7 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
     (step === 0 && isEmailValid) ||
     (step === 1 && isVendorNameValid) ||
     (step === 2 && !!tier) ||
-    (step === 3 && Object.keys(selectedProducts).length > 0);
+    (step === 3 && (Object.keys(selectedProducts).length > 0 || productLines.length === 0));
 
   const advance = () => {
     if (step < steps.length - 1 && canAdvance) setStep(step + 1);
@@ -354,7 +354,7 @@ export function VendorWizardDialog({ open, onOpenChange, onSuccess }: VendorWiza
                     <p className="text-sm text-zinc-500">
                       {entityData ? "No product lines configured for this vendor." : "Resolving vendor entity..."}
                     </p>
-                    <p className="text-xs text-zinc-600 mt-1">Contact engineering to add product lines.</p>
+                    <p className="text-xs text-zinc-600 mt-1">{entityData ? "Contact engineering to add product lines." : "You can skip this step — product lines can be added later."}</p>
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-[200px] overflow-y-auto">
