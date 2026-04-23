@@ -70,7 +70,7 @@ Plans:
 
 </details>
 
-### 🚧 v1.1 Admin-Configurable Tier Gating (In Progress)
+### v1.1 Admin-Configurable Tier Gating (In Progress)
 
 **Milestone Goal:** Make tier visibility admin-configurable (not hardcoded) and implement granular T1/T2 data visibility with partial gating, blurred/locked upgrade CTAs, and a test tier for demos.
 
@@ -146,3 +146,20 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 Plans:
 - [x] 07-01-PLAN.md — Audit RPC for duplicate detection + normalize vendor names across all tables
 - [x] 07-02-PLAN.md — Bulk merge duplicate entities, backfill unlinked mentions, health check RPC
+
+### Phase 8: Parent/Child Company Filtering
+
+**Goal:** Vendors subscribe per product line with tier-per-product. Admin provisions product line subscriptions through the wizard. Vendor dashboard shows a product line switcher. RPCs scope data to the selected product line. RLS enforces subscription boundaries.
+**Requirements**: PROD-01, PROD-02, PROD-03, PROD-04, PROD-05, PROD-06, PROD-07, PROD-08, PROD-09, PROD-10, PROD-11, PROD-12, PROD-13, PROD-14
+**Depends on:** Phase 7
+**Linear:** CAR-20
+**Plans:** 5 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — Database: vendor_product_subscriptions table, SECURITY DEFINER functions, admin RPCs, Edge Function extension
+- [ ] 08-02-PLAN.md — Admin: Wizard product line step, vendor detail panel for subscription CRUD, badge counts
+- [ ] 08-03-PLAN.md — Vendor dashboard: ActiveProductLine context, header switcher, product-specific tier resolution
+- [ ] 08-04-PLAN.md — RPC threading: All dashboard components pass active product line slug, queryKey updates
+- [ ] 08-05-PLAN.md — [BLOCKING] Database schema push to live Supabase
+
+**UI hint**: yes
