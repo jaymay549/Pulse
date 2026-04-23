@@ -30,7 +30,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { vendor_email, vendor_name, tier, action = "provision", _auth_token } = body;
+    const { vendor_email, vendor_name, tier, action = "provision", _auth_token, product_subscriptions } = body;
 
     const authToken = _auth_token || req.headers.get("Authorization")?.replace("Bearer ", "");
     if (!authToken) throw new Error("Missing auth token");
@@ -115,8 +115,52 @@ serve(async (req) => {
         );
       if (upsertError) throw upsertError;
 
+      // Insert product subscriptions if provided (per D-03)
+      if (product_subscriptions && Array.isArray(product_subscriptions) && product_subscriptions.length > 0) {
+        // First, get the vendor_login_id for this user
+        const { data: loginRow, error: loginLookupError } = await supabase
+          .from("vendor_logins")
+          .select("id")
+          .eq("user_id", vendorUserId)
+          .single();
+        if (loginLookupError) throw loginLookupError;
+        const vendorLoginId = loginRow.id;
+
+        // Resolve product line IDs from slugs and insert subscriptions
+        for (const sub of product_subscriptions) {
+          const { product_line_slug, tier: productTier } = sub;
+          if (!product_line_slug || !productTier) continue;
+          if (!VALID_TIERS.includes(productTier)) continue;
+
+          const { data: plRow } = await supabase
+            .from("vendor_product_lines")
+            .select("id")
+            .eq("slug", product_line_slug)
+            .single();
+          if (!plRow) continue; // skip unknown product lines
+
+          await supabase
+            .from("vendor_product_subscriptions")
+            .upsert(
+              {
+                vendor_login_id: vendorLoginId,
+                vendor_product_line_id: plRow.id,
+                tier: productTier,
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "vendor_login_id,vendor_product_line_id" }
+            );
+        }
+      }
+
       return new Response(
-        JSON.stringify({ ok: true, user_id: vendorUserId, password, action: "provisioned" }),
+        JSON.stringify({
+          ok: true,
+          user_id: vendorUserId,
+          password,
+          action: "provisioned",
+          subscriptions_created: product_subscriptions?.length ?? 0,
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
