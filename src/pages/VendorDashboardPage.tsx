@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, ShieldCheck } from "lucide-react";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
+import { ActiveProductLineProvider, useActiveProductLine } from "@/hooks/useActiveProductLine";
+import { useVendorIntelligenceDashboard } from "@/hooks/useVendorIntelligenceDashboard";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -21,13 +23,74 @@ import { DashboardScreenshots } from "@/components/vendor-dashboard/DashboardScr
 import { DashboardCategories } from "@/components/vendor-dashboard/DashboardCategories";
 import { DashboardDealerSignals } from "@/components/vendor-dashboard/DashboardDealerSignals";
 import { VendorDashboardLayout, type DashboardSection } from "@/components/vendor-dashboard/VendorDashboardLayout";
-import { useVendorIntelligenceDashboard } from "@/hooks/useVendorIntelligenceDashboard";
 
 interface VendorProfileRow {
   id: string;
   vendor_name: string;
   is_approved: boolean;
 }
+
+// ── Inner component: consumes ActiveProductLineContext ──────────────────────
+// Must be rendered inside ActiveProductLineProvider so useActiveProductLine() works.
+
+interface VendorDashboardInnerProps {
+  vendorName: string;
+  vendorProfile: VendorProfileRow;
+  isAdminMode: boolean;
+  activeSection: DashboardSection;
+  setActiveSection: (s: DashboardSection) => void;
+  supabase: ReturnType<typeof useClerkSupabase>;
+}
+
+function VendorDashboardInner({
+  vendorName,
+  vendorProfile,
+  isAdminMode,
+  activeSection,
+  setActiveSection,
+  supabase,
+}: VendorDashboardInnerProps) {
+  const { activeProductLine } = useActiveProductLine();
+  const productLineSlug = activeProductLine?.slug ?? null;
+
+  const { data: dashboardIntel } = useVendorIntelligenceDashboard(vendorName, productLineSlug);
+
+  return (
+    <>
+      <VendorDashboardLayout vendorName={vendorName} activeSection={activeSection} onNavigate={setActiveSection}>
+        <div className="max-w-5xl">
+          {isAdminMode && (
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-800">
+              <ShieldCheck className="h-4 w-4 flex-shrink-0" />
+              <span>
+                Admin mode &mdash; editing <strong>{vendorName}</strong>.{" "}
+                <Link to={`/vendors/${encodeURIComponent(vendorName)}`} className="underline hover:no-underline">
+                  View public profile
+                </Link>
+              </span>
+            </div>
+          )}
+          {activeSection === "intelligence" && <VendorCommandCenter vendorName={vendorName} />}
+          {activeSection === "overview" && <DashboardOverview vendorName={vendorName} onNavigate={setActiveSection} />}
+          {activeSection === "segments" && <DashboardSegments vendorName={vendorName} />}
+          {activeSection === "mentions" && <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfile.id} />}
+          {activeSection === "profile" && <DashboardEditProfile vendorProfileId={isAdminMode ? vendorProfile.id : undefined} />}
+          {activeSection === "intel" && <DashboardIntel vendorName={vendorName} />}
+          {activeSection === "dimensions" && <DashboardDimensions vendorName={vendorName} />}
+          {activeSection === "demo-requests" && <DashboardDemoRequests vendorName={vendorName} supabase={supabase} />}
+          {activeSection === "screenshots" && <DashboardScreenshots vendorName={vendorName} />}
+          {activeSection === "categories" && <DashboardCategories vendorName={vendorName} />}
+          {activeSection === "dealer-signals" && <DashboardDealerSignals vendorName={vendorName} />}
+        </div>
+      </VendorDashboardLayout>
+
+      {/* Floating AI chat — persists across all tabs */}
+      <DashboardAIChat vendorName={vendorName} dashboardIntel={dashboardIntel ?? null} />
+    </>
+  );
+}
+
+// ── Main page component ─────────────────────────────────────────────────────
 
 export default function VendorDashboardPage() {
   const supabase = useClerkSupabase();
@@ -90,10 +153,6 @@ export default function VendorDashboardPage() {
   const vendorProfile = isAdminMode ? adminVendorProfile : ownVendorProfile;
   const vendorName = vendorProfile?.vendor_name ?? "";
 
-  // Must be called before any early returns to satisfy React's rules of hooks.
-  // React Query cache shares data with VendorCommandCenter (same queryKey).
-  const { data: dashboardIntel } = useVendorIntelligenceDashboard(vendorName);
-
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -131,37 +190,18 @@ export default function VendorDashboardPage() {
     return <Navigate to="/vendors" replace />;
   }
 
+  // isVendorAuth: false here since this worktree uses Clerk auth only.
+  // ActiveProductLineProvider will no-op the subscription fetch (isVendorAuth=false).
   return (
-    <>
-      <VendorDashboardLayout vendorName={vendorName} activeSection={activeSection} onNavigate={setActiveSection}>
-        <div className="max-w-5xl">
-          {isAdminMode && (
-            <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-800">
-              <ShieldCheck className="h-4 w-4 flex-shrink-0" />
-              <span>
-                Admin mode &mdash; editing <strong>{vendorName}</strong>.{" "}
-                <Link to={`/vendors/${encodeURIComponent(vendorName)}`} className="underline hover:no-underline">
-                  View public profile
-                </Link>
-              </span>
-            </div>
-          )}
-          {activeSection === "intelligence" && <VendorCommandCenter vendorName={vendorName} />}
-          {activeSection === "overview" && <DashboardOverview vendorName={vendorName} onNavigate={setActiveSection} />}
-          {activeSection === "segments" && <DashboardSegments vendorName={vendorName} />}
-          {activeSection === "mentions" && <DashboardMentions vendorName={vendorName} vendorProfileId={vendorProfile.id} />}
-          {activeSection === "profile" && <DashboardEditProfile vendorProfileId={isAdminMode ? vendorProfile.id : undefined} />}
-          {activeSection === "intel" && <DashboardIntel vendorName={vendorName} />}
-          {activeSection === "dimensions" && <DashboardDimensions vendorName={vendorName} />}
-          {activeSection === "demo-requests" && <DashboardDemoRequests vendorName={vendorName} supabase={supabase} />}
-          {activeSection === "screenshots" && <DashboardScreenshots vendorName={vendorName} />}
-          {activeSection === "categories" && <DashboardCategories vendorName={vendorName} />}
-          {activeSection === "dealer-signals" && <DashboardDealerSignals vendorName={vendorName} />}
-        </div>
-      </VendorDashboardLayout>
-
-      {/* Floating AI chat — persists across all tabs */}
-      <DashboardAIChat vendorName={vendorName} dashboardIntel={dashboardIntel ?? null} />
-    </>
+    <ActiveProductLineProvider isVendorAuth={false} vendorUserId={null}>
+      <VendorDashboardInner
+        vendorName={vendorName}
+        vendorProfile={vendorProfile!}
+        isAdminMode={isAdminMode}
+        activeSection={activeSection}
+        setActiveSection={setActiveSection}
+        supabase={supabase}
+      />
+    </ActiveProductLineProvider>
   );
 }

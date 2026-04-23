@@ -14,6 +14,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
+import { useActiveProductLine } from "@/hooks/useActiveProductLine";
 import { VENDOR_DIMENSIONS } from "@/types/admin";
 import type { VendorDimension } from "@/hooks/useSupabaseVendorData";
 import {
@@ -93,10 +94,12 @@ function TypeBadge({ type }: { type: string }) {
 
 export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): JSX.Element {
   const supabase = useClerkSupabase();
+  const { activeProductLine } = useActiveProductLine();
+  const productLineSlug = activeProductLine?.slug ?? null;
 
   // Fetch dimension aggregates
   const { data: dimensions, isLoading: dimensionsLoading } = useQuery<VendorDimension[]>({
-    queryKey: ["dashboard-dimensions", vendorName],
+    queryKey: ["dashboard-dimensions", vendorName, productLineSlug],
     queryFn: async () => {
       const { data, error } = await supabase.rpc(
         "get_vendor_dimensions" as never,
@@ -123,7 +126,7 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
   const dimensionKeys = dimensions?.map((d) => d.dimension) ?? [];
 
   const { data: mentionsByDimension } = useQuery<Record<string, DimensionMention[]>>({
-    queryKey: ["dashboard-dimension-mentions", vendorName, dimensionKeys, vendorEntityId],
+    queryKey: ["dashboard-dimension-mentions", vendorName, productLineSlug, dimensionKeys, vendorEntityId],
     queryFn: async () => {
       const result: Record<string, DimensionMention[]> = {};
 

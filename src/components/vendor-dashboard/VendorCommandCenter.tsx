@@ -3,6 +3,7 @@ import {
   useVendorIntelligenceDashboard,
   type MetricKey,
 } from "@/hooks/useVendorIntelligenceDashboard";
+import { useActiveProductLine } from "@/hooks/useActiveProductLine";
 import { HealthScoreHero } from "./HealthScoreHero";
 import { NPSChart } from "./NPSChart";
 import { MetricCard } from "./MetricCard";
@@ -19,7 +20,9 @@ interface VendorCommandCenterProps {
 const METRIC_KEYS: MetricKey[] = ["product_stability", "customer_experience", "value_perception"];
 
 export function VendorCommandCenter({ vendorName }: VendorCommandCenterProps) {
-  const { data: intel, isLoading, isError } = useVendorIntelligenceDashboard(vendorName);
+  const { activeProductLine } = useActiveProductLine();
+  const productLineSlug = activeProductLine?.slug ?? null;
+  const { data: intel, isLoading, isError } = useVendorIntelligenceDashboard(vendorName, productLineSlug);
 
   if (isLoading) {
     return (
