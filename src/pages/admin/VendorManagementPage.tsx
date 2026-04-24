@@ -140,31 +140,23 @@ const VendorManagementPage = () => {
     },
   });
 
-  // Product count per vendor_login_id (then mapped to vendor_name via vendors list)
-  const { data: rawProductCounts = {} } = useQuery<Record<string, number>>({
-    queryKey: ["admin-vendor-product-counts"],
+  // Product count per vendor — uses SECURITY DEFINER RPC to bypass RLS
+  const { data: productCounts = {} } = useQuery<Record<string, number>>({
+    queryKey: ["admin-vendor-product-counts", vendors.map((v) => v.vendor_name).join(",")],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vendor_product_subscriptions" as any)
-        .select("vendor_login_id");
-      if (error) throw error;
       const counts: Record<string, number> = {};
-      for (const row of (data ?? []) as Array<{ vendor_login_id: string }>) {
-        counts[row.vendor_login_id] = (counts[row.vendor_login_id] || 0) + 1;
+      const uniqueNames = [...new Set(vendors.map((v) => v.vendor_name))];
+      for (const name of uniqueNames) {
+        const { data, error } = await supabase.rpc(
+          "admin_list_product_subscriptions" as never,
+          { p_vendor_name: name } as never
+        );
+        if (!error && data) counts[name] = (data as any[]).length;
       }
       return counts;
     },
+    enabled: vendors.length > 0,
   });
-
-  // Map counts from vendor_login_id to vendor_name using the vendors list
-  const productCounts = useMemo(() => {
-    const byName: Record<string, number> = {};
-    for (const v of vendors) {
-      const c = rawProductCounts[v.id];
-      if (c) byName[v.vendor_name] = (byName[v.vendor_name] || 0) + c;
-    }
-    return byName;
-  }, [vendors, rawProductCounts]);
 
   const filteredVendors = vendors.filter((v) => {
     if (!search) return true;
