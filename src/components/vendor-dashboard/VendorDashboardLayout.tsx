@@ -80,10 +80,6 @@ export function VendorDashboardLayout({ vendorName, activeSection, onNavigate, c
               {children}
             </div>
           </main>
-
-          <footer className="px-8 py-4 text-[11px] text-slate-300 border-t border-slate-100 bg-white">
-            © 2026 CDG Pulse · Vendor Control Center
-          </footer>
         </div>
       </div>
     </div>
