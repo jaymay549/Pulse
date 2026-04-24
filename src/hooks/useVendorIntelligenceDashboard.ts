@@ -111,7 +111,7 @@ export function useVendorIntelligenceDashboard(vendorName: string, productLineSl
     queryFn: async (): Promise<VendorDashboardIntel> => {
       const { data, error } = await supabase.rpc(
         "get_vendor_dashboard_intel" as never,
-        { p_vendor_name: vendorName, p_product_line_slug: productLineSlug ?? null } as never
+        { p_vendor_name: vendorName } as never
       );
 
       if (error) {
