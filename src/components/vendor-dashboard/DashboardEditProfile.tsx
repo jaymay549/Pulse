@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Camera, ImagePlus, Loader2, X } from "lucide-react";
-import { useClerkSupabase } from "@/hooks/useClerkSupabase";
+import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { GatedCard } from "./GatedCard";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -55,17 +56,14 @@ async function fileToBase64(file: File): Promise<string> {
 
 export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfileProps): JSX.Element {
   const { user, getToken } = useClerkAuth();
-  const supabase = useClerkSupabase();
+  const supabase = useVendorDataClient();
   const queryClient = useQueryClient();
   const isAdminMode = !!vendorProfileId;
 
   // Form state
   const [tagline, setTagline] = useState("");
   const [description, setDescription] = useState("");
-  const [website, setWebsite] = useState("");
-  const [linkedin, setLinkedin] = useState("");
   const [headquarters, setHeadquarters] = useState("");
-  const [email, setEmail] = useState("");
 
   // Track whether form has been initialized from profile data
   const [formInitialized, setFormInitialized] = useState(false);
@@ -157,10 +155,7 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
     if (profile && !formInitialized) {
       setTagline(profile.tagline ?? "");
       setDescription(profile.company_description ?? "");
-      setWebsite(profile.company_website ?? "");
-      setLinkedin(profile.linkedin_url ?? "");
       setHeadquarters(profile.headquarters ?? "");
-      setEmail(profile.contact_email ?? "");
       setFormInitialized(true);
     }
   }, [profile, formInitialized]);
@@ -171,10 +166,7 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
     profile &&
     (tagline !== (profile.tagline ?? "") ||
       description !== (profile.company_description ?? "") ||
-      website !== (profile.company_website ?? "") ||
-      linkedin !== (profile.linkedin_url ?? "") ||
-      headquarters !== (profile.headquarters ?? "") ||
-      email !== (profile.contact_email ?? ""));
+      headquarters !== (profile.headquarters ?? ""));
 
   // ---------- Upload helper (owner mode) ----------
   const handleUpload = async (file: File, bucket: string, path: string) => {
@@ -306,10 +298,7 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
       const updates = {
         tagline,
         company_description: description,
-        company_website: website,
-        linkedin_url: linkedin,
         headquarters,
-        contact_email: email,
       };
 
       if (isAdminMode) {
@@ -363,27 +352,33 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
   // ---------- Loading state ----------
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex flex-col items-center justify-center py-24 space-y-3">
         <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        <p className="text-sm text-slate-500">Loading profile...</p>
       </div>
     );
   }
 
   if (!profile) {
-    return <p className="text-sm text-slate-500">No approved profile found.</p>;
+    return (
+      <div className="flex flex-col items-center justify-center py-16 space-y-3">
+        <p className="text-sm font-medium text-slate-500">No approved profile found.</p>
+      </div>
+    );
   }
 
   // ---------- Render ----------
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-slate-900">Edit Profile</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        Manage your brand assets and company information
-      </p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Account Settings</h1>
+        <p className="mt-1 text-sm text-slate-500">Manage your brand assets and company information</p>
+      </div>
 
       {/* ---- Section A: Brand Assets ---- */}
-      <div className="mt-6 rounded-xl border bg-white">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
         {/* Banner */}
+        <GatedCard componentKey="profile.banner_logo">
         <div className="relative">
           <div
             className="h-[200px] w-full rounded-t-xl bg-slate-200 bg-cover bg-top"
@@ -452,8 +447,10 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
             onChange={onLogoChange}
           />
         </div>
+        </GatedCard>
 
         {/* Screenshots Gallery */}
+        <GatedCard componentKey="profile.screenshots">
         <div className="p-6 pt-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium text-slate-900">
@@ -511,11 +508,13 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
             </div>
           )}
         </div>
+        </GatedCard>
       </div>
 
       {/* ---- Section B: Profile Details Form ---- */}
-      <div className="mt-6 rounded-xl border bg-white p-6">
-        <h2 className="text-lg font-medium text-slate-900">Profile Details</h2>
+      <GatedCard componentKey="profile.details_form">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-sm font-bold text-slate-900">Profile Details</h2>
         <p className="mt-1 text-sm text-slate-500">
           Update your company information visible to the community
         </p>
@@ -544,53 +543,15 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <div>
-              <Label htmlFor="website">Company Website</Label>
-              <Input
-                id="website"
-                className="mt-1.5"
-                placeholder="https://example.com"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="linkedin">LinkedIn URL</Label>
-              <Input
-                id="linkedin"
-                className="mt-1.5"
-                placeholder="https://linkedin.com/company/..."
-                value={linkedin}
-                onChange={(e) => setLinkedin(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <div>
-              <Label htmlFor="headquarters">Headquarters</Label>
-              <Input
-                id="headquarters"
-                className="mt-1.5"
-                placeholder="City, State or Country"
-                value={headquarters}
-                onChange={(e) => setHeadquarters(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="contact-email">Contact Email</Label>
-              <Input
-                id="contact-email"
-                className="mt-1.5"
-                type="email"
-                placeholder="contact@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
+          <div>
+            <Label htmlFor="headquarters">Headquarters</Label>
+            <Input
+              id="headquarters"
+              className="mt-1.5"
+              placeholder="City, State or Country"
+              value={headquarters}
+              onChange={(e) => setHeadquarters(e.target.value)}
+            />
           </div>
         </div>
 
@@ -610,6 +571,7 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
           </Button>
         </div>
       </div>
+      </GatedCard>
     </div>
   );
 }

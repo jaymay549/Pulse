@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUp, ArrowDown, Minus, TrendingUp } from "lucide-react";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
+import { useActiveProductLine } from "@/hooks/useActiveProductLine";
 import { Badge } from "@/components/ui/badge";
-import { CompetitiveMovementCard } from "@/components/vendor-dashboard/CompetitiveMovementCard";
 
 interface DashboardIntelProps {
   vendorName: string;
@@ -80,14 +80,16 @@ function TrendBadge({ trend }: { trend: VendorTrend }) {
 
 export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element {
   const supabase = useClerkSupabase();
+  const { activeProductLine } = useActiveProductLine();
+  const productLineSlug = activeProductLine?.slug ?? null;
 
   // Own profile stats
   const { data: ownProfile, isLoading: profileLoading } = useQuery({
-    queryKey: ["intel-own-profile", vendorName],
+    queryKey: ["intel-own-profile", vendorName, productLineSlug],
     queryFn: async () => {
       const { data, error } = await supabase.rpc(
         "get_vendor_profile_v3" as never,
-        { p_vendor_name: vendorName, p_product_line_slug: null } as never
+        { p_vendor_name: vendorName, p_product_line_slug: productLineSlug } as never
       );
       if (error) throw error;
       return data as OwnProfile | null;
@@ -96,7 +98,7 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
 
   // Trend
   const { data: trend } = useQuery({
-    queryKey: ["vendor-trend", vendorName],
+    queryKey: ["vendor-trend", vendorName, productLineSlug],
     queryFn: async () => {
       const { data, error } = await supabase.rpc(
         "get_vendor_trend" as never,
@@ -111,7 +113,7 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
   const { data: competitors = [], isLoading: competitorsLoading } = useQuery<
     ComparedVendor[]
   >({
-    queryKey: ["intel-competitors", vendorName],
+    queryKey: ["intel-competitors", vendorName, productLineSlug],
     queryFn: async () => {
       const { data, error } = await supabase.rpc(
         "get_compared_vendors" as never,
@@ -257,11 +259,6 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* Competitive Movement */}
-      <div className="mt-6">
-        <CompetitiveMovementCard vendorName={vendorName} />
       </div>
     </div>
   );

@@ -5,14 +5,16 @@ import {
   getSentimentColor,
   getSwitchingRiskLevel,
 } from "@/hooks/useVendorTechStackIntel";
-import { CompetitiveMovementCard } from "@/components/vendor-dashboard/CompetitiveMovementCard";
+import { useActiveProductLine } from "@/hooks/useActiveProductLine";
 
 interface DashboardDealerSignalsProps {
   vendorName: string;
 }
 
 export function DashboardDealerSignals({ vendorName }: DashboardDealerSignalsProps) {
-  const { data, isLoading, isError } = useVendorTechStackIntel(vendorName);
+  const { activeProductLine } = useActiveProductLine();
+  const productLineSlug = activeProductLine?.slug ?? null;
+  const { data, isLoading, isError } = useVendorTechStackIntel(vendorName, productLineSlug);
 
   if (isLoading) {
     return (
@@ -145,9 +147,6 @@ export function DashboardDealerSignals({ vendorName }: DashboardDealerSignalsPro
           </div>
         </div>
       )}
-
-      {/* Competitive Movement */}
-      <CompetitiveMovementCard vendorName={vendorName} />
 
       {/* Market Share */}
       {data.category_market_share && (

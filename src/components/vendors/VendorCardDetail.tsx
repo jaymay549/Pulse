@@ -8,7 +8,6 @@ import {
   Quote,
   Lock,
   Crown,
-  Globe,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
@@ -29,7 +28,6 @@ interface VendorCardDetailProps {
   onVendorSelect?: (vendorName: string) => void;
   onCategorySelect?: (categoryId: string) => void;
   vendorLogo?: string | null;
-  vendorWebsite?: string | null;
   /** Vendor names derived from currently loaded server review entries */
   knownVendors?: string[];
   // Vendor response props
@@ -63,7 +61,6 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
   onVendorSelect,
   onCategorySelect,
   vendorLogo,
-  vendorWebsite,
   knownVendors,
   vendorResponse,
   canRespondAsVendor,
@@ -187,17 +184,6 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
                   View vendor
                 </button>
               )}
-              {vendorWebsite && (
-                <a
-                  href={vendorWebsite}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
-                >
-                  <Globe className="h-3 w-3" />
-                  Website
-                </a>
-              )}
             </div>
           </div>
         </div>
@@ -286,17 +272,6 @@ export const VendorCardDetail: React.FC<VendorCardDetailProps> = ({
                 >
                   View vendor
                 </button>
-              )}
-              {vendorWebsite && (
-                <a
-                  href={vendorWebsite}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
-                >
-                  <Globe className="h-3 w-3" />
-                  Website
-                </a>
               )}
             </div>
           </div>
