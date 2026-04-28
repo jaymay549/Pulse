@@ -30,6 +30,10 @@ export function ProfileProgressBar() {
   const confirmMutation = useConfirmTechStack();
   const [wizardOpen, setWizardOpen] = useState(false);
 
+  const isHiddenPath = HIDDEN_PATHS.some((p) =>
+    location.pathname.startsWith(p)
+  );
+
   // Track when user was loaded-and-unauthenticated so we can detect a real sign-in
   // (as opposed to a page refresh where Clerk restores an existing session)
   const sawUnauthRef = useRef(false);
@@ -59,10 +63,7 @@ export function ProfileProgressBar() {
     }
   }, [isAuthenticated, isTechDataLoaded, techData]);
 
-  // Hide on vendor dashboard and admin routes
-  if (HIDDEN_PATHS.some((p) => location.pathname.startsWith(p))) return null;
-
-  if (!isAuthenticated || !user) return null;
+  if (isHiddenPath || !isAuthenticated || !user) return null;
 
   const entries = techData?.entries || [];
   const skippedCategories = techData?.skippedCategories || [];
