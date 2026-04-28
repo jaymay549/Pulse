@@ -68,12 +68,9 @@ const Navigation = ({ basePath = "/", withBanner = false, customLogo, customNavI
                 </a>
               )
             ))}
-            <Button variant="outline" size="sm" asChild>
-              <a href="/vendor-login">Vendor Login</a>
-            </Button>
             {cta && (
               <Button variant="yellow" size="sm" className="group shadow-md hover:shadow-lg transition-shadow" asChild>
-                <a
+                <a 
                   href={cta.href}
                   {...(cta.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                 >
@@ -123,12 +120,9 @@ const Navigation = ({ basePath = "/", withBanner = false, customLogo, customNavI
                 </a>
               )
             ))}
-            <Button variant="outline" size="sm" className="w-full" asChild>
-              <a href="/vendor-login" onClick={() => setIsOpen(false)}>Vendor Login</a>
-            </Button>
             {cta && (
               <Button variant="yellow" size="sm" className="w-full group" asChild>
-                <a
+                <a 
                   href={cta.href}
                   {...(cta.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                 >

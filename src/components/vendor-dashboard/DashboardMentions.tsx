@@ -12,7 +12,6 @@ import {
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useClerkAuth } from "@/hooks/useClerkAuth";
 import { useFlagMention, useVendorFlags } from "@/hooks/useMentionFlags";
-import { useActiveProductLine } from "@/hooks/useActiveProductLine";
 import { FlagMentionModal } from "./FlagMentionModal";
 import { fetchVendorPulseFeed } from "@/hooks/useSupabaseVendorData";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -78,17 +77,15 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
   const supabase = useClerkSupabase();
   const { user } = useClerkAuth();
   const queryClient = useQueryClient();
-  const { activeProductLine } = useActiveProductLine();
-  const productLineSlug = activeProductLine?.slug ?? null;
   const [filter, setFilter] = useState<FilterType>("all");
   const [replies, setReplies] = useState<Record<string, string>>({});
   const [flagModalOpen, setFlagModalOpen] = useState(false);
   const [selectedMention, setSelectedMention] = useState<Mention | null>(null);
 
   const { data: mentions = [] } = useQuery({
-    queryKey: ["vendor-respond-mentions", vendorName, productLineSlug],
+    queryKey: ["vendor-respond-mentions", vendorName],
     queryFn: async () => {
-      const result = await fetchVendorPulseFeed({ vendorName, pageSize: 100, productLineSlug });
+      const result = await fetchVendorPulseFeed({ vendorName, pageSize: 100 });
       return result.mentions.map((m) => ({
         id: String(m.id),
         title: m.title ?? null,
@@ -100,7 +97,7 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
   });
 
   const { data: existingResponses = [] } = useQuery({
-    queryKey: ["vendor-respond-responses", vendorName, productLineSlug],
+    queryKey: ["vendor-respond-responses", vendorName],
     queryFn: async () => {
       const mentionIds = mentions.map((m) => m.id);
       if (mentionIds.length === 0) return [];
@@ -131,7 +128,7 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
     onSuccess: (_, { mentionId }) => {
       toast.success("Reply posted.");
       setReplies((prev) => ({ ...prev, [mentionId]: "" }));
-      queryClient.invalidateQueries({ queryKey: ["vendor-respond-responses", vendorName, productLineSlug] });
+      queryClient.invalidateQueries({ queryKey: ["vendor-respond-responses", vendorName] });
     },
     onError: (err: Error) => toast.error(`Failed to post reply: ${err.message}`),
   });

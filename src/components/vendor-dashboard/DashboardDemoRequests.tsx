@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CalendarCheck, Loader2, ChevronDown } from "lucide-react";
-import { useVendorDataClient } from "@/hooks/useVendorDataClient";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { GatedCard } from "./GatedCard";
 
 interface DemoRequest {
   id: string;
@@ -78,10 +77,10 @@ function StatusDropdown({
 
 interface DashboardDemoRequestsProps {
   vendorName: string;
+  supabase: SupabaseClient;
 }
 
-export function DashboardDemoRequests({ vendorName }: DashboardDemoRequestsProps) {
-  const supabase = useVendorDataClient();
+export function DashboardDemoRequests({ vendorName, supabase }: DashboardDemoRequestsProps) {
   const queryClient = useQueryClient();
 
   const { data: requests, isLoading } = useQuery({
@@ -113,9 +112,8 @@ export function DashboardDemoRequests({ vendorName }: DashboardDemoRequestsProps
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 space-y-3">
+      <div className="flex items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
-        <p className="text-sm text-slate-500">Loading demo requests...</p>
       </div>
     );
   }
@@ -123,33 +121,35 @@ export function DashboardDemoRequests({ vendorName }: DashboardDemoRequestsProps
   const newCount = requests?.filter((r) => r.status === "new").length ?? 0;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-          Demo Requests
-          {newCount > 0 && (
-            <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-indigo-600 text-[10px] font-bold text-white">
-              {newCount}
-            </span>
-          )}
-        </h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Dealers who requested a demo from your vendor profile
-        </p>
+    <div>
+      <div className="flex items-center gap-3 mb-6">
+        <div>
+          <h1
+            className="text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2"
+            style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+          >
+            Demo Requests
+            {newCount > 0 && (
+              <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-primary text-[10px] font-bold text-white">
+                {newCount}
+              </span>
+            )}
+          </h1>
+          <p className="text-sm text-slate-400 mt-0.5">
+            Dealers who requested a demo from your vendor profile
+          </p>
+        </div>
       </div>
 
       {!requests?.length ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-          <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
-            <CalendarCheck className="h-5 w-5 text-slate-400" />
-          </div>
+        <div className="rounded-2xl border border-border/50 bg-white p-10 text-center">
+          <CalendarCheck className="h-8 w-8 text-slate-300 mx-auto mb-3" />
           <p className="text-sm font-medium text-slate-500">No demo requests yet</p>
           <p className="text-xs text-slate-400 mt-1">
             When dealers request a demo on your profile page, they'll appear here.
           </p>
         </div>
       ) : (
-        <GatedCard componentKey="demo-requests.request_cards">
         <div className="space-y-3">
           {requests.map((req) => (
             <div
@@ -167,19 +167,17 @@ export function DashboardDemoRequests({ vendorName }: DashboardDemoRequestsProps
                       <span className="text-[11px] text-slate-400">· {req.location}</span>
                     )}
                   </div>
-                  <GatedCard componentKey="demo-requests.contact_info">
-                    <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                      <a
-                        href={`mailto:${req.requester_email}`}
-                        className="text-xs text-primary hover:underline"
-                      >
-                        {req.requester_email}
-                      </a>
-                      {req.requester_phone && (
-                        <span className="text-xs text-slate-400">{req.requester_phone}</span>
-                      )}
-                    </div>
-                  </GatedCard>
+                  <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                    <a
+                      href={`mailto:${req.requester_email}`}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      {req.requester_email}
+                    </a>
+                    {req.requester_phone && (
+                      <span className="text-xs text-slate-400">{req.requester_phone}</span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <span className="text-[11px] text-slate-400">
@@ -203,7 +201,6 @@ export function DashboardDemoRequests({ vendorName }: DashboardDemoRequestsProps
             </div>
           ))}
         </div>
-        </GatedCard>
       )}
     </div>
   );

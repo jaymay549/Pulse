@@ -1152,19 +1152,12 @@ const VendorsV2 = () => {
                 )}
 
                 {isAuthenticated && isAdmin && (
-                  <>
-                    <Link to="/vendor-login">
-                      <Button variant="outline" size="sm" className="hidden sm:flex text-xs">
-                        Vendor Login
-                      </Button>
-                    </Link>
-                    <Link to="/admin">
-                      <Button variant="outline" size="sm" className="hidden sm:flex text-xs">
-                        <Shield className="h-3.5 w-3.5 mr-1.5" />
-                        Admin
-                      </Button>
-                    </Link>
-                  </>
+                  <Link to="/admin">
+                    <Button variant="outline" size="sm" className="hidden sm:flex text-xs">
+                      <Shield className="h-3.5 w-3.5 mr-1.5" />
+                      Admin
+                    </Button>
+                  </Link>
                 )}
 
                 {isAuthenticated && (
@@ -1494,6 +1487,7 @@ const VendorsV2 = () => {
                         isFullAccess={accessLevel.unlimitedAccess}
                         isAuthenticated={isAuthenticated}
                         vendorResponse={vendorResponse}
+                        vendorWebsite={vendorWebsiteUrl}
                         vendorLogo={vendorLogoUrl}
                         onCardClick={(e) => setSelectedCard(e)}
                         onVendorClick={handleVendorSelect}
@@ -1501,7 +1495,7 @@ const VendorsV2 = () => {
                           if (isAuthenticated) {
                             setShowUpgradeModal(true);
                           } else {
-                            setShowGainAccess(true);
+                            window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
                           }
                         }}
                       />
@@ -1517,7 +1511,7 @@ const VendorsV2 = () => {
                         if (isAuthenticated) {
                           setShowUpgradeModal(true);
                         } else {
-                          setShowGainAccess(true);
+                          window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
                         }
                       }}
                     />
@@ -1670,6 +1664,11 @@ const VendorsV2 = () => {
         onShare={(entry) => setSelectedCardForShare(entry)}
         onVendorSelect={handleVendorSelect}
         onCategorySelect={handleCategoryChange}
+        vendorWebsite={
+          selectedCard?.vendorName
+            ? getWebsiteForVendor(selectedCard.vendorName)
+            : null
+        }
         vendorLogo={
           selectedCard?.vendorName
             ? getVendorLogoUrl(

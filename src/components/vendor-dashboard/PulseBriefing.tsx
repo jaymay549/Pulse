@@ -13,7 +13,6 @@ import {
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { fetchVendorPulseFeed } from "@/hooks/useSupabaseVendorData";
 import { useVendorIntelligenceDashboard } from "@/hooks/useVendorIntelligenceDashboard";
-import { useActiveProductLine } from "@/hooks/useActiveProductLine";
 import type { VendorDimension } from "@/hooks/useSupabaseVendorData";
 
 // ── Types ─────────────────────────────────────────────────────
@@ -200,16 +199,14 @@ function QuoteCard({ mention }: { mention: RecentMention }) {
 
 export function PulseBriefing({ vendorName, onNavigate }: PulseBriefingProps) {
   const supabase = useClerkSupabase();
-  const { activeProductLine } = useActiveProductLine();
-  const productLineSlug = activeProductLine?.slug ?? null;
 
   // Profile stats — same query key as DashboardOverview
   const { data: profile } = useQuery({
-    queryKey: ["vendor-profile", vendorName, productLineSlug],
+    queryKey: ["vendor-profile", vendorName],
     queryFn: async () => {
       const { data, error } = await supabase.rpc(
         "get_vendor_profile_v3" as never,
-        { p_vendor_name: vendorName, p_product_line_slug: productLineSlug } as never
+        { p_vendor_name: vendorName, p_product_line_slug: null } as never
       );
       if (error) throw error;
       return data as unknown as { vendorName: string; stats: VendorStats };
@@ -218,9 +215,9 @@ export function PulseBriefing({ vendorName, onNavigate }: PulseBriefingProps) {
 
   // Recent mentions — same query key as DashboardOverview
   const { data: mentions } = useQuery({
-    queryKey: ["vendor-recent-mentions", vendorName, productLineSlug],
+    queryKey: ["vendor-recent-mentions", vendorName],
     queryFn: async () => {
-      const result = await fetchVendorPulseFeed({ vendorName, pageSize: 10, productLineSlug });
+      const result = await fetchVendorPulseFeed({ vendorName, pageSize: 10 });
       return result.mentions.map((m) => ({
         id: String(m.id),
         quote: m.quote ?? "",
@@ -233,7 +230,7 @@ export function PulseBriefing({ vendorName, onNavigate }: PulseBriefingProps) {
 
   // Dimension data — same query key as DashboardDimensions
   const { data: dimensions } = useQuery<VendorDimension[]>({
-    queryKey: ["dashboard-dimensions", vendorName, productLineSlug],
+    queryKey: ["dashboard-dimensions", vendorName],
     queryFn: async () => {
       const { data, error } = await supabase.rpc(
         "get_vendor_dimensions" as never,
@@ -246,7 +243,7 @@ export function PulseBriefing({ vendorName, onNavigate }: PulseBriefingProps) {
 
   // Competitor data — same query key as DashboardIntel
   const { data: competitors } = useQuery<ComparedVendor[]>({
-    queryKey: ["intel-competitors", vendorName, productLineSlug],
+    queryKey: ["intel-competitors", vendorName],
     queryFn: async () => {
       const { data, error } = await supabase.rpc(
         "get_compared_vendors" as never,
@@ -258,7 +255,7 @@ export function PulseBriefing({ vendorName, onNavigate }: PulseBriefingProps) {
   });
 
   // Intelligence (health score + recommendations) — shared cache
-  const { data: intel } = useVendorIntelligenceDashboard(vendorName, productLineSlug);
+  const { data: intel } = useVendorIntelligenceDashboard(vendorName);
 
   const stats = profile?.stats;
   if (!stats) return null;

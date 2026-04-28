@@ -99,20 +99,19 @@ export interface VendorDashboardIntel {
   recommendations: DashboardRecommendation[];
   feature_gaps: DashboardFeatureGap[];
   sentiment_history: SentimentHistoryPoint[];
-  product_line?: { id: string; name: string; slug: string } | null;
 }
 
 // ── Hook ─────────────────────────────────────────────────────
 
-export function useVendorIntelligenceDashboard(vendorName: string, productLineSlug?: string | null) {
+export function useVendorIntelligenceDashboard(vendorName: string) {
   const supabase = useClerkSupabase();
 
   return useQuery({
-    queryKey: ["vendor-dashboard-intel", vendorName, productLineSlug ?? null],
+    queryKey: ["vendor-dashboard-intel", vendorName],
     queryFn: async (): Promise<VendorDashboardIntel> => {
       const { data, error } = await supabase.rpc(
         "get_vendor_dashboard_intel" as never,
-        { p_vendor_name: vendorName, p_product_line_slug: productLineSlug ?? null } as never
+        { p_vendor_name: vendorName } as never
       );
 
       if (error) {
@@ -130,7 +129,6 @@ export function useVendorIntelligenceDashboard(vendorName: string, productLineSl
         recommendations: result.recommendations || [],
         feature_gaps: result.feature_gaps || [],
         sentiment_history: result.sentiment_history || [],
-        product_line: result.product_line ?? null,
       };
     },
     enabled: !!vendorName,

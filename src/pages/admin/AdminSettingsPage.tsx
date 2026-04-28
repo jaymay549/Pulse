@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2, Trash2, Plus, Key, Sparkles, RefreshCw, AlertCircle, CheckCircle2, Clock, Search, ImageIcon, MapPin, BotMessageSquare, Globe, ExternalLink } from "lucide-react";
+import { Loader2, Trash2, Plus, Key, Sparkles, RefreshCw, AlertCircle, CheckCircle2, Clock, Search, Linkedin, ImageIcon, MapPin, BotMessageSquare, Globe, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -508,6 +508,27 @@ function VendorMetadataSection() {
                 <span className="text-xs text-zinc-200 shrink-0">{m.vendor_name}</span>
                 <CategoryBadge category={m.category} />
                 <StatusBadge status={m.enrichment_status} />
+                {m.website_url && (
+                  <a
+                    href={m.website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-blue-400 hover:underline truncate"
+                  >
+                    {m.website_url}
+                  </a>
+                )}
+                {m.linkedin_url && (
+                  <a
+                    href={m.linkedin_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#0A66C2] hover:text-[#0A66C2]/80 shrink-0"
+                    title={m.linkedin_url}
+                  >
+                    <Linkedin className="h-3 w-3" />
+                  </a>
+                )}
                 {m.banner_url && (
                   <span className="text-emerald-500 shrink-0" title="Has banner image">
                     <ImageIcon className="h-3 w-3" />

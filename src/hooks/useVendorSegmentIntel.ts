@@ -59,11 +59,11 @@ export function dimensionLabel(dim: string): string {
   return DIMENSION_LABELS[dim] ?? dim;
 }
 
-export function useVendorSegmentIntel(vendorName: string, productLineSlug?: string | null) {
+export function useVendorSegmentIntel(vendorName: string) {
   const supabase = useClerkSupabase();
 
   return useQuery({
-    queryKey: ["vendor-segment-intel", vendorName, productLineSlug ?? null],
+    queryKey: ["vendor-segment-intel", vendorName],
     queryFn: async (): Promise<VendorSegmentIntel> => {
       const { data, error } = await supabase.rpc(
         "get_vendor_segment_intel" as never,
