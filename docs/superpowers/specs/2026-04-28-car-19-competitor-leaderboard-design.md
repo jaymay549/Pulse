@@ -221,7 +221,7 @@ No unit framework is configured in this repo. Coverage is via Playwright e2e per
 
 ## Open questions for implementation phase
 
-1. The current `get_compared_vendors` widening logic is hardcoded to the DMS / CRM family. Generalising the widening to a `category_hierarchy` lookup is cleanest but adds scope. v1 can ship with the existing hardcoded widening plus a wider pass to a hardcoded list of known parents; the hierarchy table is a follow-up.
+1. v1 ships rank_delta_90d as null for every row (no prior-snapshot table exists yet). UI renders "—" not "New" in the delta column for v1; the prior-window computation lands in a follow-up. The widening hierarchy is hardcoded to the existing dms/crm pattern; a category_hierarchy table is also a follow-up.
 2. The "Show all N" expand should probably remember its expanded state per session; whether it should remember across sessions (localStorage) is up to the implementer.
 3. Whether the Tier 2 capability card should render *above* or *below* the leaderboard for T1 vendors. This spec ships it below; if early feedback shows T1 vendors miss it, move it above the table in a v1.1.
 
