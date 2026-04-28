@@ -61,10 +61,10 @@ BEGIN
   IF p_segment_override IS NOT NULL THEN
     -- Caller provided an explicit curated list of canonical vendor names.
     v_segment_origin   := 'override';
-    v_segment_names    := ARRAY(SELECT jsonb_array_elements_text(p_segment_override));
+    v_segment_names    := ARRAY(SELECT DISTINCT jsonb_array_elements_text(p_segment_override));
     v_category         := NULL;
     v_widened_to       := NULL;
-    v_qualifying_count := array_length(v_segment_names, 1);
+    v_qualifying_count := COALESCE(array_length(v_segment_names, 1), 0);
 
   ELSE
     -- Auto-derive segment from vendor_metadata category (case-insensitive).
@@ -154,6 +154,14 @@ BEGIN
         (v_entity_id IS NULL AND lower(vendor_name) = lower(p_vendor_name))
       )
   ),
+  -- ── mention_agg ───────────────────────────────────────────────────────────
+  -- NOTE: v1 (20260312510000) gated this CTE with HAVING COUNT(*) >= 3 to
+  -- exclude vendors with too few mentions. v2 intentionally drops that filter.
+  -- Segment membership is now governed by vendor_metric_scores.health_score IS
+  -- NOT NULL (see the category branch above), which is a stricter quality gate
+  -- than a raw mention count.  mention_count is preserved for backwards
+  -- compatibility and displayed as an informational field only.
+  -- ─────────────────────────────────────────────────────────────────────────
   mention_agg AS (
     SELECT
       COALESCE(ve.canonical_name, vm.vendor_name) AS vname,
@@ -175,10 +183,20 @@ BEGIN
   ),
   -- Apply p_limit while always keeping the viewing vendor's row.
   limited AS (
-    SELECT r.*
-    FROM ranked r
-    ORDER BY r.health_score DESC NULLS LAST, r.vendor_name ASC
-    LIMIT GREATEST(p_limit + 1, 6)
+    -- Top N by composite health_score
+    (
+      SELECT *
+      FROM ranked
+      ORDER BY health_score DESC NULLS LAST, vendor_name ASC
+      LIMIT GREATEST(p_limit + 1, 6)
+    )
+    UNION
+    -- Always include the calling vendor's own row, even if below the top-N
+    (
+      SELECT *
+      FROM ranked
+      WHERE lower(vendor_name) = lower(v_canonical)
+    )
   )
   SELECT jsonb_agg(
     jsonb_build_object(
@@ -197,7 +215,7 @@ BEGIN
       'is_above_median',           l.is_above_median,
       'is_self',                   lower(l.vendor_name) = lower(v_canonical)
     )
-    ORDER BY l.health_score DESC NULLS LAST, COALESCE(ma.mc, 0) DESC
+    ORDER BY l.health_score DESC NULLS LAST, lower(l.vendor_name) ASC
   )
   INTO v_vendors
   FROM limited l
