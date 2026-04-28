@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useVendorTier } from "../GatedCard";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
@@ -12,6 +12,7 @@ import { Tier2CapabilityCard } from "./Tier2CapabilityCard";
 import { WidenedNotice } from "./WidenedNotice";
 import { YourShapeCard } from "./YourShapeCard";
 import { useLeaderboardData } from "./useLeaderboardData";
+import { track } from "./telemetry";
 import { buildDefaultWindow } from "./window";
 import type { LeaderboardVendor, SortMetric } from "./types";
 
@@ -31,6 +32,30 @@ export function CompetitorLeaderboard({ vendorName }: CompetitorLeaderboardProps
     limit: expanded ? 50 : 8,
     segmentOverride,
   });
+
+  useEffect(() => {
+    if (!data) return;
+    const self = data.vendors.find((v) => v.is_self);
+    track({
+      name: "leaderboard_viewed",
+      payload: {
+        tier,
+        segment_category: data.segment.category,
+        was_widened: data.segment.widened_to !== null,
+        qualifying_vendor_count: data.segment.qualifying_vendor_count,
+        rank: self?.rank ?? null,
+      },
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally narrow: fire once per segment shape change, not on every refetch
+  }, [data?.segment.category, data?.segment.widened_to, data?.segment.qualifying_vendor_count, tier]);
+
+  const onRowClick = (vendor: LeaderboardVendor) => {
+    track({
+      name: "leaderboard_row_clicked",
+      payload: { tier, vendor_name: vendor.vendor_name, was_own_row: vendor.is_self },
+    });
+    setActiveRowVendor(vendor);
+  };
 
   const sorted = useMemo(() => sortVendors(data?.vendors ?? [], sortBy), [data?.vendors, sortBy]);
   const window = useMemo(
@@ -52,7 +77,13 @@ export function CompetitorLeaderboard({ vendorName }: CompetitorLeaderboardProps
         </div>
         {data.segment.widened_to && <WidenedNotice widenedTo={data.segment.widened_to} />}
 
-        <SortChips value={sortBy} onChange={setSortBy} />
+        <SortChips
+          value={sortBy}
+          onChange={(next) => {
+            track({ name: "leaderboard_sort_changed", payload: { from: sortBy, to: next } });
+            setSortBy(next);
+          }}
+        />
         <TableHeader />
 
         {window.aboveMedian.map((v, i) => (
@@ -61,7 +92,7 @@ export function CompetitorLeaderboard({ vendorName }: CompetitorLeaderboardProps
             vendor={v}
             sparkline={mockSparklineFor(v)}
             sparklineTrend={inferTrend(v)}
-            onClick={setActiveRowVendor}
+            onClick={onRowClick}
             delayMs={i * 60}
           />
         ))}
@@ -74,7 +105,7 @@ export function CompetitorLeaderboard({ vendorName }: CompetitorLeaderboardProps
               vendor={v}
               sparkline={mockSparklineFor(v)}
               sparklineTrend={inferTrend(v)}
-              onClick={setActiveRowVendor}
+              onClick={onRowClick}
               delayMs={(i + aboveCount) * 60}
             />
           ));
@@ -84,13 +115,30 @@ export function CompetitorLeaderboard({ vendorName }: CompetitorLeaderboardProps
           <ShowAllToggle
             expanded={expanded}
             totalCount={data.segment.qualifying_vendor_count}
-            onToggle={() => setExpanded((x) => !x)}
+            onToggle={() => {
+              setExpanded((x) => {
+                const next = !x;
+                if (next && data) {
+                  track({
+                    name: "leaderboard_show_all_expanded",
+                    payload: { total_vendors: data.segment.qualifying_vendor_count },
+                  });
+                }
+                return next;
+              });
+            }}
           />
         )}
 
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <YourShapeCard payload={data} />
-          {isT1 && <Tier2CapabilityCard />}
+          {isT1 && (
+            <Tier2CapabilityCard
+              onCtaClick={() =>
+                track({ name: "tier2_card_cta_clicked", payload: { source: "competitor_leaderboard" } })
+              }
+            />
+          )}
         </div>
       </div>
 
