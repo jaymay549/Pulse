@@ -55,25 +55,30 @@ export function CompetitorLeaderboard({ vendorName }: CompetitorLeaderboardProps
         <SortChips value={sortBy} onChange={setSortBy} />
         <TableHeader />
 
-        {window.aboveMedian.map((v) => (
+        {window.aboveMedian.map((v, i) => (
           <LeaderboardRow
-            key={v.vendor_name}
+            key={`${v.vendor_name}-${sortBy}`}
             vendor={v}
             sparkline={mockSparklineFor(v)}
             sparklineTrend={inferTrend(v)}
             onClick={setActiveRowVendor}
+            delayMs={i * 60}
           />
         ))}
         <MedianRow segment={data.segment} />
-        {window.belowMedian.map((v) => (
-          <LeaderboardRow
-            key={v.vendor_name}
-            vendor={v}
-            sparkline={mockSparklineFor(v)}
-            sparklineTrend={inferTrend(v)}
-            onClick={setActiveRowVendor}
-          />
-        ))}
+        {(() => {
+          const aboveCount = window.aboveMedian.length;
+          return window.belowMedian.map((v, i) => (
+            <LeaderboardRow
+              key={`${v.vendor_name}-${sortBy}`}
+              vendor={v}
+              sparkline={mockSparklineFor(v)}
+              sparklineTrend={inferTrend(v)}
+              onClick={setActiveRowVendor}
+              delayMs={(i + aboveCount) * 60}
+            />
+          ));
+        })()}
 
         {window.hasMore && (
           <ShowAllToggle

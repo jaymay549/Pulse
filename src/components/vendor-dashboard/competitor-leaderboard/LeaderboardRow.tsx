@@ -9,9 +9,11 @@ interface LeaderboardRowProps {
   onClick: (vendor: LeaderboardVendor) => void;
   sparkline: number[];
   sparklineTrend: "up" | "down" | "flat";
+  /** Render delay in milliseconds for staggered fade-in. Default: 0. */
+  delayMs?: number;
 }
 
-export function LeaderboardRow({ vendor, onClick, sparkline, sparklineTrend }: LeaderboardRowProps) {
+export function LeaderboardRow({ vendor, onClick, sparkline, sparklineTrend, delayMs = 0 }: LeaderboardRowProps) {
   const self = vendor.is_self;
   return (
     <button
@@ -19,7 +21,12 @@ export function LeaderboardRow({ vendor, onClick, sparkline, sparklineTrend }: L
       onClick={() => onClick(vendor)}
       aria-current={self ? "true" : undefined}
       aria-label={`Rank ${vendor.rank}, ${vendor.vendor_name}, Pulse score ${vendor.health_score ?? "not yet scored"}`}
+      style={{
+        animationDelay: `${delayMs}ms`,
+        animationFillMode: "both",
+      }}
       className={cn(
+        "motion-safe:animate-[leaderboard-row-in_400ms_cubic-bezier(0.16,1,0.3,1)_both]",
         "group grid w-full items-center gap-3.5 border-b border-slate-100 px-0 py-2.5 text-left text-xs transition-colors",
         "grid-cols-[30px_minmax(140px,2fr)_70px_70px_70px_70px_80px_12px]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
