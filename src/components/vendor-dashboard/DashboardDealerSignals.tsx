@@ -50,6 +50,7 @@ export function DashboardDealerSignals({ vendorName }: DashboardDealerSignalsPro
             {data.adoption_count === 1 ? " has" : "s have"} reported.
           </p>
         </div>
+        <CompetitiveMovementCard vendorName={vendorName} />
       </div>
     );
   }
