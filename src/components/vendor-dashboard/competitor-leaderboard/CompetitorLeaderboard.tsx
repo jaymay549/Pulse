@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useVendorTier } from "../GatedCard";
+import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { LeaderboardHeader } from "./LeaderboardHeader";
 import { LeaderboardRow } from "./LeaderboardRow";
 import { MedianRow } from "./MedianRow";
@@ -23,11 +25,11 @@ export function CompetitorLeaderboard({ vendorName }: CompetitorLeaderboardProps
   const [expanded, setExpanded] = useState(false);
   const [activeRowVendor, setActiveRowVendor] = useState<LeaderboardVendor | null>(null);
 
-  // Note: competitor_override is wired in Phase 8. v1 always passes null.
+  const segmentOverride = useCompetitorOverride(vendorName);
   const { data, isLoading, isError } = useLeaderboardData({
     vendorName,
     limit: expanded ? 50 : 8,
-    segmentOverride: null,
+    segmentOverride,
   });
 
   const sorted = useMemo(() => sortVendors(data?.vendors ?? [], sortBy), [data?.vendors, sortBy]);
@@ -185,4 +187,28 @@ function RowClickResult({
       </div>
     </div>
   );
+}
+
+/**
+ * Reads `vendor_profiles.competitor_override` for the given vendor name.
+ * Returns the string array override if set, or null to fall back to the
+ * auto-derived category segment in the leaderboard RPC.
+ */
+function useCompetitorOverride(vendorName: string): string[] | null {
+  const supabase = useClerkSupabase();
+  const { data } = useQuery({
+    queryKey: ["competitor-override", vendorName],
+    enabled: !!vendorName,
+    staleTime: 10 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendor_profiles")
+        .select("competitor_override")
+        .ilike("vendor_name", vendorName)
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.competitor_override as string[] | null) ?? null;
+    },
+  });
+  return data ?? null;
 }
