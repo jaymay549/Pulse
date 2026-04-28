@@ -1,0 +1,188 @@
+import { useMemo, useState } from "react";
+import { useVendorTier } from "../GatedCard";
+import { LeaderboardHeader } from "./LeaderboardHeader";
+import { LeaderboardRow } from "./LeaderboardRow";
+import { MedianRow } from "./MedianRow";
+import { ShowAllToggle } from "./ShowAllToggle";
+import { SortChips } from "./SortChips";
+import { TableHeader } from "./TableHeader";
+import { Tier2CapabilityCard } from "./Tier2CapabilityCard";
+import { WidenedNotice } from "./WidenedNotice";
+import { YourShapeCard } from "./YourShapeCard";
+import { useLeaderboardData } from "./useLeaderboardData";
+import { buildDefaultWindow } from "./window";
+import type { LeaderboardVendor, SortMetric } from "./types";
+
+interface CompetitorLeaderboardProps {
+  vendorName: string;
+}
+
+export function CompetitorLeaderboard({ vendorName }: CompetitorLeaderboardProps) {
+  const tier = useVendorTier();
+  const [sortBy, setSortBy] = useState<SortMetric>("pulse");
+  const [expanded, setExpanded] = useState(false);
+  const [activeRowVendor, setActiveRowVendor] = useState<LeaderboardVendor | null>(null);
+
+  // Note: competitor_override is wired in Phase 8. v1 always passes null.
+  const { data, isLoading, isError } = useLeaderboardData({
+    vendorName,
+    limit: expanded ? 50 : 8,
+    segmentOverride: null,
+  });
+
+  const sorted = useMemo(() => sortVendors(data?.vendors ?? [], sortBy), [data?.vendors, sortBy]);
+  const window = useMemo(
+    () => buildDefaultWindow(sorted, data?.segment.median.health_score ?? null, expanded),
+    [sorted, data?.segment.median.health_score, expanded],
+  );
+
+  if (isLoading) return <p className="text-sm text-slate-500">Loading leaderboard…</p>;
+  if (isError || !data) return <p className="text-sm text-slate-500">Could not load competitive standing.</p>;
+  if (data.vendors.length < 2) return <EmptyState />;
+
+  const isT1 = tier !== undefined && tier !== "tier_2";
+
+  return (
+    <section className="rounded-2xl bg-[#FAFAFA] p-7" aria-labelledby="competitor-leaderboard-heading">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+        <div id="competitor-leaderboard-heading">
+          <LeaderboardHeader segment={data.segment} />
+        </div>
+        {data.segment.widened_to && <WidenedNotice widenedTo={data.segment.widened_to} />}
+
+        <SortChips value={sortBy} onChange={setSortBy} />
+        <TableHeader />
+
+        {window.aboveMedian.map((v) => (
+          <LeaderboardRow
+            key={v.vendor_name}
+            vendor={v}
+            sparkline={mockSparklineFor(v)}
+            sparklineTrend={inferTrend(v)}
+            onClick={setActiveRowVendor}
+          />
+        ))}
+        <MedianRow segment={data.segment} />
+        {window.belowMedian.map((v) => (
+          <LeaderboardRow
+            key={v.vendor_name}
+            vendor={v}
+            sparkline={mockSparklineFor(v)}
+            sparklineTrend={inferTrend(v)}
+            onClick={setActiveRowVendor}
+          />
+        ))}
+
+        {window.hasMore && (
+          <ShowAllToggle
+            expanded={expanded}
+            totalCount={data.segment.qualifying_vendor_count}
+            onToggle={() => setExpanded((x) => !x)}
+          />
+        )}
+
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <YourShapeCard payload={data} />
+          {isT1 && <Tier2CapabilityCard />}
+        </div>
+      </div>
+
+      {activeRowVendor && (
+        <RowClickResult
+          tier={tier}
+          vendor={activeRowVendor}
+          onDismiss={() => setActiveRowVendor(null)}
+        />
+      )}
+    </section>
+  );
+}
+
+/**
+ * Sort comparator. The visible composite column always shows Pulse, but the
+ * row order changes with the sort key.
+ */
+function sortVendors(vendors: LeaderboardVendor[], sortBy: SortMetric): LeaderboardVendor[] {
+  const get = (v: LeaderboardVendor): number => {
+    if (sortBy === "pulse") return v.health_score ?? -Infinity;
+    if (sortBy === "product_stability") return v.product_stability_score ?? -Infinity;
+    if (sortBy === "customer_experience") return v.customer_experience_score ?? -Infinity;
+    if (sortBy === "value_perception") return v.value_perception_score ?? -Infinity;
+    return v.mention_count;
+  };
+  return [...vendors].sort((a, b) => get(b) - get(a));
+}
+
+/**
+ * v1 sparkline: derive a flat-to-current curve from the vendor's current
+ * health_score so the column has visual rhythm. Replaced by real per-vendor
+ * 90D sentiment_history wiring in a follow-up.
+ */
+function mockSparklineFor(v: LeaderboardVendor): number[] {
+  const target = (v.health_score ?? 50) / 100;
+  const start = Math.max(0.2, target - 0.18);
+  return Array.from({ length: 8 }, (_, i) => start + ((target - start) * i) / 7);
+}
+
+function inferTrend(v: LeaderboardVendor): "up" | "down" | "flat" {
+  if (v.rank_delta_90d === null) return "flat";
+  if (v.rank_delta_90d > 0) return "up";
+  if (v.rank_delta_90d < 0) return "down";
+  return "flat";
+}
+
+function EmptyState() {
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
+      <h2 className="text-lg font-extrabold tracking-tight text-slate-900">
+        Not enough data yet to rank you against competitors.
+      </h2>
+      <p className="mx-auto mt-2 max-w-md text-[13px] leading-relaxed text-slate-500">
+        Our engine is currently gathering dealer feedback. Need 2+ qualifying vendors in your segment to render the leaderboard.
+      </p>
+    </section>
+  );
+}
+
+/**
+ * Row-click outcome. Tier 1 sees an inline strip directly under the table
+ * pointing them at Tier 2. Tier 2 v1 ships a console.warn no-op (the real
+ * drawer is a follow-up issue).
+ */
+function RowClickResult({
+  tier, vendor, onDismiss,
+}: {
+  tier: string | undefined;
+  vendor: LeaderboardVendor;
+  onDismiss: () => void;
+}) {
+  if (tier === "tier_2" || tier === undefined) {
+    console.warn("CompetitorLeaderboard: Tier 2 drawer not yet implemented", vendor);
+    // For v1, dismiss immediately so the click feels intentional but inert.
+    // Replaced wholesale by the follow-up drawer issue.
+    requestAnimationFrame(onDismiss);
+    return null;
+  }
+  return (
+    <div className="mt-4 grid grid-cols-1 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-5 py-3 text-[13px] text-slate-700 sm:grid-cols-[1fr_auto]">
+      <span>
+        Diagnostic mode is available in Tier 2. See the dealer quotes, feature gaps, and competitor moves driving <strong className="font-semibold text-slate-900">{vendor.vendor_name}</strong>{`'`}s scores.
+      </span>
+      <div className="flex gap-2 justify-self-end">
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="rounded-md border border-slate-300 bg-white px-3 py-1.5 font-sans text-xs font-semibold text-slate-700 hover:bg-slate-100"
+        >
+          Dismiss
+        </button>
+        <button
+          type="button"
+          className="rounded-md border border-slate-900 bg-slate-900 px-3 py-1.5 font-sans text-xs font-semibold text-white hover:opacity-90"
+        >
+          Talk to your CSM →
+        </button>
+      </div>
+    </div>
+  );
+}
