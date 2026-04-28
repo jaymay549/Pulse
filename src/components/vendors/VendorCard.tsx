@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Lightbulb,
   Crown,
+  Globe,
 } from "lucide-react";
 import { VendorEntry } from "@/hooks/useVendorReviews";
 import { VendorResponse } from "@/hooks/useVendorResponses";
@@ -83,6 +84,7 @@ interface VendorCardProps {
   isFullAccess: boolean;
   isAuthenticated: boolean;
   vendorResponse?: VendorResponse | null;
+  vendorWebsite?: string | null;
   vendorLogo?: string | null;
   canRespondAsVendor?: boolean;
   onAddResponse?: (text: string) => Promise<boolean>;
@@ -102,6 +104,7 @@ export const VendorCard: React.FC<VendorCardProps> = ({
   isFullAccess,
   isAuthenticated,
   vendorResponse,
+  vendorWebsite,
   vendorLogo,
   canRespondAsVendor,
   onAddResponse,
@@ -400,6 +403,19 @@ export const VendorCard: React.FC<VendorCardProps> = ({
                 >
                   {entry.vendorName}
                 </h3>
+                {/* Verified vendor website link */}
+                {vendorWebsite && (
+                  <a
+                    href={vendorWebsite}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 ml-2 text-xs text-primary hover:underline"
+                  >
+                    <Globe className="h-3 w-3" />
+                    <span className="hidden sm:inline">Website</span>
+                  </a>
+                )}
               </div>
             </div>
           )}

@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ArrowRightLeft, TrendingUp, TrendingDown, ThumbsUp, AlertTriangle, Loader2, Crown, Share2, CreditCard, MessageCircle, MapPin, CalendarCheck, MessagesSquare, BotMessageSquare, Send, ArrowLeftIcon, Lock, Info } from "lucide-react";
+import { ArrowLeft, Globe, TrendingUp, TrendingDown, ThumbsUp, AlertTriangle, Loader2, Crown, Share2, CreditCard, MessageCircle, Linkedin, MapPin, CalendarCheck, MessagesSquare, ExternalLink, BotMessageSquare, Send, ArrowLeftIcon, Lock, Info } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { SignIn, UserButton, useClerk } from "@clerk/clerk-react";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
 import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import UpgradeModal from "@/components/UpgradeModal";
-import GainAccessModal from "@/components/GainAccessModal";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -128,7 +128,6 @@ const VendorProfile = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
-  const [showGainAccess, setShowGainAccess] = useState(false);
   const [trend, setTrend] = useState<VendorTrendResult | null>(null);
   const [themes, setThemes] = useState<VendorThemesResult | null>(null);
   const [comparedVendors, setComparedVendors] = useState<ComparedVendor[]>([]);
@@ -136,6 +135,7 @@ const VendorProfile = () => {
   const [selectedProductLine, setSelectedProductLine] = useState<string | null>(null);
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
+  const [websiteDrawerOpen, setWebsiteDrawerOpen] = useState(false);
 
   // Inline vendor chat state
   const [ctaChatOpen, setCtaChatOpen] = useState(false);
@@ -317,6 +317,11 @@ const VendorProfile = () => {
     if (!profileData) return null;
     return getLogoUrl(profileData.vendorName, profileData.metadata?.website_url);
   }, [profileData, getLogoUrl]);
+  const vendorWebsiteUrl = useMemo(() => {
+    const rawUrl = profileData?.metadata?.website_url?.trim();
+    if (!rawUrl) return null;
+    return rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
+  }, [profileData?.metadata?.website_url]);
 
   useEffect(() => {
     if (!vendorName) return;
@@ -538,8 +543,8 @@ const VendorProfile = () => {
                   Share
                 </Button>
                 {!isAuthenticated && (
-                  <Button variant="outline" size="sm" onClick={() => setShowGainAccess(true)}>
-                    Gain Access
+                  <Button variant="outline" size="sm" onClick={() => setShowSignIn(true)}>
+                    Sign In
                   </Button>
                 )}
                 {isAuthenticated && !isProUserValue && (
@@ -690,6 +695,27 @@ const VendorProfile = () => {
                             </Link>
                           );
                         })()}
+                    {profileData.metadata?.website_url && (
+                      <button
+                        type="button"
+                        onClick={() => setWebsiteDrawerOpen(true)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-primary hover:bg-primary/5 transition-colors"
+                      >
+                        <Globe className="h-3 w-3" />
+                        Website
+                      </button>
+                    )}
+                    {profileData.metadata?.linkedin_url && (
+                      <a
+                        href={profileData.metadata.linkedin_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-[#0A66C2] hover:bg-[#0A66C2]/5 transition-colors"
+                      >
+                        <Linkedin className="h-3 w-3" />
+                        LinkedIn
+                      </a>
+                    )}
                   </div>
 
                   {profileData.metadata?.description && (
@@ -698,17 +724,19 @@ const VendorProfile = () => {
 
                   <ProductScreenshots vendorName={vendorName} />
 
+                  {isAuthenticated && (
                   <div className="flex items-center gap-1.5 mt-3.5 text-[11px] text-slate-400">
                     <MessageCircle className="h-3 w-3" />
                     <span>Based on {profileData.stats.totalMentions} community discussions</span>
                   </div>
+                  )}
 
                   {/* ── CDG Intelligence (consolidated) ── */}
                   <VendorIntelligenceCard
                     vendorName={vendorName}
                     className="mt-6"
                     isAuthenticated={isAuthenticated}
-                    onSignIn={() => setShowGainAccess(true)}
+                    onSignIn={() => setShowSignIn(true)}
                   />
                 </div>
 
@@ -907,19 +935,19 @@ const VendorProfile = () => {
                 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 mb-1"
                 style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
               >
-                Get full access
+                Sign in for full access
               </h2>
               <p className="text-sm text-slate-400 mb-6 max-w-sm">
-                Join the community to see what dealers are really saying about the vendors you work with.
+                Members get complete intel on every vendor — from sentiment data to competitive positioning.
               </p>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-left mb-7 text-sm text-slate-600">
                 {[
-                  "Real dealer discussions & excerpts",
-                  "What dealers love & common concerns",
-                  "Which vendors dealers are switching to",
-                  "Side-by-side vendor comparisons",
-                  "Community-driven vendor intelligence",
-                  "Peer insights from 500+ dealers",
+                  "Sentiment breakdown & discussion trends",
+                  "Dimensional insights (pricing, support, onboarding)",
+                  "Competitive movement & switching data",
+                  "Alternatives & competitors",
+                  "What dealers appreciate",
+                  "Common concerns & red flags",
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
@@ -928,10 +956,10 @@ const VendorProfile = () => {
                 ))}
               </ul>
               <button
-                onClick={() => setShowGainAccess(true)}
+                onClick={() => setShowSignIn(true)}
                 className="rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
               >
-                Gain Access
+                Sign In
               </button>
             </div>
           )}
@@ -939,6 +967,7 @@ const VendorProfile = () => {
           {/* ══════════════════════════════════════════
               STATS ROW
               ══════════════════════════════════════════ */}
+          {isAuthenticated && (
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Sentiment Breakdown */}
             <div className="sm:col-span-2 lg:col-span-2 bg-white rounded-2xl border border-border/50 p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
@@ -1110,70 +1139,28 @@ const VendorProfile = () => {
               </div>
             </div>
           </section>
+          )}
 
           {/* ══════════════════════════════════════════
               DIMENSIONAL INSIGHTS & INTEL
               ══════════════════════════════════════════ */}
+          {isAuthenticated && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
             <DimensionalInsights
               vendorName={profileData.vendorName}
               mentionCount={profileData.stats.totalMentions}
             />
-            {isProUserValue ? (
-              <SwitchingIntel
-                vendorName={profileData.vendorName}
-                mentionCount={profileData.stats.totalMentions}
-              />
-            ) : (
-              <div className="rounded-2xl border border-border/50 bg-white p-5 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-                <div className="flex items-center gap-2 mb-2">
-                  <ArrowRightLeft className="h-4 w-4 text-amber-500" />
-                  <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">
-                    Competitive Movement
-                  </h3>
-                </div>
-                <p className="text-[12px] text-slate-500 mb-4">
-                  See which vendors dealers are switching to and from — who's gaining ground and who's losing it.
-                </p>
-                <div className="relative">
-                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded-xl">
-                    <Lock className="h-5 w-5 text-slate-400 mb-2" />
-                    <p className="text-xs font-semibold text-slate-600 mb-1">Member-only insights</p>
-                    <button
-                      onClick={() => {
-                        if (isAuthenticated) setShowUpgradeModal(true);
-                        else setShowGainAccess(true);
-                      }}
-                      className="text-[11px] font-medium text-primary hover:underline"
-                    >
-                      {isAuthenticated ? "Upgrade to unlock" : "Gain access to unlock"}
-                    </button>
-                  </div>
-                  <div className="blur-[6px] select-none pointer-events-none grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-[12px] font-semibold text-emerald-600">Gained from</span>
-                      <div className="mt-2 space-y-1.5">
-                        <div className="rounded-lg bg-emerald-50/50 border border-emerald-100 px-3 py-1.5 text-[13px] text-slate-400">Vendor A</div>
-                        <div className="rounded-lg bg-emerald-50/50 border border-emerald-100 px-3 py-1.5 text-[13px] text-slate-400">Vendor B</div>
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-[12px] font-semibold text-red-500">Lost to</span>
-                      <div className="mt-2 space-y-1.5">
-                        <div className="rounded-lg bg-red-50/50 border border-red-100 px-3 py-1.5 text-[13px] text-slate-400">Vendor C</div>
-                        <div className="rounded-lg bg-red-50/50 border border-red-100 px-3 py-1.5 text-[13px] text-slate-400">Vendor D</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            <SwitchingIntel
+              vendorName={profileData.vendorName}
+              mentionCount={profileData.stats.totalMentions}
+            />
           </div>
+          )}
 
           {/* ══════════════════════════════════════════
               FREQUENTLY COMPARED WITH
               ══════════════════════════════════════════ */}
-          {comparedVendors.length >= 2 && (
+          {isAuthenticated && comparedVendors.length >= 2 && (
             <section className="mb-6">
               <div>
               <h2
@@ -1244,6 +1231,7 @@ const VendorProfile = () => {
           {/* ══════════════════════════════════════════
               WHAT DEALERS APPRECIATE & COMMON CONCERNS
               ══════════════════════════════════════════ */}
+          {isAuthenticated && (
           <section className="mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* What dealers appreciate */}
@@ -1262,11 +1250,11 @@ const VendorProfile = () => {
                       <button
                         onClick={() => {
                           if (isAuthenticated) setShowUpgradeModal(true);
-                          else setShowGainAccess(true);
+                          else setShowSignIn(true);
                         }}
                         className="text-[11px] font-medium text-primary hover:underline"
                       >
-                        {isAuthenticated ? "Upgrade to unlock" : "Gain access to unlock"}
+                        {isAuthenticated ? "Upgrade to unlock" : "Sign in to unlock"}
                       </button>
                     </div>
                   )}
@@ -1312,11 +1300,11 @@ const VendorProfile = () => {
                       <button
                         onClick={() => {
                           if (isAuthenticated) setShowUpgradeModal(true);
-                          else setShowGainAccess(true);
+                          else setShowSignIn(true);
                         }}
                         className="text-[11px] font-medium text-primary hover:underline"
                       >
-                        {isAuthenticated ? "Upgrade to unlock" : "Gain access to unlock"}
+                        {isAuthenticated ? "Upgrade to unlock" : "Sign in to unlock"}
                       </button>
                     </div>
                   )}
@@ -1347,6 +1335,7 @@ const VendorProfile = () => {
               </div>
             </div>
           </section>
+          )}
 
           {/* ══════════════════════════════════════════
               COMMUNITY MENTIONS
@@ -1449,13 +1438,14 @@ const VendorProfile = () => {
                     isFullAccess={isProUserValue}
                     isAuthenticated={isAuthenticated}
                     vendorLogo={logoUrl}
+                    vendorWebsite={profileData.metadata?.website_url || null}
                     onCardClick={setSelectedCard}
                     onVendorClick={(name) => navigate(`/vendors/${encodeURIComponent(name)}`)}
                     onUpgradeClick={() => {
                       if (isAuthenticated) {
                         setShowUpgradeModal(true);
                       } else {
-                        setShowGainAccess(true);
+                        window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
                       }
                     }}
                   />
@@ -1479,7 +1469,7 @@ const VendorProfile = () => {
                   if (isAuthenticated) {
                     setShowUpgradeModal(true);
                   } else {
-                    setShowGainAccess(true);
+                    window.open(import.meta.env.VITE_STRIPE_CHECKOUT_URL, "_blank");
                   }
                 }}
                 className="mt-6 w-full bg-amber-50/80 border border-amber-200/60 rounded-2xl p-5 text-center hover:bg-amber-100/60 transition-colors cursor-pointer group"
@@ -1505,6 +1495,7 @@ const VendorProfile = () => {
           onClose={() => setSelectedCard(null)}
           onVendorSelect={(name) => navigate(`/vendors/${encodeURIComponent(name)}`)}
           vendorLogo={logoUrl}
+          vendorWebsite={profileData.metadata?.website_url || null}
         />
       )}
 
@@ -1529,12 +1520,6 @@ const VendorProfile = () => {
         vendorName={vendorName}
       />
 
-      {/* Gain Access Modal */}
-      <GainAccessModal
-        isOpen={showGainAccess}
-        onClose={() => setShowGainAccess(false)}
-      />
-
       {/* Sign In Modal */}
       <Dialog open={showSignIn} onOpenChange={setShowSignIn}>
         <DialogContent
@@ -1556,6 +1541,47 @@ const VendorProfile = () => {
         </DialogContent>
       </Dialog>
 
+      <Sheet open={websiteDrawerOpen} onOpenChange={setWebsiteDrawerOpen}>
+        <SheetContent side="right" className="w-screen max-w-none p-0 sm:max-w-none">
+          <div className="flex h-full flex-col">
+            <div className="flex items-center justify-between border-b px-5 py-3 pr-12">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-900">
+                  {profileData?.vendorName} Website
+                </p>
+                {vendorWebsiteUrl && (
+                  <p className="truncate text-xs text-slate-500">{vendorWebsiteUrl}</p>
+                )}
+              </div>
+              {vendorWebsiteUrl && (
+                <a
+                  href={vendorWebsiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Open in new tab
+                </a>
+              )}
+            </div>
+
+            {vendorWebsiteUrl ? (
+              <iframe
+                src={vendorWebsiteUrl}
+                title={`${profileData?.vendorName ?? "Vendor"} website`}
+                className="h-full w-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center px-6 text-sm text-slate-500">
+                Website URL is unavailable for this vendor.
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 };

@@ -116,7 +116,9 @@ export default function ClaimsPage() {
 
   const completionPercent = (link: VendorClaimLink) => {
     const checks = [
+      !!link.company_website,
       !!link.company_description,
+      !!link.contact_email,
     ];
     const complete = checks.filter(Boolean).length;
     return Math.round((complete / checks.length) * 100);

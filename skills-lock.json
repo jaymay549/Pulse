@@ -5,11 +5,6 @@
       "source": "firecrawl/cli",
       "sourceType": "github",
       "computedHash": "b404f2a5fab78d950e67c406bd27e1fddadb9c83480dd463d156f5c4ad1e5eb4"
-    },
-    "journal": {
-      "source": "jaymay549/journal",
-      "sourceType": "github",
-      "computedHash": "8de2fc221669b1722bda07b27e61ca115a5ac28120747477ef243f3249aade6a"
     }
   }
 }

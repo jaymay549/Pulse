@@ -14,7 +14,6 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
-import { useActiveProductLine } from "@/hooks/useActiveProductLine";
 import { VENDOR_DIMENSIONS } from "@/types/admin";
 import type { VendorDimension } from "@/hooks/useSupabaseVendorData";
 import {
@@ -94,12 +93,10 @@ function TypeBadge({ type }: { type: string }) {
 
 export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): JSX.Element {
   const supabase = useClerkSupabase();
-  const { activeProductLine } = useActiveProductLine();
-  const productLineSlug = activeProductLine?.slug ?? null;
 
   // Fetch dimension aggregates
   const { data: dimensions, isLoading: dimensionsLoading } = useQuery<VendorDimension[]>({
-    queryKey: ["dashboard-dimensions", vendorName, productLineSlug],
+    queryKey: ["dashboard-dimensions", vendorName],
     queryFn: async () => {
       const { data, error } = await supabase.rpc(
         "get_vendor_dimensions" as never,
@@ -126,7 +123,7 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
   const dimensionKeys = dimensions?.map((d) => d.dimension) ?? [];
 
   const { data: mentionsByDimension } = useQuery<Record<string, DimensionMention[]>>({
-    queryKey: ["dashboard-dimension-mentions", vendorName, productLineSlug, dimensionKeys, vendorEntityId],
+    queryKey: ["dashboard-dimension-mentions", vendorName, dimensionKeys, vendorEntityId],
     queryFn: async () => {
       const result: Record<string, DimensionMention[]> = {};
 
@@ -206,14 +203,6 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
                   <PolarGrid stroke="#e2e8f0" />
                   <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 11, fill: "#475569" }} />
                   <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10, fill: "#94a3b8" }} />
-                  <Tooltip
-                    contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12, padding: "8px 12px" }}
-                    formatter={(value: number, _name: string, props: any) => [
-                      `${value}% positive (${props.payload.mentions} mentions)`,
-                      props.payload.dimension,
-                    ]}
-                    labelFormatter={() => ""}
-                  />
                   <Radar
                     name="Positive %"
                     dataKey="score"

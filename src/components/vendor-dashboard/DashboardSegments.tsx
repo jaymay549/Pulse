@@ -6,7 +6,6 @@ import {
   type SegmentAxis,
   type SegmentBucket,
 } from "@/hooks/useVendorSegmentIntel";
-import { useActiveProductLine } from "@/hooks/useActiveProductLine";
 
 interface DashboardSegmentsProps {
   vendorName: string;
@@ -208,9 +207,7 @@ function AxisPanel({ buckets }: { buckets: SegmentBucket[] }) {
 // ─── Main Component ──────────────────────────────────────────
 
 export function DashboardSegments({ vendorName }: DashboardSegmentsProps) {
-  const { activeProductLine } = useActiveProductLine();
-  const productLineSlug = activeProductLine?.slug ?? null;
-  const { data: intel, isLoading, isError } = useVendorSegmentIntel(vendorName, productLineSlug);
+  const { data: intel, isLoading, isError } = useVendorSegmentIntel(vendorName);
 
   // Only include axes that have at least one bucket
   const activeAxes = useMemo<SegmentAxis[]>(() => {

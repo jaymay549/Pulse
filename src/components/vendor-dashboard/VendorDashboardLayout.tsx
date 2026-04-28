@@ -3,7 +3,7 @@ import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { VendorDashboardSidebar } from "./VendorDashboardSidebar";
 import { Button } from "@/components/ui/button";
-import { VendorProductLineSwitcher } from "./VendorProductLineSwitcher";
+import { cn } from "@/lib/utils";
 
 export type DashboardSection = "intelligence" | "overview" | "segments" | "mentions" | "profile" | "intel" | "dimensions" | "demo-requests" | "screenshots" | "categories" | "dealer-signals";
 
@@ -12,24 +12,9 @@ interface VendorDashboardLayoutProps {
   activeSection: DashboardSection;
   onNavigate: (section: DashboardSection) => void;
   children: React.ReactNode;
-  tier?: string;
 }
 
-const sectionLabels: Record<DashboardSection, string> = {
-  intelligence: "Intelligence Hub",
-  overview: "Dashboard Overview",
-  segments: "Market Segments",
-  mentions: "Discussions & Feedback",
-  intel: "Competitive Intelligence",
-  dimensions: "Feature Matrix",
-  "dealer-signals": "Dealer Signals",
-  "demo-requests": "Demo Requests",
-  screenshots: "Visual Gallery",
-  categories: "Market Positioning",
-  profile: "Account Settings",
-};
-
-export function VendorDashboardLayout({ vendorName, activeSection, onNavigate, children, tier }: VendorDashboardLayoutProps) {
+export function VendorDashboardLayout({ vendorName, activeSection, onNavigate, children }: VendorDashboardLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleNavigate = (section: DashboardSection) => {
@@ -37,49 +22,72 @@ export function VendorDashboardLayout({ vendorName, activeSection, onNavigate, c
     setMobileOpen(false);
   };
 
+  // Map section ID to a display label
+  const sectionLabels: Record<DashboardSection, string> = {
+    intelligence: "Intelligence Hub",
+    overview: "Dashboard Overview",
+    segments: "Market Segments",
+    mentions: "Discussions & Feedback",
+    intel: "Competitive Intelligence",
+    dimensions: "Feature Matrix",
+    "dealer-signals": "Dealer Signals",
+    "demo-requests": "Demo Requests",
+    screenshots: "Visual Gallery",
+    categories: "Market Positioning",
+    profile: "Account Settings",
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 font-sans antialiased text-slate-900">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-40 h-14 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 flex items-center gap-4">
-        {/* Mobile menu */}
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="lg:hidden -ml-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-60 bg-white border-slate-200">
-            <VendorDashboardSidebar vendorName={vendorName} activeSection={activeSection} onNavigate={handleNavigate} tier={tier} />
-          </SheetContent>
-        </Sheet>
+    <div className="min-h-screen bg-[#F9FAFB] flex flex-col font-sans antialiased text-slate-900">
+      {/* Top Header — full width, always on top */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          {/* Mobile Menu Trigger */}
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="lg:hidden -ml-2 text-slate-500">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-64">
+              <VendorDashboardSidebar vendorName={vendorName} activeSection={activeSection} onNavigate={handleNavigate} />
+            </SheetContent>
+          </Sheet>
 
-        {/* Breadcrumb */}
-        <div className="flex items-center text-sm">
-          <span className="text-slate-400">Dashboard</span>
-          <span className="mx-2 text-slate-300">/</span>
-          <span className="text-slate-800 font-medium">{sectionLabels[activeSection]}</span>
-        </div>
-
-        {/* Product line switcher */}
-        <div className="ml-auto">
-          <VendorProductLineSwitcher />
+          {/* Breadcrumb / Title */}
+          <div className="flex items-center text-sm font-medium">
+            <span className="text-slate-400">Dashboard</span>
+            <span className="mx-2 text-slate-300">/</span>
+            <span className="text-slate-900 font-semibold">{sectionLabels[activeSection]}</span>
+          </div>
         </div>
       </header>
 
-      {/* Body */}
-      <div className="flex flex-1 pt-14">
-        {/* Desktop sidebar */}
-        <div className="hidden lg:flex fixed top-14 bottom-0 w-60 z-30">
-          <VendorDashboardSidebar vendorName={vendorName} activeSection={activeSection} onNavigate={handleNavigate} tier={tier} />
+      {/* Body: sidebar + content side by side, below the header */}
+      <div className="flex flex-1 min-h-0">
+        {/* Desktop Sidebar — below header, scrolls independently */}
+        <div className="hidden lg:flex fixed top-[53px] bottom-0 w-64 border-r bg-white shadow-sm z-30">
+          <VendorDashboardSidebar vendorName={vendorName} activeSection={activeSection} onNavigate={handleNavigate} />
         </div>
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col min-w-0 lg:pl-60">
-          <main className="flex-1 p-6 sm:p-8">
-            <div className="max-w-[1200px] mx-auto animate-in fade-in duration-300">
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+          {/* Page Content */}
+          <main className="flex-1 p-4 sm:p-6 lg:p-8">
+            <div className="max-w-[1200px] mx-auto animate-in fade-in duration-500">
               {children}
             </div>
           </main>
+
+          {/* Footer */}
+          <footer className="px-8 py-6 text-[12px] text-slate-400 border-t bg-white flex items-center justify-between">
+            <p>© 2026 CDG Pulse · Vendor Control Center</p>
+            <div className="flex gap-6">
+              <a href="#" className="hover:text-slate-600 transition-colors">Help Center</a>
+              <a href="#" className="hover:text-slate-600 transition-colors">API Docs</a>
+              <a href="#" className="hover:text-slate-600 transition-colors">Privacy</a>
+            </div>
+          </footer>
         </div>
       </div>
     </div>

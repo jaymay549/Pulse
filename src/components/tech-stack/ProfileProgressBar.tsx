@@ -16,23 +16,16 @@ import {
 } from "@/hooks/useTechStackProfile";
 import { computeTechStackCompletion } from "@/hooks/useTechStackCompletion";
 import { TechStackWizard } from "./TechStackWizard";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const STALE_DAYS = 90;
 
-const HIDDEN_PATHS = ["/vendor-dashboard", "/admin"];
-
 export function ProfileProgressBar() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { isAuthenticated, isLoading: isAuthLoading, user } = useClerkAuth();
   const { data: techData, isSuccess: isTechDataLoaded } = useTechStackEntries();
   const confirmMutation = useConfirmTechStack();
   const [wizardOpen, setWizardOpen] = useState(false);
-
-  const isHiddenPath = HIDDEN_PATHS.some((p) =>
-    location.pathname.startsWith(p)
-  );
 
   // Track when user was loaded-and-unauthenticated so we can detect a real sign-in
   // (as opposed to a page refresh where Clerk restores an existing session)
@@ -63,7 +56,7 @@ export function ProfileProgressBar() {
     }
   }, [isAuthenticated, isTechDataLoaded, techData]);
 
-  if (isHiddenPath || !isAuthenticated || !user) return null;
+  if (!isAuthenticated || !user) return null;
 
   const entries = techData?.entries || [];
   const skippedCategories = techData?.skippedCategories || [];

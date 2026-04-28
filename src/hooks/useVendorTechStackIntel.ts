@@ -35,11 +35,11 @@ export interface VendorTechStackIntel {
 
 // ── Hook ─────────────────────────────────────────────────────
 
-export function useVendorTechStackIntel(vendorName: string, productLineSlug?: string | null) {
+export function useVendorTechStackIntel(vendorName: string) {
   const supabase = useClerkSupabase();
 
   return useQuery({
-    queryKey: ["vendor-tech-stack-intel", vendorName, productLineSlug ?? null],
+    queryKey: ["vendor-tech-stack-intel", vendorName],
     queryFn: async (): Promise<VendorTechStackIntel> => {
       const { data, error } = await supabase.rpc(
         "get_vendor_tech_stack_intel" as never,
