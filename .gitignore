@@ -31,3 +31,4 @@ dist-ssr
 .mcp.json
 .firecrawl/
 .worktrees/
+.superpowers/
