@@ -6,6 +6,7 @@ import {
   getSwitchingRiskLevel,
 } from "@/hooks/useVendorTechStackIntel";
 import { useActiveProductLine } from "@/hooks/useActiveProductLine";
+import { CompetitiveMovementCard } from "@/components/vendor-dashboard/CompetitiveMovementCard";
 
 interface DashboardDealerSignalsProps {
   vendorName: string;
@@ -147,6 +148,9 @@ export function DashboardDealerSignals({ vendorName }: DashboardDealerSignalsPro
           </div>
         </div>
       )}
+
+      {/* Competitive Movement */}
+      <CompetitiveMovementCard vendorName={vendorName} />
 
       {/* Market Share */}
       {data.category_market_share && (

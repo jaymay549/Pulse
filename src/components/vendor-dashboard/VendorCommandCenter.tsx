@@ -12,6 +12,7 @@ import { FeatureGapList } from "./FeatureGapList";
 import { TrendDeepDive } from "./TrendDeepDive";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CompetitiveMovementCompact } from "./CompetitiveMovementCard";
 
 interface VendorCommandCenterProps {
   vendorName: string;
@@ -160,7 +161,7 @@ export function VendorCommandCenter({ vendorName }: VendorCommandCenterProps) {
       )}
 
       {/* Insights & Actions Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Action Plan / Feature Gaps */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -181,6 +182,12 @@ export function VendorCommandCenter({ vendorName }: VendorCommandCenterProps) {
             </div>
           </div>
         )}
+
+        {/* Competitive Movement */}
+        <div className="space-y-4">
+          <h2 className="text-sm font-bold text-slate-900">Competitive Movement</h2>
+          <CompetitiveMovementCompact vendorName={vendorName} />
+        </div>
       </div>
     </div>
   );
