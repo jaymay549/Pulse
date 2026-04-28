@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowUp, ArrowDown, Minus, TrendingUp } from "lucide-react";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { Badge } from "@/components/ui/badge";
+import { CompetitiveMovementCard } from "@/components/vendor-dashboard/CompetitiveMovementCard";
 
 interface DashboardIntelProps {
   vendorName: string;
@@ -256,6 +257,11 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Competitive Movement */}
+      <div className="mt-6">
+        <CompetitiveMovementCard vendorName={vendorName} />
       </div>
     </div>
   );
