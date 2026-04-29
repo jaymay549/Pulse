@@ -14,7 +14,7 @@ function NetTrendBadge({
 
   if (net > 0) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-yellow-50 px-2.5 py-0.5 text-[11px] font-medium text-yellow-700">
         <TrendingUp className="h-3 w-3" />
         Net positive (+{net})
       </span>
@@ -23,7 +23,7 @@ function NetTrendBadge({
 
   if (net < 0) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-medium text-red-600">
+      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-800">
         <TrendingDown className="h-3 w-3" />
         Net negative ({net})
       </span>
@@ -51,7 +51,7 @@ export function CompetitiveMovementCard({ vendorName }: CompetitiveMovementCardP
   if (data.switched_to + data.switched_from === 0) return null;
 
   return (
-    <div className="rounded-xl border bg-white p-5">
+    <div className="rounded-xl border border-yellow-400 bg-white p-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -71,7 +71,7 @@ export function CompetitiveMovementCard({ vendorName }: CompetitiveMovementCardP
         {/* Gained from */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-[12px] font-semibold text-emerald-600">
+            <span className="text-[12px] font-semibold text-yellow-600">
               Gained from
             </span>
             <span className="text-[11px] text-slate-400 tabular-nums">
@@ -84,7 +84,7 @@ export function CompetitiveMovementCard({ vendorName }: CompetitiveMovementCardP
               {data.to_sources.slice(0, 5).map((source) => (
                 <div
                   key={source.vendor}
-                  className="flex items-center justify-between rounded-lg bg-emerald-50/50 border border-emerald-100 px-3 py-1.5"
+                  className="flex items-center justify-between rounded-lg bg-yellow-50/50 border border-yellow-200 px-3 py-1.5"
                 >
                   <span className="text-[13px] text-slate-700 truncate mr-2">
                     {source.vendor}
@@ -103,7 +103,7 @@ export function CompetitiveMovementCard({ vendorName }: CompetitiveMovementCardP
         {/* Lost to */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-[12px] font-semibold text-red-500">
+            <span className="text-[12px] font-semibold text-slate-800">
               Lost to
             </span>
             <span className="text-[11px] text-slate-400 tabular-nums">
@@ -116,7 +116,7 @@ export function CompetitiveMovementCard({ vendorName }: CompetitiveMovementCardP
               {data.from_destinations.slice(0, 5).map((dest) => (
                 <div
                   key={dest.vendor}
-                  className="flex items-center justify-between rounded-lg bg-red-50/50 border border-red-100 px-3 py-1.5"
+                  className="flex items-center justify-between rounded-lg bg-slate-50/50 border border-slate-300 px-3 py-1.5"
                 >
                   <span className="text-[13px] text-slate-700 truncate mr-2">
                     {dest.vendor}
@@ -149,53 +149,44 @@ export function CompetitiveMovementCompact({ vendorName }: CompetitiveMovementCo
   if (data.switched_to + data.switched_from === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 h-full">
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <ArrowRightLeft className="h-4 w-4 text-amber-500" />
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">
-          Competitive Movement
-        </h3>
-      </div>
-
-      {/* Net trend badge */}
-      <div className="mb-4">
-        <NetTrendBadge
-          switchedTo={data.switched_to}
-          switchedFrom={data.switched_from}
-        />
-      </div>
-
-      {/* Compact stats */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-[12px] font-semibold text-emerald-600">Gained</span>
-          <span className="text-sm font-bold text-slate-900">{data.switched_to} dealers</span>
+    <div className="rounded-2xl border border-yellow-400 bg-white shadow-sm p-5 h-full">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <ArrowRightLeft className="h-3.5 w-3.5 text-slate-400" />
+          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Movement</h3>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-[12px] font-semibold text-red-500">Lost</span>
-          <span className="text-sm font-bold text-slate-900">{data.switched_from} dealers</span>
+        <NetTrendBadge switchedTo={data.switched_to} switchedFrom={data.switched_from} />
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between py-1.5">
+          <span className="text-[11px] font-semibold text-yellow-600">Gained</span>
+          <span className="text-sm font-bold text-slate-900">{data.switched_to}</span>
+        </div>
+        <div className="flex items-center justify-between py-1.5">
+          <span className="text-[11px] font-semibold text-slate-700">Lost</span>
+          <span className="text-sm font-bold text-slate-900">{data.switched_from}</span>
         </div>
       </div>
 
-      {/* Top vendors (compact) */}
-      {data.to_sources.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-slate-100">
-          <p className="text-[11px] font-medium text-slate-400 mb-1.5">Top gained from</p>
-          <p className="text-[12px] text-slate-600 truncate">
-            {data.to_sources.slice(0, 3).map((s) => s.vendor).join(", ")}
-          </p>
-        </div>
-      )}
-
-      {data.from_destinations.length > 0 && (
-        <div className="mt-3">
-          <p className="text-[11px] font-medium text-slate-400 mb-1.5">Top lost to</p>
-          <p className="text-[12px] text-slate-600 truncate">
-            {data.from_destinations.slice(0, 3).map((d) => d.vendor).join(", ")}
-          </p>
-        </div>
-      )}
+      <div className="mt-3 pt-3 border-t border-slate-100 space-y-2">
+        {data.to_sources.length > 0 && (
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">From</span>
+            <span className="text-[11px] text-slate-600 truncate text-right">
+              {data.to_sources.slice(0, 2).map((s) => s.vendor).join(", ")}
+            </span>
+          </div>
+        )}
+        {data.from_destinations.length > 0 && (
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">To</span>
+            <span className="text-[11px] text-slate-600 truncate text-right">
+              {data.from_destinations.slice(0, 2).map((d) => d.vendor).join(", ")}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

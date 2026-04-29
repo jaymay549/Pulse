@@ -75,16 +75,16 @@ export function getReasonLabel(reason: string): string {
 
 export function getSentimentColor(score: number | null): string {
   if (score === null) return "text-slate-400";
-  if (score >= 8) return "text-emerald-600";
-  if (score >= 6) return "text-amber-500";
-  return "text-red-500";
+  if (score >= 8) return "text-yellow-500";
+  if (score >= 6) return "text-gray-500";
+  return "text-slate-900";
 }
 
 export function getSwitchingRiskLevel(pct: number): {
   label: string;
   color: string;
 } {
-  if (pct >= 40) return { label: "High", color: "text-red-600" };
-  if (pct >= 20) return { label: "Moderate", color: "text-amber-500" };
-  return { label: "Low", color: "text-emerald-600" };
+  if (pct >= 40) return { label: "High", color: "text-slate-900" };
+  if (pct >= 20) return { label: "Moderate", color: "text-gray-500" };
+  return { label: "Low", color: "text-yellow-500" };
 }

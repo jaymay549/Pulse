@@ -111,8 +111,8 @@ function HealthBadge({ score, trend }: { score: number | null; trend?: "up" | "d
     );
   }
 
-  const color = score >= 70 ? "text-emerald-600" : score >= 50 ? "text-amber-500" : "text-red-500";
-  const ringColor = score >= 70 ? "#10b981" : score >= 50 ? "#f59e0b" : "#ef4444";
+  const color = score >= 70 ? "text-yellow-500" : score >= 50 ? "text-gray-500" : "text-slate-900";
+  const ringColor = score >= 70 ? "#eab308" : score >= 50 ? "#9ca3af" : "#1e293b";
   const dashOffset = 264 - (score / 100) * 264;
 
   return (
@@ -162,11 +162,11 @@ function HealthBadge({ score, trend }: { score: number | null; trend?: "up" | "d
 }
 
 const QUOTE_STYLES: Record<string, { border: string; bg: string; text: string; badge: string }> = {
-  positive: { border: "border-emerald-100", bg: "bg-emerald-50/60", text: "text-emerald-900", badge: "bg-emerald-100 text-emerald-700" },
-  negative: { border: "border-red-100", bg: "bg-red-50/60", text: "text-red-900", badge: "bg-red-100 text-red-700" },
-  warning: { border: "border-red-100", bg: "bg-red-50/60", text: "text-red-900", badge: "bg-red-100 text-red-700" },
-  neutral: { border: "border-slate-100", bg: "bg-slate-50/60", text: "text-slate-900", badge: "bg-slate-100 text-slate-600" },
-  mixed: { border: "border-amber-100", bg: "bg-amber-50/60", text: "text-amber-900", badge: "bg-amber-100 text-amber-700" },
+  positive: { border: "border-yellow-200", bg: "bg-yellow-50/60", text: "text-yellow-900", badge: "bg-yellow-100 text-yellow-700" },
+  negative: { border: "border-slate-700", bg: "bg-slate-100/60", text: "text-slate-900", badge: "bg-slate-800 text-white" },
+  warning: { border: "border-slate-700", bg: "bg-slate-100/60", text: "text-slate-900", badge: "bg-slate-800 text-white" },
+  neutral: { border: "border-gray-200", bg: "bg-gray-50/60", text: "text-gray-900", badge: "bg-gray-200 text-gray-600" },
+  mixed: { border: "border-gray-300", bg: "bg-gray-100/60", text: "text-gray-900", badge: "bg-gray-300 text-gray-700" },
 };
 
 function QuoteCard({ mention }: { mention: RecentMention }) {
@@ -311,7 +311,7 @@ export function PulseBriefing({ vendorName, onNavigate }: PulseBriefingProps) {
   return (
     <div className="space-y-4">
       {/* ── Section A: Health + Narrative ──────────────────────── */}
-      <div className="rounded-xl border bg-white p-5">
+      <div className="rounded-xl border border-yellow-400 bg-white p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <HealthBadge score={intel?.metrics?.health_score ?? null} trend={trendDir} />
 
@@ -324,10 +324,10 @@ export function PulseBriefing({ vendorName, onNavigate }: PulseBriefingProps) {
             <div className="text-center">
               <div className={`text-xl font-bold ${
                 stats.positivePercent >= 70
-                  ? "text-emerald-600"
+                  ? "text-yellow-500"
                   : stats.positivePercent >= 50
-                    ? "text-amber-500"
-                    : "text-red-500"
+                    ? "text-gray-500"
+                    : "text-slate-900"
               }`}>
                 {stats.positivePercent}%
               </div>
@@ -348,7 +348,7 @@ export function PulseBriefing({ vendorName, onNavigate }: PulseBriefingProps) {
 
       {/* ── Section B: What Dealers Are Saying ─────────────────── */}
       {(positiveQuote || warningQuote) && (
-        <div className="rounded-xl border bg-white p-5">
+        <div className="rounded-xl border border-yellow-400 bg-white p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <MessageSquareQuote className="h-4 w-4 text-slate-400" />
@@ -372,7 +372,7 @@ export function PulseBriefing({ vendorName, onNavigate }: PulseBriefingProps) {
 
       {/* ── Section C: Performance Signals ─────────────────────── */}
       {(topStrengths.length > 0 || topConcernDim) && (
-        <div className="rounded-xl border bg-white p-5">
+        <div className="rounded-xl border border-yellow-400 bg-white p-5">
           <div className="flex items-center gap-2 mb-3">
             <BarChart2 className="h-4 w-4 text-slate-400" />
             <h3 className="text-sm font-semibold text-slate-900">Performance Signals</h3>
@@ -382,11 +382,11 @@ export function PulseBriefing({ vendorName, onNavigate }: PulseBriefingProps) {
             {topStrengths.map((d) => (
               <span
                 key={d.dimension}
-                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700"
+                className="inline-flex items-center gap-1.5 rounded-full bg-yellow-50 px-3 py-1 text-xs font-medium text-yellow-700"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 {DIMENSION_LABELS[d.dimension] ?? d.dimension}
-                <span className="text-emerald-500">{d.positive_percent}%</span>
+                <span className="text-yellow-500">{d.positive_percent}%</span>
               </span>
             ))}
             {topConcernDim && (
@@ -410,7 +410,7 @@ export function PulseBriefing({ vendorName, onNavigate }: PulseBriefingProps) {
 
       {/* ── Section D: Competitive Snapshot ───────────────────── */}
       {topCompetitor && (
-        <div className="rounded-xl border bg-white p-5">
+        <div className="rounded-xl border border-yellow-400 bg-white p-5">
           <div className="flex items-center gap-2 mb-2">
             <Swords className="h-4 w-4 text-slate-400" />
             <h3 className="text-sm font-semibold text-slate-900">Competitive Snapshot</h3>
@@ -442,7 +442,7 @@ export function PulseBriefing({ vendorName, onNavigate }: PulseBriefingProps) {
 
       {/* ── Section E: Top Actions ─────────────────────────────── */}
       {topActions.length > 0 && (
-        <div className="rounded-xl border bg-white p-5">
+        <div className="rounded-xl border border-yellow-400 bg-white p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Zap className="h-4 w-4 text-slate-400" />

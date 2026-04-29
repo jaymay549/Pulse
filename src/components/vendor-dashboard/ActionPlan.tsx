@@ -57,7 +57,7 @@ function RecommendationItem({ rec }: { rec: DashboardRecommendation }) {
     : null;
 
   return (
-    <div className="rounded-lg border bg-white">
+    <div className="rounded-lg border border-yellow-400 bg-white">
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-start gap-3 p-4 text-left hover:bg-slate-50/50 transition-colors"

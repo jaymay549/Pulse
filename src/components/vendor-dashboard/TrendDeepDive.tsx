@@ -33,9 +33,9 @@ function parseMonthLabel(yyyyMm: string): string {
 const METRIC_KEYS: MetricKey[] = ["product_stability", "customer_experience", "value_perception"];
 
 const BAR_COLORS: Record<string, string> = {
-  product_stability: "#3b82f6",
-  customer_experience: "#8b5cf6",
-  value_perception: "#f59e0b",
+  product_stability: "#1e293b",
+  customer_experience: "#1e293b",
+  value_perception: "#1e293b",
 };
 
 export function TrendDeepDive({ metrics, history }: TrendDeepDiveProps) {
@@ -59,116 +59,82 @@ export function TrendDeepDive({ metrics, history }: TrendDeepDiveProps) {
   }));
 
   return (
-    <div className="rounded-xl border bg-white">
+    <div>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between p-4 hover:bg-slate-50/50 transition-colors"
+        className="flex w-full items-center justify-between mb-3"
       >
         <div className="flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-slate-500" />
-          <h3 className="text-sm font-semibold text-slate-900">Trend Deep Dive</h3>
+          <TrendingUp className="h-3.5 w-3.5 text-slate-400" />
+          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Trends</h3>
         </div>
         {expanded
-          ? <ChevronUp className="h-4 w-4 text-slate-400" />
-          : <ChevronDown className="h-4 w-4 text-slate-400" />
+          ? <ChevronUp className="h-3.5 w-3.5 text-slate-400" />
+          : <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
         }
       </button>
 
       {expanded && (
-        <div className="border-t px-4 pb-5 pt-3">
-          {/* Per-metric mini area charts */}
-          <div className="grid gap-6 md:grid-cols-3">
+        <div className="space-y-5">
+          {/* Per-metric mini sparklines */}
+          <div className="space-y-4">
             {METRIC_KEYS.map((key) => {
               const score = metrics[key]?.score;
               const config = METRIC_CONFIG[key];
-              const data = metrics[key]?.data;
               const color = BAR_COLORS[key];
+
+              if (score === null) return null;
 
               return (
                 <div key={key}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-slate-700">{config.label}</span>
-                    {score !== null && (
-                      <span className="text-xs font-bold" style={{ color }}>
-                        {score}
-                      </span>
-                    )}
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-semibold text-slate-600">{config.label}</span>
+                    <span className="text-[11px] font-bold text-slate-900">{score}</span>
                   </div>
-
-                  {score !== null ? (
-                    <>
-                      <ResponsiveContainer width="100%" height={80}>
-                        <AreaChart data={chartData} margin={{ top: 2, right: 2, left: -20, bottom: 0 }}>
-                          <defs>
-                            <linearGradient id={`trendGrad-${key}`} x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor={color} stopOpacity={0.25} />
-                              <stop offset="95%" stopColor={color} stopOpacity={0.02} />
-                            </linearGradient>
-                          </defs>
-                          <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                          <YAxis hide />
-                          <Tooltip
-                            contentStyle={{ borderRadius: 6, border: "1px solid #e2e8f0", fontSize: 11, padding: "4px 8px" }}
-                            formatter={(value: number) => [value, "Discussions"]}
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="positive"
-                            stroke={color}
-                            strokeWidth={2}
-                            fill={`url(#trendGrad-${key})`}
-                            dot={{ r: 2.5, fill: color, stroke: "#fff", strokeWidth: 1.5 }}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                      {data && (
-                        <div className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-slate-500">
-                          <span>Sentiment: {data.sentiment_ratio?.toFixed(0)}%</span>
-                          <span>Volume: {data.mention_count}</span>
-                          <span>Recent: {data.recent_mentions ?? 0}</span>
-                          <span>Prior: {data.prior_mentions ?? 0}</span>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-xs text-slate-400 py-4 text-center">
-                      Not enough data yet
-                    </p>
-                  )}
+                  <ResponsiveContainer width="100%" height={50}>
+                    <AreaChart data={chartData} margin={{ top: 2, right: 2, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id={`trendGrad-${key}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={color} stopOpacity={0.15} />
+                          <stop offset="95%" stopColor={color} stopOpacity={0.01} />
+                        </linearGradient>
+                      </defs>
+                      <Area
+                        type="monotone"
+                        dataKey="positive"
+                        stroke={color}
+                        strokeWidth={1.5}
+                        fill={`url(#trendGrad-${key})`}
+                        dot={false}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
               );
             })}
           </div>
 
-          {/* Overall volume stacked bar chart */}
-          <div className="mt-6 pt-4 border-t">
-            <p className="text-xs font-medium text-slate-700 mb-2">Monthly Discussion Volume</p>
-            <ResponsiveContainer width="100%" height={140}>
-              <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
+          {/* Volume bar chart */}
+          <div className="pt-3 border-t border-slate-100">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Volume</p>
+            <ResponsiveContainer width="100%" height={100}>
+              <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <XAxis dataKey="month" tick={{ fontSize: 9, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                <YAxis hide />
                 <Tooltip
-                  contentStyle={{ borderRadius: 6, border: "1px solid #e2e8f0", fontSize: 11 }}
+                  cursor={{ fill: '#fef9c3' }}
+                  contentStyle={{ borderRadius: 8, border: "2px solid #1e293b", fontSize: 11, backgroundColor: "#fffef5" }}
                 />
-                <Bar dataKey="positive" stackId="vol" fill="#10b981" radius={[0, 0, 0, 0]} name="Positive" />
-                <Bar dataKey="neutral" stackId="vol" fill="#94a3b8" radius={[0, 0, 0, 0]} name="Neutral" />
-                <Bar dataKey="mixed" stackId="vol" fill="#f59e0b" radius={[0, 0, 0, 0]} name="Mixed" />
-                <Bar dataKey="negative" stackId="vol" fill="#ef4444" radius={[4, 4, 0, 0]} name="Negative" />
+                <Bar dataKey="positive" stackId="vol" fill="#eab308" radius={[0, 0, 0, 0]} name="Positive" />
+                <Bar dataKey="negative" stackId="vol" fill="#1e293b" radius={[2, 2, 0, 0]} name="Negative" />
               </BarChart>
             </ResponsiveContainer>
-            <div className="mt-2 flex items-center gap-4 text-[10px] text-slate-400">
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-sm bg-emerald-500" /> Positive
+            <div className="mt-1 flex items-center gap-3 text-[10px] text-slate-400">
+              <span className="flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-sm bg-yellow-400" /> Positive
               </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-sm bg-slate-400" /> Neutral
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-sm bg-amber-500" /> Mixed
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-sm bg-red-500" /> Negative
+              <span className="flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-sm bg-slate-800" /> Negative
               </span>
             </div>
           </div>

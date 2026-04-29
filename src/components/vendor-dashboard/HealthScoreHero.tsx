@@ -13,6 +13,7 @@ import {
 import { InfoTooltip } from "./InfoTooltip";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { CountUp } from "./CountUp";
 
 interface HealthScoreHeroProps {
   score: number | null;
@@ -41,9 +42,9 @@ export function HealthScoreHero({ score, history }: HealthScoreHeroProps) {
   const trend = getTrend(history);
   
   const statusConfig = {
-    strong: { label: "Exceptional", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100", icon: ShieldCheck },
-    improving: { label: "Solid Performance", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100", icon: TrendingUp },
-    attention: { label: "Action Required", color: "text-red-600", bg: "bg-red-50", border: "border-red-100", icon: Activity },
+    strong: { label: "Exceptional", color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200", icon: ShieldCheck },
+    improving: { label: "Solid Performance", color: "text-gray-600", bg: "bg-gray-50", border: "border-gray-200", icon: TrendingUp },
+    attention: { label: "Action Required", color: "text-slate-900", bg: "bg-slate-100", border: "border-slate-300", icon: Activity },
     gathering: { label: "Calculating...", color: "text-slate-400", bg: "bg-slate-50", border: "border-slate-100", icon: Activity },
   };
 
@@ -60,24 +61,24 @@ export function HealthScoreHero({ score, history }: HealthScoreHeroProps) {
             <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
               <circle
                 cx="50" cy="50" r="44"
-                fill="none" stroke="#F1F5F9" strokeWidth="8"
+                fill="none" stroke="#FEF9C3" strokeWidth="8"
               />
               {score !== null && (
                 <circle
                   cx="50" cy="50" r="44"
                   fill="none"
-                  stroke="currentColor"
+                  stroke="#eab308"
                   strokeWidth="8"
                   strokeLinecap="round"
                   strokeDasharray={`${(score / 100) * 276.5} 276.5`}
                   transform="rotate(-90 50 50)"
-                  className={cn("transition-all duration-1000 ease-out", getScoreColor(score))}
+                  className="transition-all duration-1000 ease-out"
                 />
               )}
             </svg>
             <div className="flex flex-col items-center justify-center">
-              <span className={cn("text-4xl font-black tracking-tighter", getScoreColor(score))}>
-                {score !== null ? score : "—"}
+              <span className="text-4xl font-black tracking-tighter text-slate-900">
+                {score !== null ? <CountUp value={score} duration={1.5} /> : "—"}
               </span>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Pulse Score</span>
             </div>
@@ -91,7 +92,7 @@ export function HealthScoreHero({ score, history }: HealthScoreHeroProps) {
                   content={
                     <div className="p-1 space-y-2">
                       <p className="font-bold text-slate-900 text-[13px] flex items-center gap-2">
-                        <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+                        <Sparkles className="h-3.5 w-3.5 text-yellow-500" />
                         Intelligence Engine
                       </p>
                       <p className="text-[12px] leading-relaxed text-slate-600">A weighted composite of your performance dimensions, based on verified dealer feedback from the last 90 days.</p>
@@ -112,13 +113,13 @@ export function HealthScoreHero({ score, history }: HealthScoreHeroProps) {
               
               <div className="flex items-center gap-2">
                 {trend.direction === "up" && (
-                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 gap-1 py-1 pr-2.5">
+                  <Badge className="bg-yellow-50 text-yellow-700 border-yellow-200 gap-1 py-1 pr-2.5">
                     <ArrowUp className="h-3 w-3 stroke-[3]" />
                     <span className="font-bold">+{Math.abs(trend.delta)}</span>
                   </Badge>
                 )}
                 {trend.direction === "down" && (
-                  <Badge className="bg-red-50 text-red-600 border-red-100 gap-1 py-1 pr-2.5">
+                  <Badge className="bg-slate-100 text-slate-800 border-slate-300 gap-1 py-1 pr-2.5">
                     <ArrowDown className="h-3 w-3 stroke-[3]" />
                     <span className="font-bold">{trend.delta}</span>
                   </Badge>
@@ -156,16 +157,14 @@ export function HealthScoreHero({ score, history }: HealthScoreHeroProps) {
             month: parseMonthLabel(h.month),
             health: h.health_estimate ?? 0,
           }));
-          const color = score !== null
-            ? score >= 70 ? "#10b981" : score >= 50 ? "#f59e0b" : "#ef4444"
-            : "#94a3b8";
+          const color = "#eab308";
 
           return (
             <div className="flex flex-col items-end gap-3 self-end lg:self-center">
               <div className="w-full sm:w-[240px]">
                 <div className="flex items-center justify-between mb-3 px-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Growth Trend</span>
-                  <span className="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded">90D</span>
+                  <span className="text-[10px] font-bold text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded border border-yellow-200">90D</span>
                 </div>
                 <div style={{ width: '100%', height: 70 }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -200,8 +199,8 @@ export function HealthScoreHero({ score, history }: HealthScoreHeroProps) {
       </div>
 
       {score === null && (
-        <div className="mt-8 flex items-center gap-3 rounded-xl bg-indigo-50/50 border border-indigo-100/50 px-4 py-3.5 text-[13px] font-medium text-indigo-700">
-          <div className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+        <div className="mt-8 flex items-center gap-3 rounded-xl bg-yellow-50/50 border border-yellow-200/50 px-4 py-3.5 text-[13px] font-medium text-yellow-700">
+          <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
           Market intelligence gathering in progress. Real-time feedback will populate here shortly.
         </div>
       )}

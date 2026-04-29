@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { DashboardSection } from "./VendorDashboardLayout";
 import { Separator } from "@/components/ui/separator";
+import cdgLogo from "@/assets/cdg-profile-logo.jpg";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Tooltip,
@@ -75,27 +76,16 @@ export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate, 
   const { configs: tierConfigs } = useTierConfigReadonly();
 
   return (
-    <aside className="w-60 bg-white border-r border-slate-200 flex flex-col h-full">
+    <aside className="w-60 bg-white border-r border-slate-100 flex flex-col h-full">
       {/* Brand */}
-      <div className="px-5 py-4">
+      <div className="px-4 py-4">
         <div className="flex items-center gap-3">
-          {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt={vendorName}
-              className="h-9 w-9 rounded-lg object-contain bg-white ring-1 ring-slate-200 shadow-sm"
-            />
-          ) : (
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm">
-              <Activity className="h-5 w-5" />
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-slate-900 truncate">{vendorName}</p>
-            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
-              Control Center
-            </p>
-          </div>
+          <img
+            src={logoUrl || cdgLogo}
+            alt={vendorName}
+            className="h-8 w-8 rounded-lg object-contain bg-white"
+          />
+          <p className="text-sm font-bold text-slate-900 truncate min-w-0 flex-1">{vendorName}</p>
         </div>
       </div>
 
@@ -103,10 +93,9 @@ export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate, 
 
       {/* Nav */}
       <ScrollArea className="flex-1">
-        <nav className="px-3 py-4 space-y-6">
+        <nav className="px-3 py-3 space-y-5">
           {navGroups.map((group) => {
             const filteredItems = group.items.filter((item) => {
-              // No tier (admin mode) — show everything
               if (!tier) return true;
               const vis = getVisibility(tierConfigs, tier as VendorTier, item.id);
               return vis !== "hidden";
@@ -114,7 +103,7 @@ export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate, 
             if (filteredItems.length === 0) return null;
             return (
               <div key={group.label}>
-                <p className="px-3 mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                <p className="px-3 mb-1.5 text-[10px] font-bold text-yellow-600 uppercase tracking-wider">
                   {group.label}
                 </p>
                 <div className="space-y-0.5">
@@ -126,9 +115,9 @@ export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate, 
                         key={id}
                         onClick={() => onNavigate(id)}
                         className={cn(
-                          "group w-full flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors text-left",
+                          "group w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors text-left",
                           isActive
-                            ? "bg-indigo-50 text-indigo-700"
+                            ? "bg-yellow-50 text-slate-900"
                             : isGated
                               ? "text-slate-400 hover:text-slate-500 hover:bg-slate-50"
                               : "text-slate-600 hover:text-slate-900 hover:bg-slate-50",
@@ -137,7 +126,7 @@ export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate, 
                         <Icon
                           className={cn(
                             "h-4 w-4 flex-shrink-0 transition-colors",
-                            isActive ? "text-indigo-600" : isGated ? "text-slate-300" : "text-slate-400 group-hover:text-slate-600",
+                            isActive ? "text-yellow-600" : isGated ? "text-slate-300" : "text-slate-400 group-hover:text-yellow-600",
                           )}
                         />
                         {label}
@@ -160,9 +149,9 @@ export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate, 
               href={`/vendors/${encodeURIComponent(vendorName)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors"
+              className="flex items-center gap-3 px-3 py-1.5 rounded-lg text-[12px] font-medium text-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-colors"
             >
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink className="h-3.5 w-3.5" />
               View as Member
             </a>
           </TooltipTrigger>
@@ -172,9 +161,9 @@ export function VendorDashboardSidebar({ vendorName, activeSection, onNavigate, 
         </Tooltip>
         <a
           href="/vendors"
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors"
+          className="flex items-center gap-3 px-3 py-1.5 rounded-lg text-[12px] font-medium text-slate-400 hover:text-slate-800 hover:bg-slate-50 transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3.5 w-3.5" />
           Back to CDG Pulse
         </a>
       </div>

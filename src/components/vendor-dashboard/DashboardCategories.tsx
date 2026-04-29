@@ -5,6 +5,7 @@ import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useActiveProductLine } from "@/hooks/useActiveProductLine";
 import { categories as allCategories } from "@/hooks/useVendorFilters";
 import { cn } from "@/lib/utils";
+import { AnimateOnScroll } from "./AnimateOnScroll";
 
 const MAX_CATEGORIES = 5;
 
@@ -72,6 +73,7 @@ export function DashboardCategories({ vendorName }: DashboardCategoriesProps) {
 
   return (
     <div className="space-y-6">
+      <AnimateOnScroll>
       <div>
         <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
           <Tags className="h-5 w-5 text-slate-400" />
@@ -82,6 +84,7 @@ export function DashboardCategories({ vendorName }: DashboardCategoriesProps) {
           public profile and help dealers find you.
         </p>
       </div>
+      </AnimateOnScroll>
 
       {/* Error banner */}
       {error && (
@@ -91,6 +94,7 @@ export function DashboardCategories({ vendorName }: DashboardCategoriesProps) {
         </div>
       )}
 
+      <AnimateOnScroll delay={0.1}>
       {isLoading ? (
         <div className="flex justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
@@ -141,6 +145,7 @@ export function DashboardCategories({ vendorName }: DashboardCategoriesProps) {
           </div>
         </>
       )}
+      </AnimateOnScroll>
     </div>
   );
 }

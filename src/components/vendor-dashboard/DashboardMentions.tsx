@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { AnimateOnScroll } from "./AnimateOnScroll";
 
 interface DashboardMentionsProps {
   vendorName: string;
@@ -58,11 +59,11 @@ function formatRelativeTime(dateString: string): string {
 }
 
 const TYPE_CONFIG: Record<string, { bg: string; text: string; label: string; color: string }> = {
-  positive: { bg: "bg-emerald-50", text: "text-emerald-700", label: "positive", color: "#10b981" },
-  negative: { bg: "bg-red-50", text: "text-red-700", label: "concern", color: "#ef4444" },
-  warning: { bg: "bg-red-50", text: "text-red-700", label: "concern", color: "#ef4444" },
-  neutral: { bg: "bg-slate-50", text: "text-slate-600", label: "neutral", color: "#94a3b8" },
-  mixed: { bg: "bg-amber-50", text: "text-amber-700", label: "mixed", color: "#f59e0b" },
+  positive: { bg: "bg-yellow-50", text: "text-yellow-700", label: "positive", color: "#eab308" },
+  negative: { bg: "bg-slate-900", text: "text-white", label: "concern", color: "#1e293b" },
+  warning: { bg: "bg-slate-900", text: "text-white", label: "concern", color: "#1e293b" },
+  neutral: { bg: "bg-gray-100", text: "text-gray-600", label: "neutral", color: "#9ca3af" },
+  mixed: { bg: "bg-gray-200", text: "text-gray-700", label: "mixed", color: "#6b7280" },
 };
 
 function TypeBadge({ type }: { type: string }): JSX.Element {
@@ -183,7 +184,8 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
   ].filter(d => d.value > 0);
 
   return (
-    <div className="space-y-8 pb-12 animate-in fade-in duration-700">
+    <div className="space-y-8 pb-12">
+      <AnimateOnScroll>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Discussions & Response</h1>
@@ -195,11 +197,13 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
            </Badge>
         </div>
       </div>
+      </AnimateOnScroll>
 
+      <AnimateOnScroll delay={0.1}>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left: Sentiment Analysis Summary */}
         <div className="lg:col-span-1 space-y-6">
-          <Card className="border-slate-200 shadow-sm overflow-hidden sticky top-24">
+          <Card className="border-yellow-400 shadow-sm overflow-hidden sticky top-24">
             <CardHeader className="pb-2 bg-slate-50/50 border-b border-slate-100">
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-indigo-500" />
@@ -263,7 +267,7 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
         {/* Right: Mentions List */}
         <div className="lg:col-span-2 space-y-6">
           {/* Filters Area */}
-          <div className="bg-white border border-slate-200 p-2 rounded-2xl flex flex-wrap gap-1 shadow-sm">
+          <div className="bg-white border border-yellow-400 p-2 rounded-2xl flex flex-wrap gap-1 shadow-sm">
             {[
               { id: "all", label: "All Feed", count: mentions.length },
               { id: "positive", label: "Positive", count: counts.positive },
@@ -291,7 +295,7 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
 
           {/* Mentions Cards */}
           {mentions.length === 0 ? (
-             <Card className="border-dashed border-2 bg-slate-50/50 py-20">
+             <Card className="border-dashed border-2 border-yellow-300 bg-slate-50/50 py-20">
                <CardContent className="flex flex-col items-center justify-center text-center">
                  <div className="h-16 w-16 rounded-full bg-white shadow-sm flex items-center justify-center mb-4 text-slate-300">
                    <MessageSquare className="h-8 w-8" />
@@ -311,8 +315,8 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
 
                 return (
                   <Card key={mention.id} className={cn(
-                    "border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-all duration-200",
-                    hasResponded && "border-emerald-100 bg-emerald-50/10"
+                    "border-yellow-400 shadow-sm overflow-hidden hover:shadow-md transition-all duration-200",
+                    hasResponded && "border-yellow-500 bg-yellow-50/10"
                   )}>
                     <CardContent className="p-6">
                       <div className="flex flex-col gap-4">
@@ -398,6 +402,7 @@ export function DashboardMentions({ vendorName, vendorProfileId }: DashboardMent
           )}
         </div>
       </div>
+      </AnimateOnScroll>
 
       {/* Flag modal */}
       {selectedMention && (

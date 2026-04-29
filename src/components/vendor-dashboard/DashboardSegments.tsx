@@ -7,6 +7,7 @@ import {
   type SegmentBucket,
 } from "@/hooks/useVendorSegmentIntel";
 import { useActiveProductLine } from "@/hooks/useActiveProductLine";
+import { AnimateOnScroll } from "./AnimateOnScroll";
 
 interface DashboardSegmentsProps {
   vendorName: string;
@@ -261,6 +262,7 @@ export function DashboardSegments({ vendorName }: DashboardSegmentsProps) {
   return (
     <div className="space-y-5">
       {/* Header */}
+      <AnimateOnScroll>
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">Audience Segments</h1>
         <p className="mt-1 text-sm text-slate-500">
@@ -273,8 +275,10 @@ export function DashboardSegments({ vendorName }: DashboardSegmentsProps) {
           </p>
         )}
       </div>
+      </AnimateOnScroll>
 
       {/* Axis tabs */}
+      <AnimateOnScroll delay={0.1}>
       <div className="flex gap-1 border-b border-border/50">
         {activeAxes.map((axis) => {
           const cfg = AXIS_CONFIG[axis];
@@ -298,9 +302,12 @@ export function DashboardSegments({ vendorName }: DashboardSegmentsProps) {
           );
         })}
       </div>
+      </AnimateOnScroll>
 
       {/* Active axis panel */}
+      <AnimateOnScroll delay={0.15}>
       {tab && <AxisPanel buckets={intel.axes[tab]} />}
+      </AnimateOnScroll>
     </div>
   );
 }

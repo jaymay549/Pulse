@@ -5,6 +5,7 @@ import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { GatedCard } from "./GatedCard";
+import { AnimateOnScroll } from "./AnimateOnScroll";
 
 interface DemoRequest {
   id: string;
@@ -124,6 +125,7 @@ export function DashboardDemoRequests({ vendorName }: DashboardDemoRequestsProps
 
   return (
     <div className="space-y-6">
+      <AnimateOnScroll>
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
           Demo Requests
@@ -137,7 +139,9 @@ export function DashboardDemoRequests({ vendorName }: DashboardDemoRequestsProps
           Dealers who requested a demo from your vendor profile
         </p>
       </div>
+      </AnimateOnScroll>
 
+      <AnimateOnScroll delay={0.1}>
       {!requests?.length ? (
         <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
           <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
@@ -205,6 +209,7 @@ export function DashboardDemoRequests({ vendorName }: DashboardDemoRequestsProps
         </div>
         </GatedCard>
       )}
+      </AnimateOnScroll>
     </div>
   );
 }

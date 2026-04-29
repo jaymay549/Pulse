@@ -1,6 +1,7 @@
 import { Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { CountUp } from "./CountUp";
 
 interface NPSChartProps {
   promoterCount: number;
@@ -17,7 +18,7 @@ export function NPSChart({ promoterCount, passiveCount, detractorCount }: NPSCha
   const detractorPct = total > 0 ? (detractorCount / total) * 100 : 0;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col h-full">
+    <div className="bg-white rounded-2xl border border-yellow-400 p-6 shadow-sm flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h3 className="text-[15px] font-extrabold text-slate-900 tracking-tight">Dealer NPS</h3>
@@ -62,10 +63,10 @@ export function NPSChart({ promoterCount, passiveCount, detractorCount }: NPSCha
         <div className={cn(
           "text-6xl font-black tracking-tighter tabular-nums mb-1",
           npsScore === null ? "text-slate-200" : 
-          npsScore >= 30 ? "text-emerald-600" : 
-          npsScore >= 0 ? "text-amber-500" : "text-red-500"
+          npsScore >= 30 ? "text-yellow-500" :
+          npsScore >= 0 ? "text-gray-500" : "text-slate-900"
         )}>
-          {npsScore !== null ? (npsScore > 0 ? `+${npsScore}` : npsScore) : "—"}
+          {npsScore !== null ? (npsScore > 0 ? <CountUp value={npsScore} prefix="+" duration={1.5} /> : <CountUp value={npsScore} duration={1.5} />) : "—"}
         </div>
         <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
           Aggregate Score
@@ -77,19 +78,19 @@ export function NPSChart({ promoterCount, passiveCount, detractorCount }: NPSCha
         <div className="flex h-3 w-full rounded-full overflow-hidden bg-slate-100 shadow-inner">
           {promoterPct > 0 && (
             <div
-              className="bg-emerald-500 transition-all duration-1000 ease-out"
+              className="bg-yellow-400 transition-all duration-1000 ease-out"
               style={{ width: `${promoterPct}%` }}
             />
           )}
           {passivePct > 0 && (
             <div
-              className="bg-slate-300 transition-all duration-1000 ease-out"
+              className="bg-gray-300 transition-all duration-1000 ease-out"
               style={{ width: `${passivePct}%` }}
             />
           )}
           {detractorPct > 0 && (
             <div
-              className="bg-red-400 transition-all duration-1000 ease-out"
+              className="bg-slate-800 transition-all duration-1000 ease-out"
               style={{ width: `${detractorPct}%` }}
             />
           )}
@@ -98,16 +99,16 @@ export function NPSChart({ promoterCount, passiveCount, detractorCount }: NPSCha
         {/* Legend */}
         <div className="flex justify-between items-center px-1">
           <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-tight">Promoters</span>
-            <span className="text-[13px] font-black text-slate-900">{promoterCount}</span>
+            <span className="text-[10px] font-bold text-yellow-600 uppercase tracking-tight">Promoters</span>
+            <span className="text-[13px] font-black text-slate-900"><CountUp value={promoterCount} /></span>
           </div>
           <div className="flex flex-col items-center">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Passive</span>
-            <span className="text-[13px] font-black text-slate-900">{passiveCount}</span>
+            <span className="text-[13px] font-black text-slate-900"><CountUp value={passiveCount} /></span>
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-[10px] font-bold text-red-500 uppercase tracking-tight">Detractors</span>
-            <span className="text-[13px] font-black text-slate-900">{detractorCount}</span>
+            <span className="text-[10px] font-bold text-slate-800 uppercase tracking-tight">Detractors</span>
+            <span className="text-[13px] font-black text-slate-900"><CountUp value={detractorCount} /></span>
           </div>
         </div>
       </div>

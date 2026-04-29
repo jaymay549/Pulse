@@ -33,51 +33,36 @@ export function FeatureGapList({ gaps }: FeatureGapListProps) {
   }
 
   return (
-    <div>
+    <div className="p-4 space-y-1">
       <div className="flex items-center gap-2 mb-3">
-        <Lightbulb className="h-4 w-4 text-slate-500" />
-        <h3 className="text-sm font-semibold text-slate-900">Action Plan</h3>
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
-          {gaps.length}
-        </span>
+        <Lightbulb className="h-3.5 w-3.5 text-slate-400" />
+        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Action Plan</h3>
+        <span className="text-[10px] font-bold text-slate-400">{gaps.length}</span>
       </div>
 
-      <div className="space-y-2">
+      <div className="divide-y divide-slate-100">
         {gaps.map((gap) => (
-          <div key={gap.id} className="rounded-lg border bg-white p-4">
-            {/* Category + meta row */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-                {gap.gap_label}
-              </span>
-              <span className="text-[11px] text-slate-400">
-                {gap.mention_count} {gap.mention_count === 1 ? "discussion" : "discussions"}
-              </span>
-              <span className="text-slate-200">&middot;</span>
-              <span className="text-[11px] text-slate-400">
-                Last {formatRelative(gap.last_seen)}
-              </span>
-              {gap.is_emerging && (
-                <span className="rounded-full px-2 py-0.5 text-[10px] font-medium text-amber-600 bg-amber-50">
-                  Emerging
+          <div key={gap.id} className="py-3 first:pt-0 last:pb-0">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-[11px] font-semibold text-slate-700 shrink-0">
+                  {gap.gap_label}
                 </span>
-              )}
-              <div className="ml-auto flex-shrink-0">
-                {gap.trend_direction === "up" && (
-                  <ArrowUp className="h-3.5 w-3.5 text-red-500" />
-                )}
-                {gap.trend_direction === "down" && (
-                  <ArrowDown className="h-3.5 w-3.5 text-emerald-500" />
-                )}
-                {gap.trend_direction === "stable" && (
-                  <Minus className="h-3.5 w-3.5 text-slate-300" />
+                <span className="text-[10px] text-slate-400 shrink-0">
+                  {gap.mention_count} · {formatRelative(gap.last_seen)}
+                </span>
+                {gap.is_emerging && (
+                  <span className="text-[10px] font-medium text-yellow-600">NEW</span>
                 )}
               </div>
+              <div className="shrink-0">
+                {gap.trend_direction === "up" && <ArrowUp className="h-3 w-3 text-slate-700" />}
+                {gap.trend_direction === "down" && <ArrowDown className="h-3 w-3 text-yellow-500" />}
+                {gap.trend_direction === "stable" && <Minus className="h-3 w-3 text-slate-300" />}
+              </div>
             </div>
-
-            {/* Action text */}
-            <p className="mt-2 text-sm text-slate-700 leading-relaxed">
-              {gap.ai_insight || "Review recent discussions to identify patterns in this area."}
+            <p className="mt-1 text-[12px] leading-relaxed text-slate-500">
+              {gap.ai_insight || "Review recent discussions to identify patterns."}
             </p>
           </div>
         ))}

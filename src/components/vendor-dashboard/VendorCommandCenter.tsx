@@ -13,6 +13,7 @@ import { TrendDeepDive } from "./TrendDeepDive";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CompetitiveMovementCompact } from "./CompetitiveMovementCard";
+import { AnimateOnScroll } from "./AnimateOnScroll";
 
 interface VendorCommandCenterProps {
   vendorName: string;
@@ -69,37 +70,20 @@ export function VendorCommandCenter({ vendorName }: VendorCommandCenterProps) {
   }
 
   return (
-    <div className="space-y-10 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-10 pb-12">
       {/* Intelligence Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
-              <Target className="h-5 w-5 text-white" />
-            </div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Intelligence Hub</h1>
-          </div>
-          <div className="flex items-center gap-2 text-slate-500">
-            {intel.category && (
-              <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors border-none py-1">
-                {intel.category}
-              </Badge>
-            )}
-            {intel.benchmarks && (
-              <span className="text-[13px] font-medium flex items-center gap-1.5 ml-1">
-                <div className="h-1 w-1 rounded-full bg-slate-300" />
-                {intel.benchmarks.qualifying_vendor_count} vendors benchmarked
-              </span>
-            )}
-          </div>
-        </div>
+      <AnimateOnScroll>
+      <div className="pb-2 border-b border-slate-100">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Intelligence Hub</h1>
       </div>
+      </AnimateOnScroll>
 
       {/* Health Score & Analytics */}
+      <AnimateOnScroll delay={0.1}>
       <div className="space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Primary Health Score Hero */}
-          <div className="lg:col-span-2 relative group overflow-hidden rounded-2xl border border-slate-200 bg-white p-1 transition-all hover:shadow-xl hover:shadow-indigo-500/5 duration-300">
+          <div className="lg:col-span-2 relative group overflow-hidden rounded-2xl border border-yellow-400 bg-white p-1 transition-all hover:shadow-xl hover:shadow-yellow-500/5 duration-300">
             <HealthScoreHero
               score={metrics?.health_score ?? null}
               history={intel.sentiment_history}
@@ -139,11 +123,13 @@ export function VendorCommandCenter({ vendorName }: VendorCommandCenterProps) {
           </div>
         </div>
       </div>
+      </AnimateOnScroll>
 
       {/* Comparative Benchmarks */}
       {metrics && (
-        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-          <div className="bg-slate-50/50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <AnimateOnScroll>
+        <div className="rounded-2xl border border-yellow-400 bg-white overflow-hidden shadow-sm">
+          <div className="bg-slate-50/50 px-6 py-4 border-b border-yellow-200 flex items-center justify-between">
             <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
               <Activity className="h-4 w-4 text-indigo-500" />
               Comparative Benchmarking
@@ -158,17 +144,19 @@ export function VendorCommandCenter({ vendorName }: VendorCommandCenterProps) {
             />
           </div>
         </div>
+        </AnimateOnScroll>
       )}
 
       {/* Insights & Actions Section */}
+      <AnimateOnScroll>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Action Plan / Feature Gaps */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-bold text-slate-900">Recommended Actions</h2>
-            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[10px] uppercase font-bold tracking-wider px-1.5 h-5">Priority High</Badge>
+            <Badge className="bg-yellow-50 text-yellow-700 border-yellow-300 text-[10px] uppercase font-bold tracking-wider px-1.5 h-5">Priority</Badge>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm h-full">
+          <div className="rounded-2xl border border-yellow-400 bg-white shadow-sm h-full">
             <FeatureGapList gaps={intel.feature_gaps} />
           </div>
         </div>
@@ -176,8 +164,7 @@ export function VendorCommandCenter({ vendorName }: VendorCommandCenterProps) {
         {/* Trend Analysis */}
         {metrics && (
           <div className="space-y-4">
-            <h2 className="text-sm font-bold text-slate-900">Historical Momentum</h2>
-            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 h-full">
+            <div className="rounded-2xl border border-yellow-400 bg-white shadow-sm p-5 h-full">
               <TrendDeepDive metrics={metrics} history={intel.sentiment_history} />
             </div>
           </div>
@@ -189,6 +176,7 @@ export function VendorCommandCenter({ vendorName }: VendorCommandCenterProps) {
           <CompetitiveMovementCompact vendorName={vendorName} />
         </div>
       </div>
+      </AnimateOnScroll>
     </div>
   );
 }

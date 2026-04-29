@@ -4,6 +4,8 @@ import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { useActiveProductLine } from "@/hooks/useActiveProductLine";
 import { Badge } from "@/components/ui/badge";
 import { CompetitiveMovementCard } from "@/components/vendor-dashboard/CompetitiveMovementCard";
+import { AnimateOnScroll } from "./AnimateOnScroll";
+import { CountUp } from "./CountUp";
 
 interface DashboardIntelProps {
   vendorName: string;
@@ -159,12 +161,15 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
 
   return (
     <div>
+      <AnimateOnScroll>
       <h1 className="text-2xl font-semibold text-slate-900">Market Intel</h1>
       <p className="mt-1 text-sm text-slate-500">
         Competitive intelligence from real dealer conversations
       </p>
+      </AnimateOnScroll>
 
       {/* Your Position card */}
+      <AnimateOnScroll delay={0.1}>
       <div className="mt-6 rounded-xl border bg-white p-6">
         <div className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-slate-400" />
@@ -176,7 +181,7 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
           <div className="rounded-lg border bg-slate-50 p-4">
             <div className="flex items-center gap-2">
               <span className="text-2xl font-bold text-slate-900">
-                {stats.totalMentions}
+                <CountUp value={stats.totalMentions} />
               </span>
               {trend && <TrendBadge trend={trend} />}
             </div>
@@ -186,7 +191,7 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
           {/* Positive % */}
           <div className="rounded-lg border bg-slate-50 p-4">
             <span className={`text-2xl font-bold ${sentimentColor(positivePct)}`}>
-              {positivePct}%
+              <CountUp value={positivePct} suffix="%" />
             </span>
             <p className="mt-1 text-xs text-slate-500">Positive Sentiment</p>
           </div>
@@ -194,14 +199,16 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
           {/* Concerns */}
           <div className="rounded-lg border bg-slate-50 p-4">
             <span className="text-2xl font-bold text-red-500">
-              {stats.warningCount}
+              <CountUp value={stats.warningCount} />
             </span>
             <p className="mt-1 text-xs text-slate-500">Concerns</p>
           </div>
         </div>
       </div>
+      </AnimateOnScroll>
 
       {/* Competitor Comparison table */}
+      <AnimateOnScroll delay={0.15}>
       <div className="mt-6 rounded-xl border bg-white p-6">
         <h2 className="text-lg font-medium text-slate-900">
           Competitor Comparison
@@ -261,6 +268,8 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
           </table>
         </div>
       </div>
+
+      </AnimateOnScroll>
 
       {/* Competitive Movement */}
       <div className="mt-6">

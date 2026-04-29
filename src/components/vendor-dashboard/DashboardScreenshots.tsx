@@ -5,6 +5,7 @@ import { useVendorDataClient } from "@/hooks/useVendorDataClient";
 import { useVendorScreenshots, type VendorScreenshot } from "@/hooks/useVendorScreenshots";
 import { cn } from "@/lib/utils";
 import { GatedCard } from "./GatedCard";
+import { AnimateOnScroll } from "./AnimateOnScroll";
 
 const MAX_SCREENSHOTS = 8;
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -167,6 +168,7 @@ export function DashboardScreenshots({ vendorName }: DashboardScreenshotsProps) 
 
   return (
     <div className="space-y-6">
+      <AnimateOnScroll>
       <div>
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Visual Gallery</h1>
         <p className="mt-1 text-sm text-slate-500">
@@ -174,6 +176,7 @@ export function DashboardScreenshots({ vendorName }: DashboardScreenshotsProps) 
           in the order listed below.
         </p>
       </div>
+      </AnimateOnScroll>
 
       {/* Error banner */}
       {error && (
@@ -184,6 +187,7 @@ export function DashboardScreenshots({ vendorName }: DashboardScreenshotsProps) 
       )}
 
       {/* Upload area */}
+      <AnimateOnScroll delay={0.1}>
       <GatedCard componentKey="screenshots.upload">
       <div>
         <input
@@ -226,8 +230,10 @@ export function DashboardScreenshots({ vendorName }: DashboardScreenshotsProps) 
         </p>
       </div>
       </GatedCard>
+      </AnimateOnScroll>
 
       {/* Screenshot list */}
+      <AnimateOnScroll delay={0.15}>
       <GatedCard componentKey="screenshots.gallery">
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-16 space-y-3">
@@ -332,6 +338,7 @@ export function DashboardScreenshots({ vendorName }: DashboardScreenshotsProps) 
         </div>
       )}
       </GatedCard>
+      </AnimateOnScroll>
     </div>
   );
 }

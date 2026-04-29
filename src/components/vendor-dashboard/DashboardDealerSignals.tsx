@@ -7,6 +7,8 @@ import {
 } from "@/hooks/useVendorTechStackIntel";
 import { useActiveProductLine } from "@/hooks/useActiveProductLine";
 import { CompetitiveMovementCard } from "@/components/vendor-dashboard/CompetitiveMovementCard";
+import { AnimateOnScroll } from "./AnimateOnScroll";
+import { CountUp } from "./CountUp";
 
 interface DashboardDealerSignalsProps {
   vendorName: string;
@@ -39,7 +41,7 @@ export function DashboardDealerSignals({ vendorName }: DashboardDealerSignalsPro
     return (
       <div className="space-y-6">
         <Header />
-        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
+        <div className="rounded-xl border border-yellow-400 bg-white p-8 text-center">
           <Shield className="mx-auto h-8 w-8 text-slate-300" />
           <p className="mt-3 text-sm font-medium text-slate-600">
             Not enough data yet
@@ -60,9 +62,12 @@ export function DashboardDealerSignals({ vendorName }: DashboardDealerSignalsPro
 
   return (
     <div className="space-y-6">
+      <AnimateOnScroll>
       <Header />
+      </AnimateOnScroll>
 
       {/* KPI Cards */}
+      <AnimateOnScroll delay={0.1}>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           label="Dealers Using"
@@ -76,16 +81,19 @@ export function DashboardDealerSignals({ vendorName }: DashboardDealerSignalsPro
         />
         <KpiCard
           label="Avg Sentiment"
-          value={data.avg_sentiment !== null ? `${data.avg_sentiment}/10` : "—"}
+          value={data.avg_sentiment !== null ? data.avg_sentiment : "—"}
           icon={<BarChart3 className="h-4 w-4 text-violet-500" />}
           valueColor={getSentimentColor(data.avg_sentiment)}
+          suffix="/10"
+          decimals={1}
         />
         <KpiCard
           label="Switching Risk"
-          value={`${data.switching_risk_pct}%`}
+          value={data.switching_risk_pct}
           icon={<AlertTriangle className="h-4 w-4 text-amber-500" />}
           subtitle={risk.label}
           valueColor={risk.color}
+          suffix="%"
         />
         <KpiCard
           label="At Risk"
@@ -94,32 +102,35 @@ export function DashboardDealerSignals({ vendorName }: DashboardDealerSignalsPro
           subtitle={`${data.status_breakdown.exploring} exploring, ${data.status_breakdown.left} left`}
         />
       </div>
+      </AnimateOnScroll>
 
       {/* Status Breakdown */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5">
+      <AnimateOnScroll delay={0.15}>
+      <div className="rounded-xl border border-yellow-400 bg-white p-5">
         <h3 className="text-sm font-semibold text-slate-900 mb-4">
           Dealer Status Breakdown
         </h3>
         <StatusBar breakdown={data.status_breakdown} total={data.adoption_count} />
         <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
             Stable ({data.status_breakdown.stable})
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+            <span className="h-2.5 w-2.5 rounded-full bg-gray-300" />
             Exploring ({data.status_breakdown.exploring})
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
+            <span className="h-2.5 w-2.5 rounded-full bg-slate-800" />
             Left ({data.status_breakdown.left})
           </span>
         </div>
       </div>
+      </AnimateOnScroll>
 
       {/* Exit Reasons */}
       {data.exit_reasons.length > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
+        <div className="rounded-xl border border-yellow-400 bg-white p-5">
           <h3 className="text-sm font-semibold text-slate-900 mb-4">
             Why Dealers Are Leaving
           </h3>
@@ -139,7 +150,7 @@ export function DashboardDealerSignals({ vendorName }: DashboardDealerSignalsPro
                   </div>
                   <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-red-400 transition-all"
+                      className="h-full rounded-full bg-slate-800 transition-all"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -155,7 +166,7 @@ export function DashboardDealerSignals({ vendorName }: DashboardDealerSignalsPro
 
       {/* Market Share */}
       {data.category_market_share && (
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
+        <div className="rounded-xl border border-yellow-400 bg-white p-5">
           <h3 className="text-sm font-semibold text-slate-900 mb-2">
             Category Market Share
           </h3>
@@ -165,7 +176,7 @@ export function DashboardDealerSignals({ vendorName }: DashboardDealerSignalsPro
           </p>
           <div className="flex items-end gap-3">
             <span className="text-3xl font-bold text-slate-900">
-              {data.category_market_share.share_pct}%
+              <CountUp value={data.category_market_share.share_pct} suffix="%" />
             </span>
             <span className="text-sm text-slate-500 mb-1">
               of dealers in {data.category}
@@ -207,15 +218,19 @@ function KpiCard({
   icon,
   subtitle,
   valueColor,
+  suffix,
+  decimals,
 }: {
   label: string;
   value: string | number;
   icon: React.ReactNode;
   subtitle?: string;
   valueColor?: string;
+  suffix?: string;
+  decimals?: number;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <div className="rounded-xl border border-yellow-400 bg-white p-4">
       <div className="flex items-center gap-2 mb-2">
         {icon}
         <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
@@ -223,7 +238,7 @@ function KpiCard({
         </span>
       </div>
       <p className={`text-2xl font-bold ${valueColor ?? "text-slate-900"}`}>
-        {value}
+        {typeof value === "number" ? <CountUp value={value} suffix={suffix} decimals={decimals} /> : value}
       </p>
       {subtitle && (
         <p className="mt-0.5 text-xs text-slate-400">{subtitle}</p>
@@ -249,19 +264,19 @@ function StatusBar({
     <div className="flex h-4 w-full rounded-full overflow-hidden">
       {stablePct > 0 && (
         <div
-          className="bg-emerald-500 transition-all"
+          className="bg-yellow-400 transition-all"
           style={{ width: `${stablePct}%` }}
         />
       )}
       {exploringPct > 0 && (
         <div
-          className="bg-amber-400 transition-all"
+          className="bg-gray-300 transition-all"
           style={{ width: `${exploringPct}%` }}
         />
       )}
       {leftPct > 0 && (
         <div
-          className="bg-red-400 transition-all"
+          className="bg-slate-800 transition-all"
           style={{ width: `${leftPct}%` }}
         />
       )}

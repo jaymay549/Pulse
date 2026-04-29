@@ -163,16 +163,16 @@ export type MetricKey = keyof typeof METRIC_CONFIG;
 
 export function getScoreColor(score: number | null): string {
   if (score === null) return "text-slate-400";
-  if (score >= 70) return "text-emerald-600";
-  if (score >= 50) return "text-amber-500";
-  return "text-red-500";
+  if (score >= 70) return "text-yellow-500";
+  if (score >= 50) return "text-gray-500";
+  return "text-slate-900";
 }
 
 export function getScoreBg(score: number | null): string {
   if (score === null) return "bg-slate-100";
-  if (score >= 70) return "bg-emerald-50";
-  if (score >= 50) return "bg-amber-50";
-  return "bg-red-50";
+  if (score >= 70) return "bg-yellow-50";
+  if (score >= 50) return "bg-gray-50";
+  return "bg-slate-100";
 }
 
 export function getPercentileLabel(percentile: number | null): string {

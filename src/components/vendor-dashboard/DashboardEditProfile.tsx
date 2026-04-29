@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { GatedCard } from "./GatedCard";
+import { AnimateOnScroll } from "./AnimateOnScroll";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -370,12 +371,15 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
   // ---------- Render ----------
   return (
     <div className="space-y-6">
+      <AnimateOnScroll>
       <div>
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Account Settings</h1>
         <p className="mt-1 text-sm text-slate-500">Manage your brand assets and company information</p>
       </div>
+      </AnimateOnScroll>
 
       {/* ---- Section A: Brand Assets ---- */}
+      <AnimateOnScroll delay={0.1}>
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
         {/* Banner */}
         <GatedCard componentKey="profile.banner_logo">
@@ -510,8 +514,10 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
         </div>
         </GatedCard>
       </div>
+      </AnimateOnScroll>
 
       {/* ---- Section B: Profile Details Form ---- */}
+      <AnimateOnScroll delay={0.15}>
       <GatedCard componentKey="profile.details_form">
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-sm font-bold text-slate-900">Profile Details</h2>
@@ -572,6 +578,7 @@ export function DashboardEditProfile({ vendorProfileId }: DashboardEditProfilePr
         </div>
       </div>
       </GatedCard>
+      </AnimateOnScroll>
     </div>
   );
 }

@@ -22,6 +22,7 @@ import {
   HoverCardTrigger,
   HoverCardContent,
 } from "@/components/ui/hover-card";
+import { AnimateOnScroll } from "./AnimateOnScroll";
 
 interface DashboardDimensionsProps {
   vendorName: string;
@@ -42,21 +43,21 @@ function getSentimentLabel(positivePercent: number): {
   if (positivePercent >= 75) {
     return {
       label: "Mostly positive",
-      colorClass: "text-emerald-700",
-      bgClass: "bg-emerald-50",
+      colorClass: "text-yellow-700",
+      bgClass: "bg-yellow-50",
     };
   }
   if (positivePercent >= 50) {
     return {
       label: "Mixed",
-      colorClass: "text-yellow-700",
-      bgClass: "bg-yellow-50",
+      colorClass: "text-gray-600",
+      bgClass: "bg-gray-100",
     };
   }
   return {
     label: "Needs attention",
-    colorClass: "text-red-700",
-    bgClass: "bg-red-50",
+    colorClass: "text-slate-900",
+    bgClass: "bg-slate-100",
   };
 }
 
@@ -76,11 +77,11 @@ function formatRelativeTime(dateString: string): string {
 }
 
 const TYPE_BADGE_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  positive: { bg: "bg-emerald-100", text: "text-emerald-700", label: "positive" },
-  negative: { bg: "bg-red-100", text: "text-red-700", label: "concern" },
-  warning: { bg: "bg-red-100", text: "text-red-700", label: "concern" },
-  neutral: { bg: "bg-slate-100", text: "text-slate-600", label: "neutral" },
-  mixed: { bg: "bg-amber-100", text: "text-amber-700", label: "mixed" },
+  positive: { bg: "bg-yellow-100", text: "text-yellow-700", label: "positive" },
+  negative: { bg: "bg-slate-800", text: "text-white", label: "concern" },
+  warning: { bg: "bg-slate-800", text: "text-white", label: "concern" },
+  neutral: { bg: "bg-gray-100", text: "text-gray-600", label: "neutral" },
+  mixed: { bg: "bg-gray-200", text: "text-gray-700", label: "mixed" },
 };
 
 function TypeBadge({ type }: { type: string }) {
@@ -181,12 +182,15 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
 
   return (
     <div>
+      <AnimateOnScroll>
       <h1 className="text-2xl font-semibold text-slate-900">Dimensions</h1>
       <p className="mt-1 text-sm text-slate-500">
         See how dealers rate you across key dimensions
       </p>
+      </AnimateOnScroll>
 
       {/* Charts — 2 column grid */}
+      <AnimateOnScroll delay={0.1}>
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Radar chart overview */}
         {dimensions.length >= 3 && (() => {
@@ -198,7 +202,7 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
           }));
 
           return (
-            <div className="rounded-xl border bg-white p-6">
+            <div className="rounded-xl border border-yellow-400 bg-white p-6">
               <h2 className="text-lg font-medium text-slate-900">Dimension Overview</h2>
               <p className="mt-1 text-xs text-slate-400">Positive sentiment % across all dimensions</p>
               <ResponsiveContainer width="100%" height={280}>
@@ -217,11 +221,11 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
                   <Radar
                     name="Positive %"
                     dataKey="score"
-                    stroke="#10b981"
-                    fill="#10b981"
+                    stroke="#1e293b"
+                    fill="#eab308"
                     fillOpacity={0.2}
                     strokeWidth={2}
-                    dot={{ r: 4, fill: "#10b981", stroke: "#fff", strokeWidth: 2 }}
+                    dot={{ r: 4, fill: "#1e293b", stroke: "#fff", strokeWidth: 2 }}
                   />
                 </RadarChart>
               </ResponsiveContainer>
@@ -241,7 +245,7 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
           }));
 
           return (
-            <div className="rounded-xl border bg-white p-6">
+            <div className="rounded-xl border border-yellow-400 bg-white p-6">
               <h2 className="text-lg font-medium text-slate-900">Discussions by Dimension</h2>
               <ResponsiveContainer width="100%" height={dimensions.length * 50 + 40}>
                 <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
@@ -251,32 +255,34 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
                   <Tooltip
                     contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
                   />
-                  <Bar dataKey="positive" stackId="dim" fill="#10b981" radius={[0, 0, 0, 0]} name="Positive" />
-                  <Bar dataKey="neutral" stackId="dim" fill="#94a3b8" radius={[0, 0, 0, 0]} name="Neutral" />
-                  <Bar dataKey="mixed" stackId="dim" fill="#f59e0b" radius={[0, 0, 0, 0]} name="Mixed" />
-                  <Bar dataKey="negative" stackId="dim" fill="#ef4444" radius={[0, 4, 4, 0]} name="Negative" />
+                  <Bar dataKey="positive" stackId="dim" fill="#eab308" radius={[0, 0, 0, 0]} name="Positive" />
+                  <Bar dataKey="neutral" stackId="dim" fill="#9ca3af" radius={[0, 0, 0, 0]} name="Neutral" />
+                  <Bar dataKey="mixed" stackId="dim" fill="#6b7280" radius={[0, 0, 0, 0]} name="Mixed" />
+                  <Bar dataKey="negative" stackId="dim" fill="#1e293b" radius={[0, 4, 4, 0]} name="Negative" />
                 </BarChart>
               </ResponsiveContainer>
               <div className="mt-2 flex gap-4 text-xs text-slate-400">
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" /> Positive
+                  <span className="h-2.5 w-2.5 rounded-sm bg-yellow-400" /> Positive
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-slate-400" /> Neutral
+                  <span className="h-2.5 w-2.5 rounded-sm bg-gray-400" /> Neutral
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" /> Mixed
+                  <span className="h-2.5 w-2.5 rounded-sm bg-gray-500" /> Mixed
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-red-500" /> Negative
+                  <span className="h-2.5 w-2.5 rounded-sm bg-slate-800" /> Negative
                 </span>
               </div>
             </div>
           );
         })()}
       </div>
+      </AnimateOnScroll>
 
       {/* Dimensional Breakdown — 2 column grid with hover popovers */}
+      <AnimateOnScroll delay={0.15}>
       <h2 className="mt-6 text-lg font-medium text-slate-900">Dimensional Breakdown</h2>
       <p className="mt-1 text-xs text-slate-400">Hover a dimension to see recent discussions</p>
 
@@ -290,7 +296,7 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
           return (
             <HoverCard key={dim.dimension} openDelay={200} closeDelay={100}>
               <HoverCardTrigger asChild>
-                <div className="cursor-default rounded-xl border bg-white p-4 transition-colors hover:border-slate-300">
+                <div className="cursor-default rounded-xl border border-yellow-400 bg-white p-4 transition-colors hover:border-yellow-500">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-sm font-semibold text-slate-900">{label}</span>
                     <div className="flex items-center gap-2">
@@ -308,7 +314,7 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
                   {/* Progress bar */}
                   <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-emerald-500 transition-all duration-700 ease-out"
+                      className="h-full rounded-full bg-yellow-400 transition-all duration-700 ease-out"
                       style={{ width: `${dim.positive_percent}%` }}
                     />
                   </div>
@@ -346,6 +352,7 @@ export function DashboardDimensions({ vendorName }: DashboardDimensionsProps): J
           );
         })}
       </div>
+      </AnimateOnScroll>
     </div>
   );
 }

@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp, BarChart2, MessageSquare, Clock } from "lucide-react";
+import { AnimateOnScroll } from "./AnimateOnScroll";
 
 interface DashboardOverviewProps {
   vendorName: string;
@@ -67,14 +68,14 @@ function formatRelativeTime(dateString: string): string {
 function TypeBadge({ type }: { type: string }) {
   if (type === "positive") {
     return (
-      <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 transition-colors">
+      <Badge className="bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100 transition-colors">
         positive
       </Badge>
     );
   }
 
   return (
-    <Badge className="bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100 transition-colors">
+    <Badge className="bg-slate-800 text-white border-slate-700 hover:bg-slate-700 transition-colors">
       concern
     </Badge>
   );
@@ -113,7 +114,8 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
   const latestSentiment = sentimentHistory?.[sentimentHistory.length - 1] ?? null;
 
   return (
-    <div className="space-y-8 pb-12 animate-in fade-in duration-700">
+    <div className="space-y-8 pb-12">
+      <AnimateOnScroll>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Overview</h1>
@@ -128,16 +130,20 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
           </Button>
         </div>
       </div>
+      </AnimateOnScroll>
 
       {/* Pulse Briefing — health, quotes, signals, competitive, top actions */}
+      <AnimateOnScroll delay={0.1}>
       <div className="relative group">
         <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-5 group-hover:opacity-10 transition duration-1000 group-hover:duration-200"></div>
         <div className="relative">
           <PulseBriefing vendorName={vendorName} onNavigate={onNavigate} />
         </div>
       </div>
+      </AnimateOnScroll>
 
       {/* Analytics Grid */}
+      <AnimateOnScroll delay={0.15}>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left: Charts */}
         <div className="lg:col-span-2 space-y-6">
@@ -153,11 +159,11 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
 
             return (
               <div className="space-y-6">
-                <Card className="border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-2 bg-slate-50/50 border-b border-slate-100">
+                <Card className="border-yellow-400 shadow-sm overflow-hidden group hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2 bg-slate-50/50 border-b border-yellow-200">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm font-bold flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-emerald-500" />
+                        <TrendingUp className="h-4 w-4 text-yellow-500" />
                         Sentiment Trend
                       </CardTitle>
                       <Badge variant="outline" className="text-[10px] font-bold tracking-widest uppercase">Last {sentimentHistory.length} Months</Badge>
@@ -169,8 +175,8 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
                       <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                         <defs>
                           <linearGradient id="sentimentGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.01} />
+                            <stop offset="5%" stopColor="#eab308" stopOpacity={0.15} />
+                            <stop offset="95%" stopColor="#eab308" stopOpacity={0.01} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
@@ -183,10 +189,10 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
                         <Area
                           type="monotone"
                           dataKey="positive"
-                          stroke="#10b981"
+                          stroke="#eab308"
                           strokeWidth={3}
                           fill="url(#sentimentGrad)"
-                          dot={{ r: 4, fill: "#10b981", strokeWidth: 2, stroke: "#fff" }}
+                          dot={{ r: 4, fill: "#eab308", strokeWidth: 2, stroke: "#fff" }}
                           activeDot={{ r: 6, strokeWidth: 0 }}
                         />
                       </AreaChart>
@@ -194,19 +200,19 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
                   </CardContent>
                 </Card>
 
-                <Card className="border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-2 bg-slate-50/50 border-b border-slate-100">
+                <Card className="border-yellow-400 shadow-sm overflow-hidden group hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2 bg-slate-50/50 border-b border-yellow-200">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm font-bold flex items-center gap-2">
                         <BarChart2 className="h-4 w-4 text-indigo-500" />
                         Discussion Volume
                       </CardTitle>
                       <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wider">
-                        <span className="flex items-center gap-1.5 text-emerald-600">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500" /> Positive
+                        <span className="flex items-center gap-1.5 text-yellow-600">
+                          <span className="h-2 w-2 rounded-full bg-yellow-400" /> Positive
                         </span>
-                        <span className="flex items-center gap-1.5 text-amber-600">
-                          <span className="h-2 w-2 rounded-full bg-amber-500" /> Concerns
+                        <span className="flex items-center gap-1.5 text-slate-800">
+                          <span className="h-2 w-2 rounded-full bg-slate-800" /> Concerns
                         </span>
                       </div>
                     </div>
@@ -222,8 +228,8 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
                           contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
                           formatter={(value: number, name: string) => [value, name === "positiveCount" ? "Positive" : "Concerns"]}
                         />
-                        <Bar dataKey="positiveCount" stackId="mentions" fill="#10b981" radius={[0, 0, 0, 0]} name="Positive" barSize={32} />
-                        <Bar dataKey="warningCount" stackId="mentions" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Concerns" barSize={32} />
+                        <Bar dataKey="positiveCount" stackId="mentions" fill="#eab308" radius={[0, 0, 0, 0]} name="Positive" barSize={32} />
+                        <Bar dataKey="warningCount" stackId="mentions" fill="#1e293b" radius={[4, 4, 0, 0]} name="Concerns" barSize={32} />
                       </BarChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -261,7 +267,7 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
                 {mentions.slice(0, 6).map((mention) => (
                   <div 
                     key={mention.id} 
-                    className="group flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-200"
+                    className="group flex flex-col gap-2 rounded-xl border border-yellow-400 bg-white p-4 shadow-sm hover:shadow-md hover:border-yellow-500 transition-all duration-200"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <TypeBadge type={mention.type} />
@@ -278,7 +284,7 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
                 
                 <Button 
                   variant="outline" 
-                  className="w-full border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors text-xs font-bold py-6 rounded-xl border-dashed"
+                  className="w-full border-yellow-400 text-slate-600 hover:bg-slate-50 transition-colors text-xs font-bold py-6 rounded-xl border-dashed"
                   onClick={() => onNavigate("mentions")}
                 >
                   Load More Activity
@@ -288,6 +294,7 @@ export function DashboardOverview({ vendorName, onNavigate }: DashboardOverviewP
           </div>
         </div>
       </div>
+      </AnimateOnScroll>
     </div>
   );
 }
