@@ -13,34 +13,37 @@ export interface WindowedView {
 
 /**
  * Default render set:
- *  - Top 5 by rank.
+ *  - Top 5 in the caller's sort order (caller decides which metric drives rank).
  *  - The vendor's own row (always).
  *  - The vendor immediately above and below the vendor (when the vendor is
  *    outside the top 5).
  *  - Median strip rendered between rows where Pulse score crosses the
  *    segment median.
+ *
+ * The caller (CompetitorLeaderboard) is responsible for sorting `vendors`
+ * before calling this function. We preserve that order here.
  */
 export function buildDefaultWindow(
   vendors: LeaderboardVendor[],
   medianHealth: number | null,
   expanded: boolean,
 ): WindowedView {
-  const sorted = [...vendors].sort((a, b) => a.rank - b.rank);
+  const ordered = [...vendors];
   if (expanded) {
-    return splitByMedian(sorted, medianHealth, sorted.length, false);
+    return splitByMedian(ordered, medianHealth, ordered.length, false);
   }
 
-  const top5 = sorted.slice(0, 5);
-  const self = sorted.find((v) => v.is_self);
+  const top5 = ordered.slice(0, 5);
+  const self = ordered.find((v) => v.is_self);
   const include = new Set(top5.map((v) => v.vendor_name));
 
   if (self && !include.has(self.vendor_name)) {
-    const idx = sorted.findIndex((v) => v.vendor_name === self.vendor_name);
-    [sorted[idx - 1], self, sorted[idx + 1]].forEach((v) => v && include.add(v.vendor_name));
+    const idx = ordered.findIndex((v) => v.vendor_name === self.vendor_name);
+    [ordered[idx - 1], self, ordered[idx + 1]].forEach((v) => v && include.add(v.vendor_name));
   }
 
-  const visible = sorted.filter((v) => include.has(v.vendor_name));
-  return splitByMedian(visible, medianHealth, sorted.length, sorted.length > visible.length);
+  const visible = ordered.filter((v) => include.has(v.vendor_name));
+  return splitByMedian(visible, medianHealth, ordered.length, ordered.length > visible.length);
 }
 
 function splitByMedian(
