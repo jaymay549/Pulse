@@ -155,7 +155,7 @@ export function DashboardIntel({ vendorName }: DashboardIntelProps): JSX.Element
       </div>
 
       <div className="mt-6">
-        <CompetitorLeaderboard vendorName={vendorName} />
+        <CompetitorLeaderboard vendorName={vendorName} productLineSlug={productLineSlug} />
       </div>
     </div>
   );

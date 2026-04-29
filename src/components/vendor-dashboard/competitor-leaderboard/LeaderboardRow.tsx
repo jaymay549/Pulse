@@ -27,7 +27,7 @@ export function LeaderboardRow({ vendor, onClick, sparkline, sparklineTrend, del
       }}
       className={cn(
         "motion-safe:animate-[leaderboard-row-in_400ms_cubic-bezier(0.16,1,0.3,1)_both]",
-        "group grid w-full items-center gap-3.5 border-b border-slate-100 px-0 py-2.5 text-left text-xs transition-colors",
+        "group grid w-full items-center gap-3.5 border-b border-slate-100 px-0 py-2.5 text-left text-[13px] leading-none transition-colors",
         "grid-cols-[30px_minmax(140px,2fr)_70px_70px_70px_70px_80px_12px]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         self
@@ -57,7 +57,7 @@ export function LeaderboardRow({ vendor, onClick, sparkline, sparklineTrend, del
 
 function RankCell({ value, self }: { value: number; self: boolean }) {
   return (
-    <span className={cn("font-mono text-[11.5px] font-semibold", self ? "text-primary" : "text-slate-400")}>
+    <span className={cn("font-mono text-xs font-semibold tabular-nums", self ? "text-primary" : "text-slate-400")}>
       {String(value).padStart(2, "0")}
     </span>
   );
@@ -66,10 +66,10 @@ function RankCell({ value, self }: { value: number; self: boolean }) {
 function NameCell({ name, mentions, self }: { name: string; mentions: number; self: boolean }) {
   return (
     <span className="flex items-center gap-2">
-      <span className={cn("font-semibold", self ? "text-primary" : "text-slate-900")}>
+      <span className={cn("font-sans text-[13px] font-semibold leading-none", self ? "text-primary" : "text-slate-900")}>
         {name}
       </span>
-      <span className="font-mono text-[10px] font-medium text-slate-400">
+      <span className="font-mono text-[11px] font-medium leading-none text-slate-400">
         · {mentions} mentions
       </span>
     </span>
@@ -85,7 +85,7 @@ function PulseCell({ vendor, self }: { vendor: LeaderboardVendor; self: boolean 
         <GatheringPill />
       ) : (
         <>
-          <span className={cn("font-mono text-sm font-bold tabular-nums", sentimentTextClass(value))}>
+          <span className={cn("font-mono text-[13px] font-bold leading-none tabular-nums", sentimentTextClass(value))}>
             {Math.round(value)}
           </span>
           {delta !== null && delta !== 0 && (
@@ -112,7 +112,7 @@ function ScoreCell({ value }: { value: number | null }) {
     </span>
   );
   return (
-    <span className={cn("text-right font-mono text-xs font-bold tabular-nums", sentimentTextClass(value))}>
+    <span className={cn("text-right font-mono text-[13px] font-bold leading-none tabular-nums", sentimentTextClass(value))}>
       {Math.round(value)}
     </span>
   );

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useVendorTier } from "../GatedCard";
+import { CategoryChips } from "./CategoryChips";
 import { useClerkSupabase } from "@/hooks/useClerkSupabase";
 import { LeaderboardHeader } from "./LeaderboardHeader";
 import { LeaderboardRow } from "./LeaderboardRow";
@@ -18,17 +19,21 @@ import type { LeaderboardVendor, SortMetric } from "./types";
 
 interface CompetitorLeaderboardProps {
   vendorName: string;
+  productLineSlug?: string | null;
 }
 
-export function CompetitorLeaderboard({ vendorName }: CompetitorLeaderboardProps) {
+export function CompetitorLeaderboard({ vendorName, productLineSlug = null }: CompetitorLeaderboardProps) {
   const tier = useVendorTier();
   const [sortBy, setSortBy] = useState<SortMetric>("pulse");
+  const [categoryOverride, setCategoryOverride] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [activeRowVendor, setActiveRowVendor] = useState<LeaderboardVendor | null>(null);
 
   const segmentOverride = useCompetitorOverride(vendorName);
   const { data, isLoading, isError } = useLeaderboardData({
     vendorName,
+    productLineSlug,
+    categoryOverride,
     limit: expanded ? 50 : 8,
     segmentOverride,
   });
@@ -77,6 +82,15 @@ export function CompetitorLeaderboard({ vendorName }: CompetitorLeaderboardProps
         </div>
         {data.segment.widened_to && <WidenedNotice widenedTo={data.segment.widened_to} />}
 
+        <CategoryChips
+          availableCategories={data.segment.available_categories ?? data.segment.included_categories ?? []}
+          activeCategory={categoryOverride}
+          autoCategory={data.segment.category}
+          onChange={(next) => {
+            setCategoryOverride(next);
+            setExpanded(false);
+          }}
+        />
         <SortChips
           value={sortBy}
           onChange={(next) => {

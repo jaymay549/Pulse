@@ -27,6 +27,8 @@ export interface LeaderboardSegment {
   category: string | null;
   origin: "category" | "override";
   widened_to: string | null;
+  included_categories?: string[];
+  available_categories?: string[];
   qualifying_vendor_count: number;
   median: {
     health_score: number | null;

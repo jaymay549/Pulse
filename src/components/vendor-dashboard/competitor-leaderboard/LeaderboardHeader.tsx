@@ -5,6 +5,7 @@ interface LeaderboardHeaderProps {
 }
 
 export function LeaderboardHeader({ segment }: LeaderboardHeaderProps) {
+  const includedCategories = segment.included_categories ?? [];
   const eyebrowCategory =
     segment.origin === "override"
       ? "Curated competitor set"
@@ -24,6 +25,11 @@ export function LeaderboardHeader({ segment }: LeaderboardHeaderProps) {
         <p className="mt-1.5 text-[13px] leading-snug text-slate-500">
           90-day window, weighted composite. Click any row to expand the per-vendor breakdown.
         </p>
+        {includedCategories.length > 0 && (
+          <p className="mt-1 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+            Categories compared: {includedCategories.map(formatCategory).join(", ")}
+          </p>
+        )}
       </div>
       <span
         aria-label="Live, 90-day window"
@@ -36,4 +42,8 @@ export function LeaderboardHeader({ segment }: LeaderboardHeaderProps) {
       </span>
     </div>
   );
+}
+
+function formatCategory(category: string): string {
+  return category.replace(/-/g, " ").toUpperCase();
 }
