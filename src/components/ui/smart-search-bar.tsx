@@ -15,10 +15,12 @@ interface VendorSuggestion {
 
 interface SmartSearchBarProps {
   placeholder?: string
+  placeholders?: string[]
   suggestions: VendorSuggestion[]
   onVendorSelect: (vendorName: string, options?: { productLineSlug?: string | null }) => void
   onAISubmit: (query: string) => void
   onSearchChange?: (query: string) => void
+  onUpgrade?: () => void
   isPro: boolean
   isLoading?: boolean
   className?: string
@@ -29,10 +31,12 @@ const normalizeSearchText = (value: string) =>
 
 export function SmartSearchBar({
   placeholder = "Search vendors or ask a question...",
+  placeholders,
   suggestions,
   onVendorSelect,
   onAISubmit,
   onSearchChange,
+  onUpgrade,
   isPro,
   isLoading = false,
   className,
@@ -42,6 +46,16 @@ export function SmartSearchBar({
   const [isFocused, setIsFocused] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [showDropdown, setShowDropdown] = useState(false)
+  const [placeholderIndex, setPlaceholderIndex] = useState(0)
+
+  // Rotate through placeholders every 3 seconds when idle
+  useEffect(() => {
+    if (!placeholders || placeholders.length === 0 || isFocused || searchQuery) return
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % placeholders.length)
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [placeholders, isFocused, searchQuery])
 
   // Filter suggestions based on search query
   const filteredSuggestions =
@@ -175,27 +189,45 @@ export function SmartSearchBar({
           <Search className="h-5 w-5" />
         </motion.div>
 
-        {/* Input */}
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder={placeholder}
-          value={searchQuery}
-          onChange={handleInputChange}
-          onFocus={() => {
-            setIsFocused(true)
-            if (searchQuery.trim().length >= 2) {
-              setShowDropdown(true)
-            }
-          }}
-          onBlur={() => setIsFocused(false)}
-          onKeyDown={handleKeyDown}
-          disabled={isLoading}
-          className={cn(
-            "w-full py-4 pl-3 pr-3 bg-transparent outline-none placeholder:text-muted-foreground text-base",
-            "text-foreground font-normal"
+        {/* Input + rotating placeholder overlay */}
+        <div className="relative flex-1">
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder={placeholders && placeholders.length > 0 ? "" : placeholder}
+            value={searchQuery}
+            onChange={handleInputChange}
+            onFocus={() => {
+              setIsFocused(true)
+              if (searchQuery.trim().length >= 2) {
+                setShowDropdown(true)
+              }
+            }}
+            onBlur={() => setIsFocused(false)}
+            onKeyDown={handleKeyDown}
+            disabled={isLoading}
+            className={cn(
+              "w-full py-4 pl-3 pr-3 bg-transparent outline-none placeholder:text-muted-foreground text-base",
+              "text-foreground font-normal"
+            )}
+          />
+          {placeholders && placeholders.length > 0 && !isFocused && !searchQuery && (
+            <div className="absolute inset-0 flex items-center pl-3 pointer-events-none">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={placeholderIndex}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-muted-foreground text-base truncate"
+                >
+                  {placeholders[placeholderIndex]}
+                </motion.span>
+              </AnimatePresence>
+            </div>
           )}
-        />
+        </div>
 
         {/* Right side: Clear button or Sparkles indicator */}
         <div className="flex items-center pr-4 gap-2">
@@ -295,14 +327,30 @@ export function SmartSearchBar({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
-              className="absolute z-50 w-full mt-2 p-4 bg-white rounded-xl shadow-xl border border-border text-center"
+              className="absolute z-50 w-full mt-2 p-5 bg-white rounded-xl shadow-xl border border-border"
             >
-              <p className="text-sm text-muted-foreground">
-                No vendors found for "{searchQuery}"
-                {isPro
-                  ? " — press Enter to ask AI"
-                  : " — AI search is a Pro feature"}
-              </p>
+              {isPro ? (
+                <p className="text-sm text-muted-foreground text-center">
+                  No vendors found for "{searchQuery}" — press Enter to ask AI
+                </p>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="flex items-center gap-2 text-amber-600">
+                    <Sparkles className="h-5 w-5" />
+                    <span className="font-semibold text-sm">AI Vendor Advisor</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Get instant answers about vendors, comparisons, and recommendations.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => onUpgrade?.()}
+                    className="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition-colors"
+                  >
+                    Upgrade to Pro
+                  </button>
+                </div>
+              )}
             </motion.div>
           )}
       </AnimatePresence>
