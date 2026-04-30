@@ -21,10 +21,10 @@ export function MedianRow({ segment }: MedianRowProps) {
     >
       <span />
       <span className="text-slate-500">Segment median · {labelCategory}</span>
-      <span className="text-right text-slate-500">{m.health_score ?? "—"}</span>
-      <span className="text-right text-slate-500">{m.product_stability ?? "—"}</span>
-      <span className="text-right text-slate-500">{m.customer_experience ?? "—"}</span>
-      <span className="text-right text-slate-500">{m.value_perception ?? "—"}</span>
+      <span className="text-right tabular-nums text-slate-500">{m.health_score ?? "—"}</span>
+      <span className="text-right tabular-nums text-slate-500">{m.product_stability ?? "—"}</span>
+      <span className="text-right tabular-nums text-slate-500">{m.customer_experience ?? "—"}</span>
+      <span className="text-right tabular-nums text-slate-500">{m.value_perception ?? "—"}</span>
       <span />
       <span />
     </div>

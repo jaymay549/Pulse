@@ -82,52 +82,50 @@ function NameCell({ name, mentions, self }: { name: string; mentions: number; se
 function PulseCell({ vendor }: { vendor: LeaderboardVendor; self: boolean }) {
   const value = vendor.health_score;
   const delta = vendor.rank_delta_90d;
+  if (value === null) {
+    return (
+      <span
+        className="text-right text-[13px] font-bold leading-none text-slate-300"
+        title="Not enough discussion to score yet."
+      >
+        —
+      </span>
+    );
+  }
   return (
     <span className="flex items-baseline justify-end gap-1">
-      {value === null ? (
-        <GatheringPill />
-      ) : (
-        <>
-          <span className={cn("text-[13px] font-bold leading-none tabular-nums", sentimentTextClass(value))}>
-            {Math.round(value)}
-          </span>
-          {delta !== null && delta !== 0 && (
-            <span
-              className={cn(
-                "text-[10px] font-bold tabular-nums",
-                delta > 0 ? "text-emerald-600" : "text-red-500",
-              )}
-              aria-label={`Rank changed ${delta > 0 ? "up" : "down"} ${Math.abs(delta)} since prior window`}
-            >
-              {delta > 0 ? "+" : ""}{delta}
-            </span>
+      {delta !== null && delta !== 0 && (
+        <span
+          className={cn(
+            "text-[10px] font-bold tabular-nums",
+            delta > 0 ? "text-emerald-600" : "text-red-500",
           )}
-        </>
+          aria-label={`Rank changed ${delta > 0 ? "up" : "down"} ${Math.abs(delta)} since prior window`}
+        >
+          {delta > 0 ? "+" : ""}{delta}
+        </span>
       )}
+      <span className={cn("text-[13px] font-bold leading-none tabular-nums", sentimentTextClass(value))}>
+        {Math.round(value)}
+      </span>
     </span>
   );
 }
 
 function ScoreCell({ value }: { value: number | null }) {
-  if (value === null) return (
-    <span className="flex justify-end">
-      <GatheringPill />
-    </span>
-  );
+  if (value === null) {
+    return (
+      <span
+        className="text-right text-[13px] font-bold leading-none text-slate-300"
+        title="Not enough discussion in this dimension to score yet."
+      >
+        —
+      </span>
+    );
+  }
   return (
     <span className={cn("text-right text-[13px] font-bold leading-none tabular-nums", sentimentTextClass(value))}>
       {Math.round(value)}
-    </span>
-  );
-}
-
-function GatheringPill() {
-  return (
-    <span
-      className="rounded-full px-1.5 py-[1px] text-[10px] font-medium uppercase tracking-wide text-slate-300"
-      title="Not enough discussion in this dimension to score yet."
-    >
-      Gathering
     </span>
   );
 }
