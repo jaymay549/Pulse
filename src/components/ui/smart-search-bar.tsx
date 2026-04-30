@@ -169,9 +169,9 @@ export function SmartSearchBar({
     <div ref={containerRef} className={cn("relative w-full", className)}>
       <motion.div
         className={cn(
-          "flex items-center w-full rounded-xl border-2 relative overflow-hidden transition-all duration-200",
+          "flex items-center w-full rounded-full border-2 relative overflow-hidden transition-all duration-200",
           isFocused
-            ? "border-primary/50 shadow-lg shadow-primary/10 bg-white"
+            ? "border-yellow-400 shadow-lg shadow-yellow-400/10 bg-white"
             : "border-border bg-white/80"
         )}
         animate={{ scale: isFocused ? 1.01 : 1 }}
@@ -182,7 +182,7 @@ export function SmartSearchBar({
           className="pl-5 py-4"
           animate={{
             scale: isFocused ? 1.1 : 1,
-            color: isFocused ? "var(--primary)" : "var(--muted-foreground)",
+            color: isFocused ? "#ca8a04" : "var(--muted-foreground)",
           }}
           transition={{ duration: 0.2 }}
         >

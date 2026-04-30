@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { SmartSearchBar } from "@/components/ui/smart-search-bar";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import cdgPulseLogo from "@/assets/cdg-pulse-logo.png";
+import GradientText from "@/components/ui/GradientText";
+import SplitText from "@/components/ui/SplitText";
 
 // Components
 import {
@@ -46,9 +48,39 @@ const SUGGESTED_PROMPTS = [
   "What DMS should I use for a mid-size dealership?",
   "Which vendors have the most dealer complaints?",
   "Best CRM for customer follow-up and retention?",
-  "Compare F&I menu providers — pros and cons",
-  "Who handles service scheduling well for multi-rooftop?",
 ];
+
+function CountUp({ target, duration = 1.5 }: { target: number; duration?: number }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLElement>(null);
+  const animatedTarget = useRef(0);
+
+  useEffect(() => {
+    if (!ref.current || target <= 0 || target === animatedTarget.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && target > 0) {
+          animatedTarget.current = target;
+          const start = performance.now();
+          const animate = (now: number) => {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / (duration * 1000), 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setCount(Math.round(eased * target));
+            if (progress < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [target, duration]);
+
+  return <strong ref={ref} className="text-foreground">{count}</strong>;
+}
 
 const normalizeSearchText = (value: string) =>
   value.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -1090,7 +1122,7 @@ const VendorsV2 = () => {
         />
       </Helmet>
 
-      <div className="min-h-screen bg-[hsl(var(--vendor-bg))] overflow-x-hidden">
+      <div className="min-h-screen bg-[hsl(var(--vendor-bg))] overflow-x-hidden relative">
         {/* Navigation */}
         <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1193,33 +1225,64 @@ const VendorsV2 = () => {
           </div>
         </header>
 
+        {/* Half-moon gradient background */}
+        {isLandingState && (
+          <div
+            className="absolute inset-x-0 top-0 h-[70vh] -z-10 overflow-hidden"
+            style={{
+              background: "radial-gradient(ellipse 120% 80% at 50% -10%, #FFD500 0%, rgba(255, 213, 0, 0.15) 50%, transparent 80%)",
+            }}
+          />
+        )}
+
         {/* Main Content -- single column */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
           {/* Hero -- only on landing state (no category/vendor/AI selected) */}
           {isLandingState && (
-            <div
-              className="rounded-3xl -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-8"
-              style={{ background: 'radial-gradient(125% 125% at 50% 10%, transparent 40%, rgba(245, 158, 11, 0.15) 100%)' }}
-            >
             <div className="max-w-3xl mx-auto text-center pt-16 sm:pt-24 lg:pt-32 pb-12 sm:pb-16">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/20 border border-secondary/30 text-xs font-semibold text-yellow-800 mb-6">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-500 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
-                </span>
-                Updated Daily
+              <div className="flex items-center justify-center mb-6">
+                <div className="flex items-center rounded-full border border-border bg-background p-1 shadow shadow-black/5">
+                  <div className="flex -space-x-1.5">
+                    <img className="rounded-full ring-1 ring-background" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face" width={20} height={20} alt="Member" />
+                    <img className="rounded-full ring-1 ring-background" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face" width={20} height={20} alt="Member" />
+                    <img className="rounded-full ring-1 ring-background" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face" width={20} height={20} alt="Member" />
+                    <img className="rounded-full ring-1 ring-background" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" width={20} height={20} alt="Member" />
+                  </div>
+                  <p className="px-2 text-xs text-muted-foreground">
+                    Trusted by <strong className="font-medium text-foreground">1,000+</strong> members
+                  </p>
+                </div>
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-foreground mb-4 tracking-tight leading-none">
-                <span className="block mb-2">Raw Vendor Intel</span>
-                <span className="bg-secondary text-secondary-foreground px-2 py-1 inline-block">
-                  From Verified Dealers
+                <SplitText
+                  text="Raw Vendor Intel"
+                  className="block mb-2"
+                  tag="span"
+                  splitType="chars"
+                  delay={40}
+                  duration={0.8}
+                  ease="power3.out"
+                  from={{ opacity: 0, y: 30 }}
+                  to={{ opacity: 1, y: 0 }}
+                  threshold={0.1}
+                  rootMargin="0px"
+                />
+                <span className="inline-flex items-center gap-2">
+                  <span>From</span>{" "}
+                  <GradientText
+                    colors={["#EAB308", "#000000", "#f1c027"]}
+                    animationSpeed={6.5}
+                    showBorder={false}
+                    className="inline-block"
+                  >
+                    Verified Dealers
+                  </GradientText>
                 </span>
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
                 No paid placements. No vendor spin. Real warnings and recommendations from verified dealers in CDG Circles.
               </p>
-            </div>
             </div>
           )}
 
@@ -1266,39 +1329,24 @@ const VendorsV2 = () => {
               className=""
             />
 
-            {/* Suggested prompt chips -- only on landing state */}
-            {isLandingState && (
-              <div className="flex flex-wrap justify-center gap-2 mt-4">
-                {SUGGESTED_PROMPTS.map((prompt) => (
-                  <button
-                    key={prompt}
-                    onClick={() => handleAISubmit(prompt)}
-                    className="text-sm px-3 py-1.5 rounded-full border border-border bg-white text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            )}
-
             {/* Stats line -- only on landing state */}
             {isLandingState && (
               <div className="flex justify-center gap-4 mt-6 text-sm text-muted-foreground">
-                <span><strong className="text-foreground">{totalVerifiedCount}+</strong> recommendations</span>
+                <span><CountUp target={totalVerifiedCount} />+ recommendations</span>
                 <span className="text-border">&#8226;</span>
-                <span><strong className="text-foreground">{totalWarningCountValue}+</strong> concerns</span>
+                <span><CountUp target={totalWarningCountValue} />+ concerns</span>
                 <span className="text-border">&#8226;</span>
-                <span><strong className="text-foreground">{categories.length - 1}</strong> categories</span>
+                <span><CountUp target={categories.length - 1} /> categories</span>
               </div>
             )}
 
             {/* Circles CTAs -- unauthenticated landing state */}
             {isLandingState && !isAuthenticated && (
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6">
-                <Button variant="yellow" size="lg" className="font-bold w-full sm:w-auto" onClick={() => setShowGainAccess(true)}>
+                <Button variant="yellow" size="lg" className="font-bold w-full sm:w-auto rounded-full" onClick={() => setShowGainAccess(true)}>
                   Gain Access
                 </Button>
-                <Button variant="outline" size="lg" className="w-full sm:w-auto" onClick={() => setShowSignIn(true)}>
+                <Button size="lg" className="w-full sm:w-auto rounded-full bg-foreground text-background hover:bg-foreground/90" onClick={() => setShowSignIn(true)}>
                   Sign In
                 </Button>
               </div>
