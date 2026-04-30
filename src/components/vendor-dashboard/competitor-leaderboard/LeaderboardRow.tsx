@@ -31,7 +31,7 @@ export function LeaderboardRow({ vendor, onClick, sparkline, sparklineTrend, del
         "grid-cols-[30px_minmax(140px,2fr)_70px_70px_70px_70px_80px_12px]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         self
-          ? "-mx-6 bg-yellow-50/70 px-6 hover:bg-yellow-100/70"
+          ? "bg-yellow-50/70 hover:bg-yellow-100/70"
           : "hover:bg-slate-50",
       )}
     >
