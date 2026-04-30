@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-15)
 Phase: 07 of 6 (Tier Config Foundation)
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-04-28 - Completed quick task 260428-pe3: CAR-21 - Add competitive movement tracking to vendor dashboard
+Last activity: 2026-04-30 - Completed quick task 260430-k34: CAR-30 Apple-style minimalist redesign of VendorsV2 landing
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -90,6 +90,7 @@ None for v1.1 — RLS safety net already in place from v1.0, no RLS changes need
 | 260417-kw5 | Wire up vendor dashboard to use dynamic tier_component_config instead of hardcoded T2_ONLY_SECTIONS | 2026-04-17 | 6c8da8c | [260417-kw5-wire-up-vendor-dashboard-to-use-dynamic-](./quick/260417-kw5-wire-up-vendor-dashboard-to-use-dynamic-/) |
 | 260428-paj | Extend get_vendor_dashboard_intel RPC with product line filtering and re-enable frontend param | 2026-04-28 | 32d28d9 | [260428-paj-extend-get-vendor-dashboard-intel-rpc-wi](./quick/260428-paj-extend-get-vendor-dashboard-intel-rpc-wi/) |
 | 260428-pe3 | CAR-21: Add competitive movement tracking to vendor dashboard in Market Intel, Dealer Signals, and Intelligence Hub | 2026-04-28 | 8f2b8f0 | [260428-pe3-car-21-add-competitive-movement-tracking](./quick/260428-pe3-car-21-add-competitive-movement-tracking/) |
+| 260430-k34 | CAR-30: Apple-style minimalist redesign of VendorsV2 landing — gradient bg, expanded prompts, inline upgrade | 2026-04-30 | ba5a160 | [260430-k34-car-30-apple-style-minimalist-redesign-o](./quick/260430-k34-car-30-apple-style-minimalist-redesign-o/) |
 
 ## Session Continuity
 
