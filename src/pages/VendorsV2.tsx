@@ -18,7 +18,6 @@ import {
   UpgradeTeaser,
   CategoryPills,
   InlineAIChat,
-  UpgradePromptCard,
   CategoryGrid,
   QuickTipsSection,
   VendorIntelTicker,
@@ -45,8 +44,10 @@ import { cn } from "@/lib/utils";
 
 const SUGGESTED_PROMPTS = [
   "What DMS should I use for a mid-size dealership?",
-  "Which vendors have the most concerns?",
-  "Best CRM for customer follow-up?",
+  "Which vendors have the most dealer complaints?",
+  "Best CRM for customer follow-up and retention?",
+  "Compare F&I menu providers — pros and cons",
+  "Who handles service scheduling well for multi-rooftop?",
 ];
 
 const normalizeSearchText = (value: string) =>
@@ -93,7 +94,6 @@ const VendorsV2 = () => {
   // AI Chat state
   const [aiQuery, setAiQuery] = useState<{ text: string; id: number } | null>(null);
   const aiQueryIdRef = useRef(0);
-  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [fullAiVendorContext, setFullAiVendorContext] = useState<ChatVendorContext[]>([]);
 
   // Clerk Auth
@@ -959,17 +959,12 @@ const VendorsV2 = () => {
     if (isProUserValue) {
       aiQueryIdRef.current += 1;
       setAiQuery({ text: query, id: aiQueryIdRef.current });
-      setShowUpgradePrompt(false);
-    } else {
-      setShowUpgradePrompt(true);
-      setAiQuery(null);
     }
   };
 
   // Handle clearing the AI chat
   const handleAIChatClose = () => {
     setAiQuery(null);
-    setShowUpgradePrompt(false);
   };
 
   // Get all unique vendor names for autocomplete.
@@ -1202,6 +1197,10 @@ const VendorsV2 = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
           {/* Hero -- only on landing state (no category/vendor/AI selected) */}
           {isLandingState && (
+            <div
+              className="rounded-3xl -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-8"
+              style={{ background: 'radial-gradient(125% 125% at 50% 10%, transparent 40%, rgba(245, 158, 11, 0.15) 100%)' }}
+            >
             <div className="max-w-3xl mx-auto text-center pt-16 sm:pt-24 lg:pt-32 pb-12 sm:pb-16">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/20 border border-secondary/30 text-xs font-semibold text-yellow-800 mb-6">
                 <span className="relative flex h-2 w-2">
@@ -1220,6 +1219,7 @@ const VendorsV2 = () => {
               <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
                 No paid placements. No vendor spin. Real warnings and recommendations from verified dealers in CDG Circles.
               </p>
+            </div>
             </div>
           )}
 
@@ -1255,11 +1255,12 @@ const VendorsV2 = () => {
             )}
 
             <SmartSearchBar
-              placeholder="Search vendors or ask a question..."
+              placeholders={SUGGESTED_PROMPTS}
               suggestions={vendorSuggestionsWithLogos}
               onVendorSelect={handleVendorSelectWithOptions}
               onAISubmit={handleAISubmit}
               onSearchChange={setSearchQuery}
+              onUpgrade={() => setShowUpgradeModal(true)}
               isPro={isProUserValue}
               isLoading={!!aiQuery}
               className=""
@@ -1314,14 +1315,7 @@ const VendorsV2 = () => {
               />
             )}
 
-            {/* Upgrade prompt -- shown when free user tries AI */}
-            {showUpgradePrompt && (
-              <UpgradePromptCard
-                onUpgrade={() => setShowUpgradeModal(true)}
-                onDismiss={() => setShowUpgradePrompt(false)}
-                className="mt-4"
-              />
-            )}
+            {/* Upgrade prompt now handled inline by SmartSearchBar's no-results dropdown */}
           </div>
 
           {/* ===== BRANCH 1: Landing State ===== */}

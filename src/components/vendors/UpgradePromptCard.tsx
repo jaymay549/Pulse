@@ -1,3 +1,4 @@
+// NOTE: No longer used on VendorsV2 landing. Kept for potential reuse.
 import { Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
