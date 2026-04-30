@@ -30,7 +30,7 @@ export function SortChips({ value, onChange }: SortChipsProps) {
               "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
               on
-                ? "border-primary/30 bg-primary/10 text-primary"
+                ? "border-slate-900 bg-slate-900 text-yellow-400"
                 : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50",
             )}
           >

@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 interface SparklineProps {
   /** 8 normalized values 0–1 representing 90-day health-score trajectory. */
   values: number[];
-  /** Apply primary-blue treatment (used on the vendor's own row). */
+  /** Apply CDG-yellow treatment (used on the vendor's own row). */
   isSelf?: boolean;
   /** Trend direction; when "up", the last bar is highlighted emerald. */
   trend?: "up" | "down" | "flat";
@@ -23,7 +23,7 @@ export function Sparkline({ values, isSelf = false, trend = "flat" }: SparklineP
             className={cn(
               "w-[3px] rounded-[1.5px]",
               isSelf
-                ? "bg-primary"
+                ? "bg-amber-500"
                 : isLast && trend === "up"
                 ? "bg-emerald-600"
                 : "bg-slate-300",

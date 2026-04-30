@@ -17,7 +17,7 @@ export function LeaderboardHeader({ segment }: LeaderboardHeaderProps) {
   return (
     <div>
       <div className="flex items-center gap-2">
-        <Trophy className="h-5 w-5 text-slate-400" />
+        <Trophy className="h-5 w-5 text-amber-500" />
         <h2 className="text-lg font-medium text-slate-900">Competitor Leaderboard</h2>
       </div>
       <p className="mt-1 text-sm text-slate-500">

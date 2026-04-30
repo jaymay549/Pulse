@@ -245,7 +245,7 @@ function RowClickResult({
         </button>
         <button
           type="button"
-          className="rounded-md border border-slate-900 bg-slate-900 px-3 py-1.5 font-sans text-xs font-semibold text-white hover:opacity-90"
+          className="rounded-md border border-slate-900 bg-slate-900 px-3 py-1.5 font-sans text-xs font-semibold text-yellow-400 hover:bg-slate-800"
         >
           Talk to your CSM →
         </button>

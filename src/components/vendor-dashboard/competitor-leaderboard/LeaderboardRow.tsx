@@ -31,7 +31,7 @@ export function LeaderboardRow({ vendor, onClick, sparkline, sparklineTrend, del
         "grid-cols-[30px_minmax(140px,2fr)_70px_70px_70px_70px_80px_12px]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         self
-          ? "-mx-6 bg-primary/[0.06] px-6 hover:bg-primary/[0.10]"
+          ? "-mx-6 bg-yellow-50/70 px-6 hover:bg-yellow-100/70"
           : "hover:bg-slate-50",
       )}
     >
@@ -48,7 +48,7 @@ export function LeaderboardRow({ vendor, onClick, sparkline, sparklineTrend, del
         className={cn(
           "h-3 w-3 justify-self-end text-slate-300 transition-all",
           "group-hover:translate-x-0.5 group-hover:text-slate-500",
-          self && "text-primary",
+          self && "text-amber-500",
         )}
       />
     </button>
@@ -57,7 +57,7 @@ export function LeaderboardRow({ vendor, onClick, sparkline, sparklineTrend, del
 
 function RankCell({ value, self }: { value: number; self: boolean }) {
   return (
-    <span className={cn("text-xs font-semibold tabular-nums", self ? "text-primary" : "text-slate-400")}>
+    <span className={cn("text-xs font-semibold tabular-nums", self ? "text-amber-600" : "text-slate-400")}>
       {String(value).padStart(2, "0")}
     </span>
   );
@@ -66,9 +66,12 @@ function RankCell({ value, self }: { value: number; self: boolean }) {
 function NameCell({ name, mentions, self }: { name: string; mentions: number; self: boolean }) {
   return (
     <span className="flex items-center gap-2">
-      <span className={cn("text-[13px] font-semibold leading-none", self ? "text-primary" : "text-slate-900")}>
-        {name}
-      </span>
+      <span className="text-[13px] font-semibold leading-none text-slate-900">{name}</span>
+      {self && (
+        <span className="rounded-full bg-yellow-400 px-1.5 py-[1px] text-[9px] font-bold uppercase tracking-wider text-slate-900">
+          You
+        </span>
+      )}
       <span className="text-[11px] leading-none text-slate-400 tabular-nums">
         · {mentions} mentions
       </span>
