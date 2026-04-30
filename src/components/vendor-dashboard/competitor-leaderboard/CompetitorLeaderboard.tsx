@@ -75,8 +75,7 @@ export function CompetitorLeaderboard({ vendorName, productLineSlug = null }: Co
   const isT1 = tier !== undefined && tier !== "tier_2";
 
   return (
-    <section className="rounded-2xl bg-[#FAFAFA] p-7" aria-labelledby="competitor-leaderboard-heading">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+    <section className="rounded-xl border bg-white p-6" aria-labelledby="competitor-leaderboard-heading">
         <div id="competitor-leaderboard-heading">
           <LeaderboardHeader segment={data.segment} />
         </div>
@@ -154,7 +153,6 @@ export function CompetitorLeaderboard({ vendorName, productLineSlug = null }: Co
             />
           )}
         </div>
-      </div>
 
       {activeRowVendor && (
         <RowClickResult

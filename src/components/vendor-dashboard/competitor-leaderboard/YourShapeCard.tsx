@@ -28,16 +28,18 @@ export function YourShapeCard({ payload }: YourShapeCardProps) {
   const worst = sorted[sorted.length - 1];
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-      <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-        Your shape
+    <div className="rounded-xl border border-slate-200 bg-white p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400">
+          Your shape
+        </h3>
       </div>
-      <h3 className="mt-1 text-sm font-extrabold tracking-tight text-slate-900">
+      <p className="text-sm font-semibold text-slate-900 leading-snug">
         {best.score !== null && worst.score !== null
           ? `You lead in ${DIMENSION_LABEL[best.key]}, but lag in ${DIMENSION_LABEL[worst.key]}.`
           : "Building your shape."}
-      </h3>
-      <p className="mt-2 text-[13px] leading-snug text-slate-700">
+      </p>
+      <p className="mt-2 text-xs text-slate-600 leading-relaxed">
         {renderLines({ self, best, worst, median })}
       </p>
     </div>

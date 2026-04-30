@@ -57,7 +57,7 @@ export function LeaderboardRow({ vendor, onClick, sparkline, sparklineTrend, del
 
 function RankCell({ value, self }: { value: number; self: boolean }) {
   return (
-    <span className={cn("font-mono text-xs font-semibold tabular-nums", self ? "text-primary" : "text-slate-400")}>
+    <span className={cn("text-xs font-semibold tabular-nums", self ? "text-primary" : "text-slate-400")}>
       {String(value).padStart(2, "0")}
     </span>
   );
@@ -66,17 +66,17 @@ function RankCell({ value, self }: { value: number; self: boolean }) {
 function NameCell({ name, mentions, self }: { name: string; mentions: number; self: boolean }) {
   return (
     <span className="flex items-center gap-2">
-      <span className={cn("font-sans text-[13px] font-semibold leading-none", self ? "text-primary" : "text-slate-900")}>
+      <span className={cn("text-[13px] font-semibold leading-none", self ? "text-primary" : "text-slate-900")}>
         {name}
       </span>
-      <span className="font-mono text-[11px] font-medium leading-none text-slate-400">
+      <span className="text-[11px] leading-none text-slate-400 tabular-nums">
         · {mentions} mentions
       </span>
     </span>
   );
 }
 
-function PulseCell({ vendor, self }: { vendor: LeaderboardVendor; self: boolean }) {
+function PulseCell({ vendor }: { vendor: LeaderboardVendor; self: boolean }) {
   const value = vendor.health_score;
   const delta = vendor.rank_delta_90d;
   return (
@@ -85,13 +85,13 @@ function PulseCell({ vendor, self }: { vendor: LeaderboardVendor; self: boolean 
         <GatheringPill />
       ) : (
         <>
-          <span className={cn("font-mono text-[13px] font-bold leading-none tabular-nums", sentimentTextClass(value))}>
+          <span className={cn("text-[13px] font-bold leading-none tabular-nums", sentimentTextClass(value))}>
             {Math.round(value)}
           </span>
           {delta !== null && delta !== 0 && (
             <span
               className={cn(
-                "font-mono text-[9.5px] font-bold",
+                "text-[10px] font-bold tabular-nums",
                 delta > 0 ? "text-emerald-600" : "text-red-500",
               )}
               aria-label={`Rank changed ${delta > 0 ? "up" : "down"} ${Math.abs(delta)} since prior window`}
@@ -112,7 +112,7 @@ function ScoreCell({ value }: { value: number | null }) {
     </span>
   );
   return (
-    <span className={cn("text-right font-mono text-[13px] font-bold leading-none tabular-nums", sentimentTextClass(value))}>
+    <span className={cn("text-right text-[13px] font-bold leading-none tabular-nums", sentimentTextClass(value))}>
       {Math.round(value)}
     </span>
   );
@@ -121,7 +121,7 @@ function ScoreCell({ value }: { value: number | null }) {
 function GatheringPill() {
   return (
     <span
-      className="rounded-full px-1.5 py-[1px] font-mono text-[10px] font-bold uppercase tracking-wide text-slate-300"
+      className="rounded-full px-1.5 py-[1px] text-[10px] font-medium uppercase tracking-wide text-slate-300"
       title="Not enough discussion in this dimension to score yet."
     >
       Gathering

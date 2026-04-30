@@ -17,7 +17,7 @@ export function MedianRow({ segment }: MedianRowProps) {
     <div
       role="separator"
       aria-label={`Segment median: Pulse ${m.health_score ?? "not available"}`}
-      className="my-1.5 grid items-center gap-3.5 border-y border-dashed border-slate-400 py-1 font-mono text-[10px] font-bold uppercase leading-none tracking-[0.14em] text-slate-500 grid-cols-[30px_minmax(140px,2fr)_70px_70px_70px_70px_80px_12px]"
+      className="my-1.5 grid items-center gap-3.5 border-y border-dashed border-slate-300 py-1.5 text-xs font-medium uppercase tracking-wide text-slate-500 grid-cols-[30px_minmax(140px,2fr)_70px_70px_70px_70px_80px_12px]"
     >
       <span />
       <span className="text-slate-500">Segment median · {labelCategory}</span>
