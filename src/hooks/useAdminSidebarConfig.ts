@@ -19,6 +19,7 @@ import {
   Store,
   Sliders,
   Eye,
+  Activity,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -47,6 +48,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "prompts", to: "/admin/prompts", icon: FileText, label: "Prompts" },
   { id: "trends", to: "/admin/trends", icon: TrendingUp, label: "Trends" },
   { id: "debug", to: "/admin/debug", icon: Bug, label: "Debug" },
+  { id: "health", to: "/admin/health", icon: Activity, label: "System Health" },
   { id: "settings", to: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 
